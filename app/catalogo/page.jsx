@@ -25,30 +25,14 @@ export default async function Catalogo({ searchParams }) {
     <main className="min-h-screen bg-[#0d0d0d]">
 
       {/* Header */}
-      <section className="bg-black border-b-2 border-orange-500 px-6 py-8">
-        <h1 className="text-white text-2xl font-black uppercase tracking-wide mb-1">
-          Catálogo <span className="text-orange-500">completo</span>
-        </h1>
-        <p className="text-gray-500 text-xs uppercase tracking-widest">
-          <form method="GET" action="/catalogo" className="mt-4 flex gap-2 max-w-md">
-            {marcaFiltro && <input type="hidden" name="marca" value={marcaFiltro} />}
-            {categoriaFiltro && <input type="hidden" name="categoria" value={categoriaFiltro} />}
-              <input
-                  type="text"
-                  name="busqueda"
-                  defaultValue={params?.busqueda || ''}
-                  placeholder="Buscar producto..."
-                  className="flex-1 bg-[#111] border border-[#333] focus:border-orange-500 text-white text-sm px-4 py-2 rounded-lg outline-none placeholder:text-gray-600 transition"
-                    />
-                    <button
-                      type="submit"
-                      className="bg-orange-500 hover:bg-orange-600 text-black font-black text-xs uppercase px-4 py-2 rounded-lg transition"
-                    >
-                      Buscar
-                    </button>
-                  </form>
-        </p>
-      </section>
+<section className="bg-black border-b-2 border-orange-500 px-6 py-8">
+  <h1 className="text-white text-2xl font-black uppercase tracking-wide mb-1">
+    Catálogo <span className="text-orange-500">completo</span>
+  </h1>
+  <p className="text-gray-500 text-xs uppercase tracking-widest">
+    {productosFiltrados.length} producto{productosFiltrados.length !== 1 ? 's' : ''} encontrado{productosFiltrados.length !== 1 ? 's' : ''}
+  </p>
+</section>
 
       <div className="px-4 py-6 flex flex-col sm:flex-row gap-6 max-w-7xl mx-auto">
 

@@ -72,7 +72,7 @@ export default function BannerCarousel() {
     return (
       <div
         className="w-full flex items-center justify-center"
-        style={{ height: "340px", background: "#111" }}
+        style={{ height: "700px", background: "#111" }}
       >
         <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
       </div>
@@ -82,7 +82,7 @@ export default function BannerCarousel() {
   const banner = banners[current];
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ height: "340px" }}>
+    <div className="relative w-full overflow-hidden" style={{ height: "700px" }}>
 
       {/* Slides con imagen de fondo */}
       {banners.map((b, i) => {

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getProductosDestacados, getMarcas, getCategorias, getPreventas, getDinamicas, urlFor } from '@/lib/sanity'
 import BannerCarousel from "./components/BannerCarousel";
+import CarruselDestacados from './components/CarruselDestacados'
 
 export default async function Home() {
   const [destacados, marcas, categorias, preventas, dinamicas] = await Promise.all([
@@ -124,61 +125,19 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── Productos destacados ── */}
-      <section className="bg-[#111] px-6 pb-10">
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-white text-lg font-black uppercase tracking-wide">
-            Destacados <span className="text-orange-500">esta semana</span>
-          </h2>
-          <Link href="/catalogo" className="text-orange-500 text-xs font-bold uppercase">
-            Ver todos →
-          </Link>
-        </div>
-        {destacados.length === 0 ? (
-          <p className="text-gray-500 text-sm">No hay productos destacados aún.</p>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {destacados.map((producto) => (
-              <Link
-                key={producto._id}
-                href={'/producto/' + producto._id}
-                className="bg-[#1a1a1a] border border-[#333] hover:border-orange-500 rounded-xl overflow-hidden transition"
-              >
-                <div className="h-36 bg-[#222] flex items-center justify-center overflow-hidden relative">
-                  {producto.imagenes && producto.imagenes[0] ? (
-                    <img
-                      src={urlFor(producto.imagenes[0]).width(300).height(144).url()}
-                      alt={producto.nombre}
-                      className="w-full h-full object-contain p-2"
-                    />
-                  ) : (
-                    <span className="text-4xl">🎁</span>
-                  )}
-                  {producto.disponible && (
-                    <span className="absolute top-2 left-2 bg-green-500 text-white text-xs font-black px-2 py-0.5 rounded">
-                      Disponible
-                    </span>
-                  )}
-                </div>
-                <div className="p-3">
-                  <p className="text-white font-bold text-sm mb-1">{producto.nombre}</p>
-                  <p className="text-gray-500 text-xs mb-2">{producto.marca}</p>
-                  {producto.precio && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-orange-500 font-black text-sm">
-                        ${producto.precio.toLocaleString('es-MX')}
-                      </span>
-                      <span className="bg-orange-500 text-black text-xs font-black px-1.5 py-0.5 rounded">
-                        Directo
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+ {/* ── Destacados ── */}
+<section id="destacados" className="py-16 px-4 bg-[#111111]">
+  <div className="max-w-6xl mx-auto">
+    <p className="text-orange-500 font-black uppercase text-sm tracking-widest mb-2">Esta semana</p>
+    <h2 className="text-white font-black uppercase text-4xl mb-10">DESTACADOS</h2>
+    <CarruselDestacados productos={destacados} />
+    <div className="text-center mt-10">
+      <Link href="/catalogo" className="inline-block border border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black font-black uppercase px-8 py-3 rounded-xl transition-colors">
+        Ver catálogo completo
+      </Link>
+    </div>
+  </div>
+</section>
 
       {/* ════════════════════════════════════════════
           SECCIÓN 1 — PREVENTAS
@@ -266,7 +225,7 @@ export default async function Home() {
             <p className="text-gray-500 text-xs">Te respondemos en minutos por WhatsApp</p>
           </div>
           <a
-            href="https://wa.me/521XXXXXXXXXX?text=Hola%2C%20tengo%20dudas%20sobre%20una%20preventa"
+            href="https://wa.me/524427183787?text=Hola%2C%20tengo%20dudas%20sobre%20una%20preventa"
             className="bg-orange-500 text-black font-black text-xs uppercase tracking-wide px-5 py-2.5 rounded-lg whitespace-nowrap"
           >
             Preguntar →
@@ -385,7 +344,7 @@ export default async function Home() {
             🎵 TikTok
           </a>
           <a
-            href="https://wa.me/521XXXXXXXXXX"
+            href="https://wa.me/524427183787"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-black border border-[#333] hover:border-orange-500 text-gray-300 text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition"
@@ -497,7 +456,7 @@ export default async function Home() {
           <p className="text-white font-black text-sm uppercase mb-1">¿Sigues con dudas?</p>
           <p className="text-gray-500 text-xs mb-4">Nuestro equipo está en línea de lunes a sábado de 10am a 8pm</p>
           <a
-            href="https://wa.me/521XXXXXXXXXX?text=Hola%2C%20tengo%20una%20pregunta%20sobre%20Hecatombe"
+            href="https://wa.me/524427183787?text=Hola%2C%20tengo%20una%20pregunta%20sobre%20Hecatombe"
             className="inline-block bg-orange-500 text-black font-black text-xs uppercase tracking-widest px-8 py-3 rounded-lg"
           >
             Escríbenos →
@@ -515,7 +474,7 @@ export default async function Home() {
           <p className="text-green-100 text-sm">Escríbenos directo por WhatsApp</p>
         </div>
         <a
-          href="https://wa.me/521XXXXXXXXXX"
+          href="https://wa.me/524427183787"
           className="bg-white text-green-800 font-black px-6 py-3 rounded-lg text-sm uppercase tracking-wide"
         >
           WhatsApp

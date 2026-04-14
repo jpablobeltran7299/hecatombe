@@ -4,6 +4,12 @@ export default {
   type: 'document',
   fields: [
     {
+      name: 'mlUrl',
+      title: 'URL en Mercado Libre',
+      type: 'url',
+      description: 'Link del producto en Mercado Libre (opcional)',
+    },
+    {
       name: 'nombre',
       title: 'Nombre',
       type: 'string',

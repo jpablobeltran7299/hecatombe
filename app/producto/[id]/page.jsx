@@ -9,7 +9,7 @@ export default async function Producto({ params }) {
   if (!producto) return notFound()
 
   const whatsappUrl =
-    'https://wa.me/521XXXXXXXXXX?text=Hola%2C%20me%20interesa%20el%20producto%3A%20' +
+    'https://wa.me/524427183787?text=Hola%2C%20me%20interesa%20el%20producto%3A%20' +
     encodeURIComponent(producto.nombre)
 
   return (
@@ -126,7 +126,7 @@ export default async function Producto({ params }) {
           </div>
 
           {/* CTA WhatsApp */}
-{producto.disponible ? (
+          {producto.disponible ? (
   
     <a href={whatsappUrl}
     target="_blank"
@@ -144,8 +144,8 @@ export default async function Producto({ params }) {
   </div>
 )}
 
-{/* Botón Mercado Libre — solo si tiene mlUrl */}
-{producto.mlUrl && (
+          {/* Botón Mercado Libre — solo si tiene mlUrl */}
+          {producto.mlUrl && (
   
     <a href={producto.mlUrl}
     target="_blank"

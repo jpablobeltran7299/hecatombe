@@ -1,7 +1,7 @@
 export default function WhatsAppButton() {
   return (
     <a
-      href="https://wa.me/521XXXXXXXXXX?text=Hola%2C%20me%20interesa%20un%20producto%20de%20Hecatombe"
+      href="https://wa.me/524427183787?text=Hola%2C%20me%20interesa%20un%20producto%20de%20Hecatombe"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Contactar por WhatsApp"
