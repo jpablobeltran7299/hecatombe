@@ -56,6 +56,31 @@ export default {
       title: 'Destacado (aparece en el home)',
       type: 'boolean',
       initialValue: false
-    }
+    },
+    {
+      name: 'tipo',
+      title: 'Tipo',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Normal', value: 'normal' },
+          { title: 'Preventa', value: 'preventa' },
+        ],
+        layout: 'radio'
+      },
+      initialValue: 'normal'
+    },
+    {
+      name: 'fechaEstimada',
+      title: 'Fecha estimada de llegada (preventas)',
+      type: 'date',
+      hidden: ({ document }) => document?.tipo !== 'preventa'
+    },
+    {
+      name: 'activo',
+      title: 'Activo (visible en tienda)',
+      type: 'boolean',
+      initialValue: true
+    },
   ]
 }

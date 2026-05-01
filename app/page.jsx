@@ -3,6 +3,16 @@ import { getProductosDestacados, getMarcas, getCategorias, getPreventas, getDina
 import BannerCarousel from "./components/BannerCarousel";
 import CarruselDestacados from './components/CarruselDestacados'
 
+export const metadata = {
+  title: 'Inicio',
+  description: 'Coleccionables geek en Querétaro. Funkos, figuras, preventas y dinámicas exclusivas.',
+  openGraph: {
+    title: 'Hecatombe Coleccionables',
+    description: 'Tu tienda de coleccionables geek en Querétaro.',
+    url: 'https://tudominio.com',
+  },
+}
+
 export default async function Home() {
   const [destacados, marcas, categorias, preventas, dinamicas] = await Promise.all([
     getProductosDestacados(),
@@ -171,52 +181,58 @@ export default async function Home() {
           ))}
         </div>
 
-        {/* Grid de preventas dinámicas desde Sanity */}
         {preventas && preventas.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {preventas.map((producto) => (
-              <Link
-                key={producto._id}
-                href={'/producto/' + producto._id}
-                className="bg-[#111] border border-[#333] hover:border-orange-500 rounded-xl overflow-hidden transition group"
-              >
-                <div className="h-36 bg-[#1a1a1a] flex items-center justify-center overflow-hidden relative">
-                  {producto.imagenes?.[0] ? (
-                    <img
-                      src={urlFor(producto.imagenes[0]).width(300).height(144).url()}
-                      alt={producto.nombre}
-                      className="w-full h-full object-contain p-2"
-                    />
-                  ) : (
-                    <span className="text-4xl">📦</span>
-                  )}
-                  <span className="absolute top-2 left-2 bg-orange-500 text-black text-xs font-black px-2 py-0.5 rounded">
-                    Preventa
-                  </span>
-                </div>
-                <div className="p-3">
-                  <p className="text-white font-bold text-sm mb-1 line-clamp-2">{producto.nombre}</p>
-                  {producto.precio && (
-                    <p className="text-orange-500 font-black text-sm">
-                      Anticipo: ${(producto.precio * 0.5).toLocaleString('es-MX')}
-                    </p>
-                  )}
-                  {producto.fechaEstimada && (
-                    <p className="text-gray-600 text-xs mt-1">
-                      Llega: {new Date(producto.fechaEstimada).toLocaleDateString('es-MX', { month: 'short', year: 'numeric' })}
-                    </p>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          /* Placeholder cuando no hay preventas en Sanity aún */
-          <div className="border-2 border-dashed border-[#2a2a2a] rounded-xl p-8 text-center">
-            <p className="text-gray-600 text-sm font-bold uppercase">No hay preventas abiertas en este momento</p>
-            <p className="text-gray-700 text-xs mt-1">Síguenos en redes para ser el primero en enterarte</p>
-          </div>
-        )}
+  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+    {preventas.map((producto) => (
+      <Link
+        key={producto._id}
+        href={'/producto/' + producto._id}
+        className="group bg-[#111] border border-[#333] hover:border-orange-500 rounded-2xl overflow-hidden transition-colors flex flex-col"
+      >
+        {/* Imagen */}
+        <div className="aspect-square bg-[#1a1a1a] overflow-hidden relative flex-shrink-0">
+          {producto.imagenes?.[0] ? (
+            <img
+              src={urlFor(producto.imagenes[0]).width(400).height(400).url()}
+              alt={producto.nombre}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-4xl">📦</div>
+          )}
+          <span className="absolute top-2 left-2 bg-orange-500 text-black text-xs font-black px-2 py-0.5 rounded-full uppercase">
+            Preventa
+          </span>
+        </div>
+
+        {/* Info */}
+        <div className="p-4 flex flex-col flex-1">
+          <p className="text-gray-400 text-xs uppercase font-black tracking-widest mb-1 truncate">
+            {producto.marca}
+          </p>
+          <p className="text-white font-black text-sm uppercase leading-tight mb-2 flex-1 line-clamp-2">
+            {producto.nombre}
+          </p>
+          {producto.precio && (
+            <p className="text-orange-500 font-black text-base">
+              Anticipo: ${(producto.precio * 0.5).toLocaleString('es-MX')} MXN
+            </p>
+          )}
+          {producto.fechaEstimada && (
+            <p className="text-gray-600 text-xs mt-1">
+              🗓 Llega: {new Date(producto.fechaEstimada).toLocaleDateString('es-MX', { month: 'short', year: 'numeric' })}
+            </p>
+          )}
+        </div>
+      </Link>
+    ))}
+  </div>
+) : (
+  <div className="border-2 border-dashed border-[#2a2a2a] rounded-xl p-8 text-center">
+    <p className="text-gray-600 text-sm font-bold uppercase">No hay preventas abiertas en este momento</p>
+    <p className="text-gray-700 text-xs mt-1">Síguenos en redes para ser el primero en enterarte</p>
+  </div>
+)}
 
         {/* CTA WhatsApp */}
         <div className="mt-6 bg-[#111] border border-[#2a2a2a] rounded-xl px-5 py-4 flex items-center justify-between gap-4 flex-wrap">

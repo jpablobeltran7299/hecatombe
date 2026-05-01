@@ -2,6 +2,11 @@ import { getDinamicas } from '@/lib/sanity'
 import { urlFor } from '@/lib/sanity'
 import Link from 'next/link'
 
+export const metadata = {
+  title: 'Dinámicas',
+  description: 'Rifas, concursos, flash sales y trivias exclusivas para la comunidad Hecatombe.',
+}
+
 const TIPO_CONFIG = {
   rifa:       { label: 'RIFA',       color: 'bg-purple-600',  emoji: '🎟️' },
   concurso:   { label: 'CONCURSO',   color: 'bg-blue-600',    emoji: '🏆' },

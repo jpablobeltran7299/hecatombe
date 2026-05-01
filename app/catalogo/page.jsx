@@ -1,6 +1,11 @@
 import { getTodosProductos, getMarcas, getCategorias, urlFor } from '@/lib/sanity'
 import Link from 'next/link'
 
+export const metadata = {
+  title: 'Catálogo',
+  description: 'Explora todo nuestro catálogo de coleccionables: Funkos, figuras, cultura pop y más.',
+}
+
 export default async function Catalogo({ searchParams }) {
   const params = await searchParams
   const [productos, marcas, categorias] = await Promise.all([
@@ -29,9 +34,28 @@ export default async function Catalogo({ searchParams }) {
   <h1 className="text-white text-2xl font-black uppercase tracking-wide mb-1">
     Catálogo <span className="text-orange-500">completo</span>
   </h1>
-  <p className="text-gray-500 text-xs uppercase tracking-widest">
+  <p className="text-gray-500 text-xs uppercase tracking-widest mb-4">
     {productosFiltrados.length} producto{productosFiltrados.length !== 1 ? 's' : ''} encontrado{productosFiltrados.length !== 1 ? 's' : ''}
   </p>
+
+  {/* Buscador */}
+  <form method="GET" action="/catalogo" className="flex gap-2 max-w-md">
+    {marcaFiltro && <input type="hidden" name="marca" value={marcaFiltro} />}
+    {categoriaFiltro && <input type="hidden" name="categoria" value={categoriaFiltro} />}
+    <input
+      type="text"
+      name="busqueda"
+      defaultValue={params?.busqueda || ''}
+      placeholder="Buscar producto..."
+      className="flex-1 bg-[#111] border border-[#333] focus:border-orange-500 text-white text-sm px-4 py-2 rounded-lg outline-none placeholder-gray-600 transition-colors"
+    />
+    <button
+      type="submit"
+      className="bg-orange-500 hover:bg-orange-400 text-black font-black text-sm px-4 py-2 rounded-lg transition-colors uppercase"
+    >
+      Buscar
+    </button>
+  </form>
 </section>
 
       <div className="px-4 py-6 flex flex-col sm:flex-row gap-6 max-w-7xl mx-auto">
