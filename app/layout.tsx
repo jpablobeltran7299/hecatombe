@@ -18,6 +18,9 @@ export const metadata = {
   twitter: {
     card: 'summary_large_image',
   },
+  icons: {
+  icon: '/favicon.png',
+  },
 }
 
 

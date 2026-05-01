@@ -22,7 +22,7 @@ export default function Navbar() {
   return (
     <nav className="bg-black border-b-2 border-orange-500 px-6 py-3 flex items-center justify-between">
       <Link href="/" className="text-white text-xl font-black uppercase tracking-widest">
-        <Image src="/logo.png" alt="Hecatombe" width={200} height={40} />
+        <img src="/logo.png" alt="Hecatombe" style={{ height: '36px', width: 'auto' }} />
       </Link>
 
       <div className="flex items-center gap-6">
