@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
+import BadgesProducto from './BadgesProducto'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
 
@@ -7,7 +8,8 @@ function ProductoCard({ producto }) {
   return (
     <Link href={`/producto/${producto._id}`} className="block group h-full">
       <div className="bg-[#111111] rounded-2xl overflow-hidden border border-gray-800 group-hover:border-orange-500 transition-colors flex flex-col h-full">
-        <div className="aspect-square bg-[#1a1a1a] overflow-hidden flex-shrink-0">
+        <div className="aspect-square bg-[#1a1a1a] overflow-hidden relative flex-shrink-0">
+          <BadgesProducto producto={producto} />
           {producto.imagenes?.[0] ? (
             <img
               src={urlFor(producto.imagenes[0]).width(400).height(400).url()}

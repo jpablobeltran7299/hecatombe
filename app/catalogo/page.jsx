@@ -1,4 +1,5 @@
 import { getTodosProductos, getMarcas, getCategorias, urlFor } from '@/lib/sanity'
+import BadgesProducto from '../components/BadgesProducto'
 import Link from 'next/link'
 
 export const metadata = {
@@ -125,26 +126,18 @@ export default async function Catalogo({ searchParams }) {
                   className="group bg-[#111] border border-[#222] hover:border-orange-500 rounded-xl overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-orange-500/10 flex flex-col">
 
                   {/* Imagen */}
-                  <div className="relative bg-[#1a1a1a] aspect-square flex items-center justify-center overflow-hidden">
-                    {producto.imagenes && producto.imagenes[0] ? (
-                      <img
-                        src={urlFor(producto.imagenes[0]).width(400).height(400).url()}
-                        alt={producto.nombre}
-                        className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <span className="text-5xl">🎁</span>
-                    )}
-
-                    {/* Badge disponibilidad */}
-                    <span className={`absolute top-2 left-2 text-xs font-black px-2 py-0.5 rounded ${
-                      producto.disponible
-                        ? 'bg-green-500 text-white'
-                        : 'bg-[#333] text-gray-400'
-                    }`}>
-                      {producto.disponible ? 'Disponible' : 'Agotado'}
-                    </span>
-                  </div>
+                    <div className="relative bg-[#1a1a1a] aspect-square flex items-center justify-center overflow-hidden">
+                      <BadgesProducto producto={producto} />
+                      {producto.imagenes && producto.imagenes[0] ? (
+                        <img
+                          src={urlFor(producto.imagenes[0]).width(400).height(400).url()}
+                          alt={producto.nombre}
+                          className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <span className="text-5xl">🎁</span>
+                      )}
+                    </div>
 
                   {/* Info */}
                   <div className="p-3 flex flex-col flex-1">

@@ -82,5 +82,12 @@ export default {
       type: 'boolean',
       initialValue: true
     },
+    {
+      name: 'ultimasPiezas',
+      title: 'Últimas piezas',
+      type: 'boolean',
+      initialValue: false,
+      description: 'Activa el badge "Últimas piezas" en el catálogo'
+    },
   ]
 }
