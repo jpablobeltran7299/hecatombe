@@ -54,7 +54,6 @@ export default async function Producto({ params }) {
         <GaleriaProducto
           imagenes={producto.imagenes}
           nombre={producto.nombre}
-          urlFor={urlFor}
         />
 
         {/* Columna derecha: info */}

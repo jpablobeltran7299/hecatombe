@@ -1,7 +1,8 @@
 'use client'
 import { useState } from 'react'
+import { urlFor } from '@/lib/sanity'
 
-export default function GaleriaProducto({ imagenes, nombre, urlFor }) {
+export default function GaleriaProducto({ imagenes, nombre }) {
   const [activa, setActiva] = useState(0)
 
   return (
