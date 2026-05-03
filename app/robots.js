@@ -4,6 +4,6 @@ export default function robots() {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://hecatombe.mx/sitemap.xml',
+    sitemap: 'https://www.hecatombe.com.mx/sitemap.xml',
   }
 }
