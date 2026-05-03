@@ -69,20 +69,17 @@ export default function BannerCarousel() {
   };
 
   if (!loaded) {
-    return (
-      <div
-        className="w-full flex items-center justify-center"
-        style={{ height: "700px", background: "#111" }}
-      >
-        <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
-      </div>
-    );
-  }
+  return (
+    <div className="w-full flex items-center justify-center h-[400px] md:h-[600px] lg:h-[700px] bg-[#111]">
+      <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
+    </div>
+  );
+}
 
   const banner = banners[current];
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ height: "700px" }}>
+    <div className="relative w-full overflow-hidden h-[400px] md:h-[600px] lg:h-[700px]">
 
       {/* Slides con imagen de fondo */}
       {banners.map((b, i) => {
