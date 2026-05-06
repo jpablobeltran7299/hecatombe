@@ -1,42 +1,8 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
-import { getTodosProductos, getMarcas, getCategorias, urlFor } from '@/lib/sanity'
+import { getTodosProductos, getMarcas, getCategorias, getTematicas, getLineas, urlFor } from '@/lib/sanity'
 import BadgesProducto from '../components/BadgesProducto'
 import Link from 'next/link'
-
-const TEMATICAS = [
-  { label: 'Anime', value: 'anime' },
-  { label: 'Disney', value: 'disney' },
-  { label: 'Películas', value: 'peliculas' },
-  { label: 'Series', value: 'series' },
-  { label: 'Videojuegos', value: 'videojuegos' },
-  { label: 'Animación', value: 'animacion' },
-  { label: 'Deportes', value: 'deportes' },
-  { label: 'Música', value: 'musica' },
-  { label: 'Marvel', value: 'marvel' },
-  { label: 'DC Comics', value: 'dc' },
-  { label: 'Star Wars', value: 'starwars' },
-  { label: 'Harry Potter', value: 'harrypotter' },
-  { label: 'Horror', value: 'horror' },
-  { label: 'Otros', value: 'otros' },
-]
-
-const LINEAS = [
-  { label: 'POP', value: 'pop' },
-  { label: 'POP Animation', value: 'pop_animation' },
-  { label: 'POP Movies', value: 'pop_movies' },
-  { label: 'POP Games', value: 'pop_games' },
-  { label: 'POP TV', value: 'pop_tv' },
-  { label: 'POP Sports', value: 'pop_sports' },
-  { label: 'POP Rides', value: 'pop_rides' },
-  { label: 'Bitty POP', value: 'bitty_pop' },
-  { label: 'POP Keychain', value: 'pop_keychain' },
-  { label: 'Figura de acción', value: 'figura_accion' },
-  { label: 'Estatua', value: 'estatua' },
-  { label: 'Peluche', value: 'peluche' },
-  { label: 'Accesorio', value: 'accesorio' },
-  { label: 'Otro', value: 'otro' },
-]
 
 function Checkbox({ label, checked, onChange, count }) {
   return (
@@ -84,6 +50,8 @@ export default function Catalogo() {
   const [categorias, setCategorias] = useState([])
   const [cargando, setCargando] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [tematicas, setTematicas] = useState([])
+  const [lineas, setLineas] = useState([])
 
   // Filtros
   const [busqueda, setBusqueda] = useState('')
@@ -98,18 +66,20 @@ export default function Catalogo() {
   const [ordenar, setOrdenar] = useState('recientes')
 
   useEffect(() => {
-    Promise.all([getTodosProductos(), getMarcas(), getCategorias()]).then(([p, m, c]) => {
-      setProductos(p)
-      setMarcas(m)
-      setCategorias(c)
-      const precios = p.map(x => x.precio).filter(Boolean)
-      if (precios.length) {
-        setPrecioMin(Math.min(...precios))
-        setPrecioMax(Math.max(...precios))
-      }
-      setCargando(false)
-    })
-  }, [])
+  Promise.all([getTodosProductos(), getMarcas(), getCategorias(), getTematicas(), getLineas()]).then(([p, m, c, t, l]) => {
+    setProductos(p)
+    setMarcas(m)
+    setCategorias(c)
+    setTematicas(t)
+    setLineas(l)
+    const precios = p.map(x => x.precio).filter(Boolean)
+    if (precios.length) {
+      setPrecioMin(Math.min(...precios))
+      setPrecioMax(Math.max(...precios))
+    }
+    setCargando(false)
+  })
+}, [])
 
   const [rangoMin, setRangoMin] = useState(0)
   const [rangoMax, setRangoMax] = useState(99999)
@@ -210,28 +180,28 @@ export default function Catalogo() {
       </SeccionFiltro>
 
       <SeccionFiltro titulo="Temática" defaultOpen={false}>
-        {TEMATICAS.map(t => (
-          <Checkbox
-            key={t.value}
-            label={t.label}
-            checked={tematicasSel.includes(t.value)}
-            onChange={() => toggleItem(t.value, tematicasSel, setTematicasSel)}
-            count={productos.filter(p => p.tematica === t.value).length}
-          />
-        ))}
-      </SeccionFiltro>
+  {tematicas.map(t => (
+    <Checkbox
+      key={t._id}
+      label={t.nombre}
+      checked={tematicasSel.includes(t.nombre)}
+      onChange={() => toggleItem(t.nombre, tematicasSel, setTematicasSel)}
+      count={productos.filter(p => p.tematica === t.nombre).length}
+    />
+  ))}
+</SeccionFiltro>
 
-      <SeccionFiltro titulo="Línea" defaultOpen={false}>
-        {LINEAS.map(l => (
-          <Checkbox
-            key={l.value}
-            label={l.label}
-            checked={lineasSel.includes(l.value)}
-            onChange={() => toggleItem(l.value, lineasSel, setLineasSel)}
-            count={productos.filter(p => p.linea === l.value).length}
-          />
-        ))}
-      </SeccionFiltro>
+<SeccionFiltro titulo="Línea" defaultOpen={false}>
+  {lineas.map(l => (
+    <Checkbox
+      key={l._id}
+      label={l.nombre}
+      checked={lineasSel.includes(l.nombre)}
+      onChange={() => toggleItem(l.nombre, lineasSel, setLineasSel)}
+      count={productos.filter(p => p.linea === l.nombre).length}
+    />
+  ))}
+</SeccionFiltro>
 
       <SeccionFiltro titulo="Precio" defaultOpen={false}>
         <div className="flex flex-col gap-2 mt-1">
