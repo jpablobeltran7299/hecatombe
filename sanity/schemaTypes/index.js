@@ -3,5 +3,7 @@ import categoria from './categoria'
 import producto from './producto'
 import banner from './banner'
 import dinamica from './dinamica'
+import tematica from './tematica'
+import linea from './linea'
 
-export const schemaTypes = [marca, categoria, producto, banner, dinamica]
+export const schemaTypes = [marca, categoria, producto, banner, dinamica, tematica, linea]
