@@ -46,6 +46,54 @@ export default {
       validation: Rule => Rule.required()
     },
     {
+      name: 'tematica',
+      title: 'Temática',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Anime', value: 'anime' },
+          { title: 'Disney', value: 'disney' },
+          { title: 'Películas', value: 'peliculas' },
+          { title: 'Series', value: 'series' },
+          { title: 'Videojuegos', value: 'videojuegos' },
+          { title: 'Animación', value: 'animacion' },
+          { title: 'Deportes', value: 'deportes' },
+          { title: 'Música', value: 'musica' },
+          { title: 'Marvel', value: 'marvel' },
+          { title: 'DC Comics', value: 'dc' },
+          { title: 'Star Wars', value: 'starwars' },
+          { title: 'Harry Potter', value: 'harrypotter' },
+          { title: 'Horror', value: 'horror' },
+          { title: 'Otros', value: 'otros' },
+        ],
+        layout: 'dropdown'
+      }
+    },
+    {
+      name: 'linea',
+      title: 'Línea de producto',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'POP', value: 'pop' },
+          { title: 'POP Animation', value: 'pop_animation' },
+          { title: 'POP Movies', value: 'pop_movies' },
+          { title: 'POP Games', value: 'pop_games' },
+          { title: 'POP TV', value: 'pop_tv' },
+          { title: 'POP Sports', value: 'pop_sports' },
+          { title: 'POP Rides', value: 'pop_rides' },
+          { title: 'Bitty POP', value: 'bitty_pop' },
+          { title: 'POP Keychain', value: 'pop_keychain' },
+          { title: 'Figura de acción', value: 'figura_accion' },
+          { title: 'Estatua', value: 'estatua' },
+          { title: 'Peluche', value: 'peluche' },
+          { title: 'Accesorio', value: 'accesorio' },
+          { title: 'Otro', value: 'otro' },
+        ],
+        layout: 'dropdown'
+      }
+    },
+    {
       name: 'disponible',
       title: 'Disponible',
       type: 'boolean',
