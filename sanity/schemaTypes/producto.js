@@ -46,17 +46,23 @@ export default {
       validation: Rule => Rule.required()
     },
     {
-  name: 'tematica',
-  title: 'Temática',
-  type: 'reference',
-  to: [{ type: 'tematica' }],
-},
-{
-  name: 'linea',
-  title: 'Línea de producto',
-  type: 'reference',
-  to: [{ type: 'linea' }],
-},
+      name: 'tematica',
+      title: 'Temática',
+      type: 'reference',
+      to: [{ type: 'tematica' }],
+    },
+    {
+      name: 'universo',
+      title: 'Universo',
+      type: 'reference',
+      to: [{ type: 'universo' }],
+    },
+    {
+      name: 'linea',
+      title: 'Línea de producto',
+      type: 'reference',
+      to: [{ type: 'linea' }],
+    },
     {
       name: 'disponible',
       title: 'Disponible',
