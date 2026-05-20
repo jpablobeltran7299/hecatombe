@@ -1,18 +1,13 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
-import { getTodosProductos, getMarcas, getCategorias, getTematicas, getLineas, urlFor } from '@/lib/sanity'
+import { getTodosProductos, getTematicas, getLineas, getUniversos, urlFor } from '@/lib/sanity'
 import BadgesProducto from '../components/BadgesProducto'
 import Link from 'next/link'
 
 function Checkbox({ label, checked, onChange, count }) {
   return (
     <label className="flex items-center gap-2 cursor-pointer group py-1">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="hidden"
-      />
+      <input type="checkbox" checked={checked} onChange={onChange} className="hidden" />
       <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
         checked ? 'bg-orange-500 border-orange-500' : 'border-[#444] group-hover:border-orange-500'
       }`}>
@@ -21,9 +16,7 @@ function Checkbox({ label, checked, onChange, count }) {
       <span className={`text-xs font-bold uppercase tracking-wide flex-1 ${checked ? 'text-orange-500' : 'text-gray-400 group-hover:text-white'}`}>
         {label}
       </span>
-      {count !== undefined && (
-        <span className="text-gray-600 text-xs">({count})</span>
-      )}
+      {count !== undefined && <span className="text-gray-600 text-xs">({count})</span>}
     </label>
   )
 }
@@ -32,10 +25,7 @@ function SeccionFiltro({ titulo, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
     <div className="border-b border-[#1a1a1a] py-4">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full mb-2"
-      >
+      <button onClick={() => setOpen(!open)} className="flex items-center justify-between w-full mb-2">
         <span className="text-orange-500 text-xs font-black uppercase tracking-widest">{titulo}</span>
         <span className="text-gray-500 text-xs">{open ? '▲' : '▼'}</span>
       </button>
@@ -46,53 +36,43 @@ function SeccionFiltro({ titulo, children, defaultOpen = true }) {
 
 export default function Catalogo() {
   const [productos, setProductos] = useState([])
-  const [marcas, setMarcas] = useState([])
-  const [categorias, setCategorias] = useState([])
+  const [tematicas, setTematicas] = useState([])
+  const [universos, setUniversos] = useState([])
+  const [lineas, setLineas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [tematicas, setTematicas] = useState([])
-  const [lineas, setLineas] = useState([])
 
   // Filtros
   const [busqueda, setBusqueda] = useState('')
-  const [marcasSel, setMarcasSel] = useState([])
-  const [categoriasSel, setCategoriasSel] = useState([])
   const [tematicasSel, setTematicasSel] = useState([])
+  const [universosSel, setUniversosSel] = useState([])
   const [lineasSel, setLineasSel] = useState([])
-  const [tipoSel, setTipoSel] = useState([]) // normal, preventa
+  const [tipoSel, setTipoSel] = useState([])
   const [soloDisponibles, setSoloDisponibles] = useState(false)
+  const [rangoMin, setRangoMin] = useState(0)
+  const [rangoMax, setRangoMax] = useState(99999)
   const [precioMin, setPrecioMin] = useState(0)
   const [precioMax, setPrecioMax] = useState(99999)
   const [ordenar, setOrdenar] = useState('recientes')
 
   useEffect(() => {
-  Promise.all([getTodosProductos(), getMarcas(), getCategorias(), getTematicas(), getLineas()]).then(([p, m, c, t, l]) => {
-    setProductos(p)
-    setMarcas(m)
-    setCategorias(c)
-    setTematicas(t)
-    setLineas(l)
-    const precios = p.map(x => x.precio).filter(Boolean)
-    if (precios.length) {
-      setPrecioMin(Math.min(...precios))
-      setPrecioMax(Math.max(...precios))
-    }
-    setCargando(false)
-  })
-}, [])
-
-  const [rangoMin, setRangoMin] = useState(0)
-  const [rangoMax, setRangoMax] = useState(99999)
-
-  useEffect(() => {
-    if (!cargando) {
-      const precios = productos.map(x => x.precio).filter(Boolean)
+    Promise.all([getTodosProductos(), getTematicas(), getUniversos(), getLineas()]).then(([p, t, u, l]) => {
+      setProductos(p)
+      setTematicas(t)
+      setUniversos(u)
+      setLineas(l)
+      const precios = p.map(x => x.precio).filter(Boolean)
       if (precios.length) {
-        setRangoMin(Math.min(...precios))
-        setRangoMax(Math.max(...precios))
+        const min = Math.min(...precios)
+        const max = Math.max(...precios)
+        setPrecioMin(min)
+        setPrecioMax(max)
+        setRangoMin(min)
+        setRangoMax(max)
       }
-    }
-  }, [cargando])
+      setCargando(false)
+    })
+  }, [])
 
   const toggleItem = (val, sel, setSel) => {
     setSel(prev => prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val])
@@ -101,29 +81,24 @@ export default function Catalogo() {
   const productosFiltrados = useMemo(() => {
     let result = productos.filter(p => {
       if (busqueda && !p.nombre?.toLowerCase().includes(busqueda.toLowerCase())) return false
-      if (marcasSel.length && !marcasSel.includes(p.marca)) return false
-      if (categoriasSel.length && !categoriasSel.includes(p.categoria)) return false
       if (tematicasSel.length && !tematicasSel.includes(p.tematica)) return false
+      if (universosSel.length && !universosSel.includes(p.universo)) return false
       if (lineasSel.length && !lineasSel.includes(p.linea)) return false
       if (tipoSel.length && !tipoSel.includes(p.tipo)) return false
       if (soloDisponibles && !p.disponible) return false
       if (p.precio && (p.precio < rangoMin || p.precio > rangoMax)) return false
       return true
     })
-
     if (ordenar === 'precio_asc') result.sort((a, b) => (a.precio || 0) - (b.precio || 0))
     else if (ordenar === 'precio_desc') result.sort((a, b) => (b.precio || 0) - (a.precio || 0))
     else if (ordenar === 'nombre') result.sort((a, b) => a.nombre?.localeCompare(b.nombre))
-    // recientes: orden por defecto de Sanity
-
     return result
-  }, [productos, busqueda, marcasSel, categoriasSel, tematicasSel, lineasSel, tipoSel, soloDisponibles, rangoMin, rangoMax, ordenar])
+  }, [productos, busqueda, tematicasSel, universosSel, lineasSel, tipoSel, soloDisponibles, rangoMin, rangoMax, ordenar])
 
   const limpiarFiltros = () => {
     setBusqueda('')
-    setMarcasSel([])
-    setCategoriasSel([])
     setTematicasSel([])
+    setUniversosSel([])
     setLineasSel([])
     setTipoSel([])
     setSoloDisponibles(false)
@@ -132,7 +107,7 @@ export default function Catalogo() {
     setOrdenar('recientes')
   }
 
-  const filtrosActivos = marcasSel.length + categoriasSel.length + tematicasSel.length + lineasSel.length + tipoSel.length + (soloDisponibles ? 1 : 0)
+  const filtrosActivos = tematicasSel.length + universosSel.length + lineasSel.length + tipoSel.length + (soloDisponibles ? 1 : 0)
 
   const sidebar = (
     <div className="flex flex-col">
@@ -143,11 +118,7 @@ export default function Catalogo() {
       )}
 
       <SeccionFiltro titulo="Disponibilidad">
-        <Checkbox
-          label="Solo disponibles"
-          checked={soloDisponibles}
-          onChange={() => setSoloDisponibles(!soloDisponibles)}
-        />
+        <Checkbox label="Solo disponibles" checked={soloDisponibles} onChange={() => setSoloDisponibles(!soloDisponibles)} />
       </SeccionFiltro>
 
       <SeccionFiltro titulo="Tipo">
@@ -155,73 +126,41 @@ export default function Catalogo() {
         <Checkbox label="Preventa" checked={tipoSel.includes('preventa')} onChange={() => toggleItem('preventa', tipoSel, setTipoSel)} />
       </SeccionFiltro>
 
-      <SeccionFiltro titulo="Marca">
-        {marcas.map(m => (
-          <Checkbox
-            key={m._id}
-            label={m.nombre}
-            checked={marcasSel.includes(m.nombre)}
-            onChange={() => toggleItem(m.nombre, marcasSel, setMarcasSel)}
-            count={productos.filter(p => p.marca === m.nombre).length}
-          />
+      <SeccionFiltro titulo="Categoría" defaultOpen={false}>
+        {tematicas.map(t => (
+          <Checkbox key={t._id} label={t.nombre} checked={tematicasSel.includes(t.nombre)}
+            onChange={() => toggleItem(t.nombre, tematicasSel, setTematicasSel)}
+            count={productos.filter(p => p.tematica === t.nombre).length} />
         ))}
       </SeccionFiltro>
 
-      <SeccionFiltro titulo="Categoría">
-        {categorias.map(c => (
-          <Checkbox
-            key={c._id}
-            label={c.nombre}
-            checked={categoriasSel.includes(c.nombre)}
-            onChange={() => toggleItem(c.nombre, categoriasSel, setCategoriasSel)}
-            count={productos.filter(p => p.categoria === c.nombre).length}
-          />
+      <SeccionFiltro titulo="Universo" defaultOpen={false}>
+        {universos.map(u => (
+          <Checkbox key={u._id} label={u.nombre} checked={universosSel.includes(u.nombre)}
+            onChange={() => toggleItem(u.nombre, universosSel, setUniversosSel)}
+            count={productos.filter(p => p.universo === u.nombre).length} />
         ))}
       </SeccionFiltro>
 
-      <SeccionFiltro titulo="Temática" defaultOpen={false}>
-  {tematicas.map(t => (
-    <Checkbox
-      key={t._id}
-      label={t.nombre}
-      checked={tematicasSel.includes(t.nombre)}
-      onChange={() => toggleItem(t.nombre, tematicasSel, setTematicasSel)}
-      count={productos.filter(p => p.tematica === t.nombre).length}
-    />
-  ))}
-</SeccionFiltro>
-
-<SeccionFiltro titulo="Línea" defaultOpen={false}>
-  {lineas.map(l => (
-    <Checkbox
-      key={l._id}
-      label={l.nombre}
-      checked={lineasSel.includes(l.nombre)}
-      onChange={() => toggleItem(l.nombre, lineasSel, setLineasSel)}
-      count={productos.filter(p => p.linea === l.nombre).length}
-    />
-  ))}
-</SeccionFiltro>
+      <SeccionFiltro titulo="Tipo de artículo" defaultOpen={false}>
+        {lineas.map(l => (
+          <Checkbox key={l._id} label={l.nombre} checked={lineasSel.includes(l.nombre)}
+            onChange={() => toggleItem(l.nombre, lineasSel, setLineasSel)}
+            count={productos.filter(p => p.linea === l.nombre).length} />
+        ))}
+      </SeccionFiltro>
 
       <SeccionFiltro titulo="Precio" defaultOpen={false}>
         <div className="flex flex-col gap-2 mt-1">
           <div className="flex items-center gap-2">
             <span className="text-gray-500 text-xs">$</span>
-            <input
-              type="number"
-              value={rangoMin}
-              onChange={e => setRangoMin(Number(e.target.value))}
-              className="w-full bg-[#111] border border-[#333] text-white text-xs px-2 py-1 rounded"
-            />
+            <input type="number" value={rangoMin} onChange={e => setRangoMin(Number(e.target.value))}
+              className="w-full bg-[#111] border border-[#333] text-white text-xs px-2 py-1 rounded" />
           </div>
           <div className="flex items-center gap-2">
             <span className="text-gray-500 text-xs">$</span>
-            <input
-              type="number"
-              value={rangoMax}
-              onChange={e => setRangoMax(Number(e.target.value))}
-              className="w-full bg-[#111] border border-[#333] text-white text-xs px-2 py-1 rounded"
-            />
+            <input type="number" value={rangoMax} onChange={e => setRangoMax(Number(e.target.value))}
+              className="w-full bg-[#111] border border-[#333] text-white text-xs px-2 py-1 rounded" />
           </div>
         </div>
       </SeccionFiltro>
@@ -230,8 +169,6 @@ export default function Catalogo() {
 
   return (
     <main className="min-h-screen bg-[#0d0d0d]">
-
-      {/* Header */}
       <section className="bg-black border-b-2 border-orange-500 px-6 py-8">
         <h1 className="text-white text-2xl font-black uppercase tracking-wide mb-1">
           Catálogo <span className="text-orange-500">completo</span>
@@ -239,40 +176,24 @@ export default function Catalogo() {
         <p className="text-gray-500 text-xs uppercase tracking-widest mb-4">
           {productosFiltrados.length} producto{productosFiltrados.length !== 1 ? 's' : ''} encontrado{productosFiltrados.length !== 1 ? 's' : ''}
         </p>
-
         <div className="flex gap-2 flex-wrap">
-          {/* Buscador */}
-          <input
-            type="text"
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
+          <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar producto..."
-            className="flex-1 min-w-[200px] max-w-md bg-[#111] border border-[#333] focus:border-orange-500 text-white text-sm px-4 py-2 rounded-lg outline-none placeholder-gray-600 transition-colors"
-          />
-
-          {/* Ordenar */}
-          <select
-            value={ordenar}
-            onChange={e => setOrdenar(e.target.value)}
-            className="bg-[#111] border border-[#333] text-gray-400 text-xs font-bold uppercase px-3 py-2 rounded-lg outline-none"
-          >
+            className="flex-1 min-w-[200px] max-w-md bg-[#111] border border-[#333] focus:border-orange-500 text-white text-sm px-4 py-2 rounded-lg outline-none placeholder-gray-600 transition-colors" />
+          <select value={ordenar} onChange={e => setOrdenar(e.target.value)}
+            className="bg-[#111] border border-[#333] text-gray-400 text-xs font-bold uppercase px-3 py-2 rounded-lg outline-none">
             <option value="recientes">Más recientes</option>
             <option value="precio_asc">Precio: menor a mayor</option>
             <option value="precio_desc">Precio: mayor a menor</option>
             <option value="nombre">Nombre A-Z</option>
           </select>
-
-          {/* Botón filtros mobile */}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="sm:hidden flex items-center gap-2 bg-[#111] border border-[#333] text-gray-400 text-xs font-black uppercase px-4 py-2 rounded-lg"
-          >
+          <button onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="sm:hidden flex items-center gap-2 bg-[#111] border border-[#333] text-gray-400 text-xs font-black uppercase px-4 py-2 rounded-lg">
             Filtros {filtrosActivos > 0 && <span className="bg-orange-500 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center">{filtrosActivos}</span>}
           </button>
         </div>
       </section>
 
-      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex sm:hidden">
           <div className="absolute inset-0 bg-black/80" onClick={() => setSidebarOpen(false)} />
@@ -287,15 +208,12 @@ export default function Catalogo() {
       )}
 
       <div className="px-4 py-6 flex gap-6 max-w-7xl mx-auto">
-
-        {/* Sidebar desktop */}
         <aside className="hidden sm:block w-52 shrink-0">
           <div className="bg-black border border-[#222] rounded-xl p-4 sticky top-4">
             {sidebar}
           </div>
         </aside>
 
-        {/* Grid productos */}
         <div className="flex-1">
           {cargando ? (
             <div className="flex items-center justify-center py-20">
@@ -315,11 +233,8 @@ export default function Catalogo() {
                   <div className="relative bg-[#1a1a1a] aspect-square flex items-center justify-center overflow-hidden">
                     <BadgesProducto producto={producto} />
                     {producto.imagenes?.[0] ? (
-                      <img
-                        src={urlFor(producto.imagenes[0]).width(400).height(400).url()}
-                        alt={producto.nombre}
-                        className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
-                      />
+                      <img src={urlFor(producto.imagenes[0]).width(400).height(400).url()} alt={producto.nombre}
+                        className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300" />
                     ) : (
                       <span className="text-5xl">🎁</span>
                     )}
@@ -329,15 +244,11 @@ export default function Catalogo() {
                     <p className="text-white font-bold text-sm leading-snug mb-2 flex-1">{producto.nombre}</p>
                     <div className="flex items-center justify-between mt-auto">
                       {producto.precio ? (
-                        <span className="text-orange-500 font-black text-base">
-                          ${producto.precio.toLocaleString('es-MX')}
-                        </span>
+                        <span className="text-orange-500 font-black text-base">${producto.precio.toLocaleString('es-MX')}</span>
                       ) : (
                         <span className="text-gray-600 text-xs font-bold uppercase">Consultar</span>
                       )}
-                      <span className="text-orange-500 text-xs font-black opacity-0 group-hover:opacity-100 transition-opacity">
-                        Ver →
-                      </span>
+                      <span className="text-orange-500 text-xs font-black opacity-0 group-hover:opacity-100 transition-opacity">Ver →</span>
                     </div>
                   </div>
                 </Link>
