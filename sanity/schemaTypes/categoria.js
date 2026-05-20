@@ -2,7 +2,7 @@ export default {
   name: 'categoria',
   title: 'Categoría',
   type: 'document',
-  options: { hidden: true },
+  __experimental_actions: ['update', 'publish'],
   fields: [
     {
       name: 'nombre',

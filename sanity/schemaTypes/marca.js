@@ -2,7 +2,7 @@ export default {
   name: 'marca',
   title: 'Marca',
   type: 'document',
-  options: { hidden: true },
+  __experimental_actions: ['update', 'publish'],
   fields: [
     {
       name: 'nombre',
