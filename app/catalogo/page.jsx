@@ -207,7 +207,7 @@ export default function Catalogo() {
         </div>
       )}
 
-      <div className="px-4 py-6 flex gap-6 max-w-7xl mx-auto">
+      <div className="px-4 py-6 flex gap-6 max-w-7xl mx-auto items-start">
         <aside className="hidden sm:block w-52 shrink-0 self-start sticky top-4">
           <div className="bg-black border border-[#222] rounded-xl p-4 max-h-[calc(100vh-2rem)] overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-[#111] [&::-webkit-scrollbar-thumb]:bg-orange-500 [&::-webkit-scrollbar-thumb]:rounded-full">
             {sidebar}
