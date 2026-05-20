@@ -209,7 +209,7 @@ export default function Catalogo() {
 
       <div className="px-4 py-6 flex gap-6 max-w-7xl mx-auto">
         <aside className="hidden sm:block w-52 shrink-0">
-          <div className="bg-black border border-[#222] rounded-xl p-4 sticky top-4">
+          <div className="bg-black border border-[#222] rounded-xl p-4 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
             {sidebar}
           </div>
         </aside>
