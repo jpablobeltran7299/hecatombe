@@ -2,6 +2,7 @@ export default {
   name: 'marca',
   title: 'Marca',
   type: 'document',
+  options: { hidden: true },
   fields: [
     {
       name: 'nombre',

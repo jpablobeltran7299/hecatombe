@@ -2,6 +2,7 @@ export default {
   name: 'categoria',
   title: 'Categoría',
   type: 'document',
+  options: { hidden: true },
   fields: [
     {
       name: 'nombre',
