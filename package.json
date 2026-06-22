@@ -12,6 +12,8 @@
     "@sanity/client": "^7.22.0",
     "@sanity/image-url": "^1.2.0",
     "@sanity/vision": "^4.22.0",
+    "axios": "^1.16.1",
+    "cheerio": "^1.2.0",
     "next": "16.2.1",
     "next-sanity": "^11.6.12",
     "react": "19.2.4",
