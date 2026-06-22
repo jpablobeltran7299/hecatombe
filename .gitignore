@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+imagenes/
+test_api.js
+test_ddg.js
+test_ddg2.js
+buscar_imagenes_duckduckgo.js
+buscar_imagenes_google.js
+buscar_imagenes_test.js
+buscar_imagenes_test2.js
+git
+subir_imagenes.js
+importar_productos.js
+borrar_importados.js
+slugs_productos.csv
