@@ -144,16 +144,6 @@ export default async function Producto({ params }) {
             </div>
           )}
 
-          {producto.mlUrl && (
-            <a href={producto.mlUrl} target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full mt-3 border-2 border-[#FFE600] hover:bg-[#FFE600] text-[#FFE600] hover:text-black font-black text-sm uppercase tracking-widest py-4 rounded-xl transition-all duration-200">
-              <svg width="20" height="20" viewBox="0 0 48 48" fill="currentColor">
-                <path d="M24 4C13 4 4 13 4 24s9 20 20 20 20-9 20-20S35 4 24 4zm0 6c3.9 0 7.4 1.4 10.2 3.6L13.6 33.8A13.9 13.9 0 0 1 10 24c0-7.7 6.3-14 14-14zm0 28c-3.9 0-7.4-1.4-10.2-3.6l20.6-20.2A13.9 13.9 0 0 1 38 24c0 7.7-6.3 14-14 14z"/>
-              </svg>
-              Comprar en Mercado Libre
-            </a>
-          )}
-
           <p className="text-gray-700 text-xs text-center mt-3">
             ¿No está disponible? Pregúntanos por preventa →{' '}
             <a href={whatsappUrl} className="text-orange-500 hover:underline">WhatsApp</a>
