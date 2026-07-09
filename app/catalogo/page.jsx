@@ -224,7 +224,7 @@ export default function Catalogo() {
               {productosFiltrados.map((producto) => (
                 <Link key={producto._id} href={`/producto/${producto._id}`}
                   className="group bg-[#111] border border-[#222] hover:border-orange-500 rounded-xl overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-orange-500/10 flex flex-col">
-                  <div className="relative bg-[#1a1a1a] aspect-square flex items-center justify-center overflow-hidden">
+                  <div className="relative bg-white aspect-square flex items-center justify-center overflow-hidden">
                     <BadgesProducto producto={producto} />
                     <BotonFavoritoCard productoId={producto._id} />
                     {producto.imagenes?.[0] ? (
