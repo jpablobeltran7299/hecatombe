@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { getTodosProductos, getTematicas, getLineas, getUniversos, urlFor } from '@/lib/sanity'
 import BadgesProducto from '../components/BadgesProducto'
+import BotonFavoritoCard from '../components/BotonFavoritoCard'
 import Link from 'next/link'
 
 function Checkbox({ label, checked, onChange, count }) {
@@ -42,7 +43,6 @@ export default function Catalogo() {
   const [cargando, setCargando] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // Filtros
   const [busqueda, setBusqueda] = useState('')
   const [tematicasSel, setTematicasSel] = useState([])
   const [universosSel, setUniversosSel] = useState([])
@@ -116,16 +116,13 @@ export default function Catalogo() {
           ✕ Limpiar filtros ({filtrosActivos})
         </button>
       )}
-
       <SeccionFiltro titulo="Disponibilidad">
         <Checkbox label="Solo disponibles" checked={soloDisponibles} onChange={() => setSoloDisponibles(!soloDisponibles)} />
       </SeccionFiltro>
-
       <SeccionFiltro titulo="Tipo">
         <Checkbox label="Normal" checked={tipoSel.includes('normal')} onChange={() => toggleItem('normal', tipoSel, setTipoSel)} />
         <Checkbox label="Preventa" checked={tipoSel.includes('preventa')} onChange={() => toggleItem('preventa', tipoSel, setTipoSel)} />
       </SeccionFiltro>
-
       <SeccionFiltro titulo="Categoría" defaultOpen={false}>
         {tematicas.map(t => (
           <Checkbox key={t._id} label={t.nombre} checked={tematicasSel.includes(t.nombre)}
@@ -133,7 +130,6 @@ export default function Catalogo() {
             count={productos.filter(p => p.tematica === t.nombre).length} />
         ))}
       </SeccionFiltro>
-
       <SeccionFiltro titulo="Universo" defaultOpen={false}>
         {universos.map(u => (
           <Checkbox key={u._id} label={u.nombre} checked={universosSel.includes(u.nombre)}
@@ -141,7 +137,6 @@ export default function Catalogo() {
             count={productos.filter(p => p.universo === u.nombre).length} />
         ))}
       </SeccionFiltro>
-
       <SeccionFiltro titulo="Tipo de artículo" defaultOpen={false}>
         {lineas.map(l => (
           <Checkbox key={l._id} label={l.nombre} checked={lineasSel.includes(l.nombre)}
@@ -149,7 +144,6 @@ export default function Catalogo() {
             count={productos.filter(p => p.linea === l.nombre).length} />
         ))}
       </SeccionFiltro>
-
       <SeccionFiltro titulo="Precio" defaultOpen={false}>
         <div className="flex flex-col gap-2 mt-1">
           <div className="flex items-center gap-2">
@@ -232,6 +226,7 @@ export default function Catalogo() {
                   className="group bg-[#111] border border-[#222] hover:border-orange-500 rounded-xl overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-orange-500/10 flex flex-col">
                   <div className="relative bg-[#1a1a1a] aspect-square flex items-center justify-center overflow-hidden">
                     <BadgesProducto producto={producto} />
+                    <BotonFavoritoCard productoId={producto._id} />
                     {producto.imagenes?.[0] ? (
                       <img src={urlFor(producto.imagenes[0]).width(400).height(400).url()} alt={producto.nombre}
                         className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300" />

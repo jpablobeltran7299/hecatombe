@@ -2,6 +2,8 @@ import { getProducto, urlFor } from '@/lib/sanity'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import GaleriaProducto from '@/app/components/GaleriaProducto'
+import BotonCarrito from '@/app/components/BotonCarrito'
+import BotonFavorito from '@/app/components/BotonFavorito'
 
 export async function generateMetadata({ params }) {
   const { id } = await params
@@ -115,32 +117,47 @@ export default async function Producto({ params }) {
             ))}
           </div>
 
+          {/* Botón carrito */}
+          {producto.disponible && (
+            <BotonCarrito
+              productoId={producto._id}
+              nombre={producto.nombre}
+              precio={producto.precio}
+              imagen={producto.imagenes?.[0] ? urlFor(producto.imagenes[0]).width(200).url() : null}
+            />
+          )}
+
+          {/* Botón favorito */}
+          <BotonFavorito productoId={producto._id} />
+
           {producto.disponible ? (
-  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-3 w-full bg-[#25D366] hover:bg-[#20ba5a] text-white font-black text-sm uppercase tracking-widest py-4 rounded-xl transition-colors">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="w-5 h-5 fill-white">
-      <path d="M16 0C7.163 0 0 7.163 0 16c0 2.822.736 5.471 2.027 7.774L0 32l8.463-2.001A15.93 15.93 0 0 0 16 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29.333a13.27 13.27 0 0 1-6.748-1.833l-.484-.287-5.02 1.187 1.234-4.874-.317-.5A13.238 13.238 0 0 1 2.667 16C2.667 8.636 8.636 2.667 16 2.667S29.333 8.636 29.333 16 23.364 29.333 16 29.333zm7.27-9.77c-.398-.199-2.354-1.162-2.718-1.295-.364-.133-.63-.199-.895.2-.265.398-1.029 1.294-1.261 1.56-.232.265-.465.298-.863.1-.398-.2-1.681-.619-3.202-1.977-1.183-1.056-1.981-2.36-2.213-2.758-.232-.398-.025-.613.175-.811.179-.178.398-.465.597-.698.2-.232.265-.398.398-.663.133-.265.066-.497-.033-.696-.1-.2-.895-2.158-1.227-2.955-.323-.776-.65-.671-.895-.683l-.762-.013c-.265 0-.696.1-1.06.497-.364.398-1.393 1.362-1.393 3.32 0 1.957 1.426 3.848 1.625 4.113.2.265 2.805 4.282 6.796 6.005.95.41 1.692.655 2.27.839.954.303 1.823.26 2.51.158.765-.114 2.354-.962 2.686-1.892.332-.93.332-1.727.232-1.892-.099-.166-.364-.265-.762-.464z" />
-    </svg>
-    Preguntar por WhatsApp
-  </a>
-) : (
-  <div className="w-full bg-[#1a1a1a] border border-[#333] text-gray-600 font-black text-sm uppercase tracking-widest py-4 rounded-xl text-center">
-    Producto agotado
-  </div>
-)}
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center justify-center gap-3 w-full mt-3 bg-[#25D366] hover:bg-[#20ba5a] text-white font-black text-sm uppercase tracking-widest py-4 rounded-xl transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="w-5 h-5 fill-white">
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 2.822.736 5.471 2.027 7.774L0 32l8.463-2.001A15.93 15.93 0 0 0 16 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29.333a13.27 13.27 0 0 1-6.748-1.833l-.484-.287-5.02 1.187 1.234-4.874-.317-.5A13.238 13.238 0 0 1 2.667 16C2.667 8.636 8.636 2.667 16 2.667S29.333 8.636 29.333 16 23.364 29.333 16 29.333zm7.27-9.77c-.398-.199-2.354-1.162-2.718-1.295-.364-.133-.63-.199-.895.2-.265.398-1.029 1.294-1.261 1.56-.232.265-.465.298-.863.1-.398-.2-1.681-.619-3.202-1.977-1.183-1.056-1.981-2.36-2.213-2.758-.232-.398-.025-.613.175-.811.179-.178.398-.465.597-.698.2-.232.265-.398.398-.663.133-.265.066-.497-.033-.696-.1-.2-.895-2.158-1.227-2.955-.323-.776-.65-.671-.895-.683l-.762-.013c-.265 0-.696.1-1.06.497-.364.398-1.393 1.362-1.393 3.32 0 1.957 1.426 3.848 1.625 4.113.2.265 2.805 4.282 6.796 6.005.95.41 1.692.655 2.27.839.954.303 1.823.26 2.51.158.765-.114 2.354-.962 2.686-1.892.332-.93.332-1.727.232-1.892-.099-.166-.364-.265-.762-.464z" />
+              </svg>
+              Preguntar por WhatsApp
+            </a>
+          ) : (
+            <div className="w-full bg-[#1a1a1a] border border-[#333] text-gray-600 font-black text-sm uppercase tracking-widest py-4 rounded-xl text-center">
+              Producto agotado
+            </div>
+          )}
 
-{producto.mlUrl && (
-  <a href={producto.mlUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-3 w-full mt-3 border-2 border-[#FFE600] hover:bg-[#FFE600] text-[#FFE600] hover:text-black font-black text-sm uppercase tracking-widest py-4 rounded-xl transition-all duration-200">
-    <svg width="20" height="20" viewBox="0 0 48 48" fill="currentColor">
-      <path d="M24 4C13 4 4 13 4 24s9 20 20 20 20-9 20-20S35 4 24 4zm0 6c3.9 0 7.4 1.4 10.2 3.6L13.6 33.8A13.9 13.9 0 0 1 10 24c0-7.7 6.3-14 14-14zm0 28c-3.9 0-7.4-1.4-10.2-3.6l20.6-20.2A13.9 13.9 0 0 1 38 24c0 7.7-6.3 14-14 14z"/>
-    </svg>
-    Comprar en Mercado Libre
-  </a>
-)}
+          {producto.mlUrl && (
+            <a href={producto.mlUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center justify-center gap-3 w-full mt-3 border-2 border-[#FFE600] hover:bg-[#FFE600] text-[#FFE600] hover:text-black font-black text-sm uppercase tracking-widest py-4 rounded-xl transition-all duration-200">
+              <svg width="20" height="20" viewBox="0 0 48 48" fill="currentColor">
+                <path d="M24 4C13 4 4 13 4 24s9 20 20 20 20-9 20-20S35 4 24 4zm0 6c3.9 0 7.4 1.4 10.2 3.6L13.6 33.8A13.9 13.9 0 0 1 10 24c0-7.7 6.3-14 14-14zm0 28c-3.9 0-7.4-1.4-10.2-3.6l20.6-20.2A13.9 13.9 0 0 1 38 24c0 7.7-6.3 14-14 14z"/>
+              </svg>
+              Comprar en Mercado Libre
+            </a>
+          )}
 
-<p className="text-gray-700 text-xs text-center mt-3">
-  ¿No está disponible? Pregúntanos por preventa →{' '}
-  <a href={whatsappUrl} className="text-orange-500 hover:underline">WhatsApp</a>
-</p>
+          <p className="text-gray-700 text-xs text-center mt-3">
+            ¿No está disponible? Pregúntanos por preventa →{' '}
+            <a href={whatsappUrl} className="text-orange-500 hover:underline">WhatsApp</a>
+          </p>
 
         </div>
       </div>

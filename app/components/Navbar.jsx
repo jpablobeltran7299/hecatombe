@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 const LINKS = [
   { href: '/catalogo', label: 'Catálogo' },
@@ -16,7 +17,34 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [user, setUser] = useState(null)
+  const [cantidadCarrito, setCantidadCarrito] = useState(0)
   const router = useRouter()
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    function actualizarContador() {
+      const carrito = JSON.parse(localStorage.getItem('carrito') || '[]')
+      const total = carrito.reduce((acc, i) => acc + i.cantidad, 0)
+      setCantidadCarrito(total)
+    }
+    actualizarContador()
+    window.addEventListener('storage', actualizarContador)
+    window.addEventListener('carritoActualizado', actualizarContador)
+    return () => {
+      window.removeEventListener('storage', actualizarContador)
+      window.removeEventListener('carritoActualizado', actualizarContador)
+    }
+  }, [])
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -31,7 +59,7 @@ export default function Navbar() {
   return (
     <>
       <nav className="bg-black border-b-2 border-orange-500 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
-        
+
         {/* Logo */}
         <Link href="/" onClick={() => setMenuOpen(false)}>
           <img src="/logo.png" alt="Hecatombe" style={{ height: '32px', width: 'auto' }} />
@@ -69,10 +97,49 @@ export default function Navbar() {
               </svg>
             </button>
           </form>
+
+          {/* Ícono carrito */}
+          <Link href="/carrito" className="relative text-gray-400 hover:text-orange-500 transition">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            {cantidadCarrito > 0 && (
+              <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center">
+                {cantidadCarrito}
+              </span>
+            )}
+          </Link>
+
+          {/* Botón login/cuenta desktop */}
+          {user ? (
+            <Link href="/cuenta"
+              className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase px-4 py-2 rounded-lg transition">
+              Mi cuenta
+            </Link>
+          ) : (
+            <Link href="/login"
+              className="border border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white text-xs font-black uppercase px-4 py-2 rounded-lg transition">
+              Iniciar sesión
+            </Link>
+          )}
         </div>
 
-        {/* Mobile — buscador + hamburguesa */}
+        {/* Mobile — carrito + buscador + hamburguesa */}
         <div className="flex md:hidden items-center gap-3">
+          <Link href="/carrito" className="relative text-gray-400 hover:text-orange-500 transition">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            {cantidadCarrito > 0 && (
+              <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center">
+                {cantidadCarrito}
+              </span>
+            )}
+          </Link>
           <button
             onClick={() => setSearchOpen(!searchOpen)}
             className="text-gray-400 hover:text-orange-500 transition"
@@ -129,6 +196,11 @@ export default function Navbar() {
               {label}
             </Link>
           ))}
+          <Link href={user ? '/cuenta' : '/login'}
+            onClick={() => setMenuOpen(false)}
+            className="text-orange-500 text-sm font-black uppercase tracking-widest hover:text-orange-400 transition">
+            {user ? 'Mi cuenta' : 'Iniciar sesión'}
+          </Link>
         </div>
       )}
     </>
