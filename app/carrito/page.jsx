@@ -7,12 +7,23 @@ import Link from 'next/link'
 export default function CarritoPage() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
+  const [procesando, setProcesando] = useState(false)
+  const [user, setUser] = useState(null)
+  const [estado, setEstado] = useState(null)
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const e = params.get('estado')
+    if (e) setEstado(e)
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+    })
+
     cargarCarrito()
   }, [])
 
-  async function cargarCarrito() {
+  function cargarCarrito() {
     const carritoLocal = JSON.parse(localStorage.getItem('carrito') || '[]')
     setItems(carritoLocal)
     setLoading(false)
@@ -22,6 +33,7 @@ export default function CarritoPage() {
     const nuevo = items.filter(i => i.productoId !== productoId)
     setItems(nuevo)
     localStorage.setItem('carrito', JSON.stringify(nuevo))
+    window.dispatchEvent(new Event('carritoActualizado'))
   }
 
   function cambiarCantidad(productoId, delta) {
@@ -34,6 +46,38 @@ export default function CarritoPage() {
     })
     setItems(nuevo)
     localStorage.setItem('carrito', JSON.stringify(nuevo))
+    window.dispatchEvent(new Event('carritoActualizado'))
+  }
+
+  async function handlePagar() {
+    if (!user) {
+      window.location.href = '/login'
+      return
+    }
+
+    setProcesando(true)
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items,
+          userId: user.id,
+          userEmail: user.email,
+        }),
+      })
+
+      const data = await res.json()
+      if (data.init_point) {
+        window.location.href = data.init_point
+      } else {
+        alert('Error al procesar el pago. Intenta de nuevo.')
+      }
+    } catch (error) {
+      console.error(error)
+      alert('Error al procesar el pago. Intenta de nuevo.')
+    }
+    setProcesando(false)
   }
 
   const total = items.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
@@ -48,6 +92,23 @@ export default function CarritoPage() {
     <main className="min-h-screen bg-black px-4 py-12">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-black uppercase text-white mb-8">Mi carrito</h1>
+
+        {/* Mensajes de estado */}
+        {estado === 'exitoso' && (
+          <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4 mb-6">
+            <p className="text-green-400 font-black uppercase text-sm">✅ ¡Pago exitoso! Tu pedido está confirmado.</p>
+          </div>
+        )}
+        {estado === 'fallido' && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 mb-6">
+            <p className="text-red-400 font-black uppercase text-sm">❌ El pago no se pudo procesar. Intenta de nuevo.</p>
+          </div>
+        )}
+        {estado === 'pendiente' && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 mb-6">
+            <p className="text-yellow-400 font-black uppercase text-sm">⏳ Pago pendiente. Te notificaremos cuando se confirme.</p>
+          </div>
+        )}
 
         {items.length === 0 ? (
           <div className="bg-[#111] border border-white/10 rounded-2xl p-12 text-center">
@@ -65,9 +126,9 @@ export default function CarritoPage() {
                   className="bg-[#111] border border-white/10 rounded-2xl p-4 flex items-center gap-4">
                   {item.imagen ? (
                     <img src={item.imagen} alt={item.nombre}
-                      className="w-16 h-16 object-cover rounded-lg bg-[#1a1a1a]" />
+                      className="w-16 h-16 object-contain rounded-lg bg-white flex-shrink-0" />
                   ) : (
-                    <div className="w-16 h-16 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-2xl">📦</div>
+                    <div className="w-16 h-16 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-2xl flex-shrink-0">📦</div>
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-black uppercase text-sm truncate">{item.nombre}</p>
@@ -95,12 +156,18 @@ export default function CarritoPage() {
                 <span className="text-white/60 uppercase font-black text-sm">Total</span>
                 <span className="text-orange-500 font-black text-2xl">${total.toLocaleString('es-MX')} MXN</span>
               </div>
+              {!user && (
+                <p className="text-white/40 text-xs text-center mb-3">
+                  Necesitas <Link href="/login" className="text-orange-500 hover:underline">iniciar sesión</Link> para proceder al pago
+                </p>
+              )}
               <button
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black uppercase py-4 rounded-xl transition opacity-50 cursor-not-allowed"
-                disabled>
-                Proceder al pago (próximamente)
+                onClick={handlePagar}
+                disabled={procesando}
+                className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black uppercase py-4 rounded-xl transition">
+                {procesando ? 'Procesando...' : '💳 Proceder al pago'}
               </button>
-              <p className="text-white/20 text-xs text-center mt-3">El pago estará disponible con Mercado Pago</p>
+              <p className="text-white/20 text-xs text-center mt-3">Pago seguro con Mercado Pago</p>
             </div>
           </>
         )}
