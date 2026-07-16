@@ -80,7 +80,16 @@ export default function Catalogo() {
 
   const productosFiltrados = useMemo(() => {
     let result = productos.filter(p => {
-      if (busqueda && !p.nombre?.toLowerCase().includes(busqueda.toLowerCase())) return false
+      if (busqueda) {
+        const q = busqueda.toLowerCase()
+        const coincide =
+          p.nombre?.toLowerCase().includes(q) ||
+          p.universo?.toLowerCase().includes(q) ||
+          p.tematica?.toLowerCase().includes(q) ||
+          p.marca?.toLowerCase().includes(q) ||
+          p.linea?.toLowerCase().includes(q)
+        if (!coincide) return false
+      }
       if (tematicasSel.length && !tematicasSel.includes(p.tematica)) return false
       if (universosSel.length && !universosSel.includes(p.universo)) return false
       if (lineasSel.length && !lineasSel.includes(p.linea)) return false
