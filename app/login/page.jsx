@@ -9,6 +9,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [modoRecuperar, setModoRecuperar] = useState(false)
+  const [mensajeRecuperar, setMensajeRecuperar] = useState('')
 
   async function handleLogin(e) {
     e.preventDefault()
@@ -17,6 +19,18 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) setError(error.message)
     else window.location.href = '/cuenta'
+    setLoading(false)
+  }
+
+  async function handleRecuperar(e) {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/cuenta`,
+    })
+    if (error) setError(error.message)
+    else setMensajeRecuperar('¡Listo! Revisa tu correo para restablecer tu contraseña.')
     setLoading(false)
   }
 
@@ -30,57 +44,111 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-black flex items-center justify-center px-4">
       <div className="bg-[#111] border border-white/10 rounded-2xl p-8 w-full max-w-md">
-        <h1 className="text-2xl font-black uppercase text-white mb-1">Inicia sesión</h1>
-        <p className="text-white/50 text-sm mb-6">
-          ¿No tienes cuenta?{' '}
-          <Link href="/registro" className="text-orange-500 hover:underline">Regístrate</Link>
-        </p>
 
-        <form onSubmit={handleLogin} className="flex flex-col gap-4">
-          <input
-            type="email"
-            placeholder="Correo electrónico"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            className="bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-orange-500"
-          />
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            className="bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-orange-500"
-          />
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase py-3 rounded-lg transition"
-          >
-            {loading ? 'Entrando...' : 'Iniciar sesión'}
-          </button>
-        </form>
+        {modoRecuperar ? (
+          <>
+            <h1 className="text-2xl font-black uppercase text-white mb-1">Recuperar contraseña</h1>
+            <p className="text-white/50 text-sm mb-6">
+              Te enviaremos un link a tu correo para crear una nueva contraseña.
+            </p>
 
-        <div className="flex items-center gap-3 my-6">
-          <div className="flex-1 h-px bg-white/10" />
-          <span className="text-white/30 text-sm">o</span>
-          <div className="flex-1 h-px bg-white/10" />
-        </div>
+            {mensajeRecuperar ? (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-4 mb-4">
+                <p className="text-green-400 text-sm">{mensajeRecuperar}</p>
+              </div>
+            ) : (
+              <form onSubmit={handleRecuperar} className="flex flex-col gap-4">
+                <input
+                  type="email"
+                  placeholder="Correo electrónico"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  className="bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-orange-500"
+                />
+                {error && <p className="text-red-400 text-sm">{error}</p>}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase py-3 rounded-lg transition"
+                >
+                  {loading ? 'Enviando...' : 'Enviar link de recuperación'}
+                </button>
+              </form>
+            )}
 
-        <button
-          onClick={handleGoogle}
-          className="w-full flex items-center justify-center gap-3 bg-white text-black font-bold py-3 rounded-lg hover:bg-white/90 transition"
-        >
-          <svg width="20" height="20" viewBox="0 0 48 48">
-            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-          </svg>
-          Continuar con Google
-        </button>
+            <button
+              onClick={() => { setModoRecuperar(false); setMensajeRecuperar(''); setError('') }}
+              className="mt-4 text-white/40 hover:text-white text-sm transition w-full text-center"
+            >
+              ← Volver al inicio de sesión
+            </button>
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl font-black uppercase text-white mb-1">Inicia sesión</h1>
+            <p className="text-white/50 text-sm mb-6">
+              ¿No tienes cuenta?{' '}
+              <Link href="/registro" className="text-orange-500 hover:underline">Regístrate</Link>
+            </p>
+
+            <form onSubmit={handleLogin} className="flex flex-col gap-4">
+              <input
+                type="email"
+                placeholder="Correo electrónico"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                className="bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-orange-500"
+              />
+              <div className="flex flex-col gap-1">
+                <input
+                  type="password"
+                  placeholder="Contraseña"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  className="bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-orange-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setModoRecuperar(true)}
+                  className="text-white/30 hover:text-orange-500 text-xs text-right transition"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+              {error && <p className="text-red-400 text-sm">{error}</p>}
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase py-3 rounded-lg transition"
+              >
+                {loading ? 'Entrando...' : 'Iniciar sesión'}
+              </button>
+            </form>
+
+            <div className="flex items-center gap-3 my-6">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-white/30 text-sm">o</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+
+            <button
+              onClick={handleGoogle}
+              className="w-full flex items-center justify-center gap-3 bg-white text-black font-bold py-3 rounded-lg hover:bg-white/90 transition"
+            >
+              <svg width="20" height="20" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+              Continuar con Google
+            </button>
+          </>
+        )}
+
       </div>
     </main>
   )
