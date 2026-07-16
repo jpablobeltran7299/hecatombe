@@ -7,7 +7,6 @@ import Link from 'next/link'
 export default function CarritoPage() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
-  const [procesando, setProcesando] = useState(false)
   const [user, setUser] = useState(null)
   const [estado, setEstado] = useState(null)
 
@@ -49,35 +48,12 @@ export default function CarritoPage() {
     window.dispatchEvent(new Event('carritoActualizado'))
   }
 
-  async function handlePagar() {
+  function handlePagar() {
     if (!user) {
       window.location.href = '/login'
       return
     }
-
-    setProcesando(true)
-    try {
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items,
-          userId: user.id,
-          userEmail: user.email,
-        }),
-      })
-
-      const data = await res.json()
-      if (data.init_point) {
-        window.location.href = data.init_point
-      } else {
-        alert('Error al procesar el pago. Intenta de nuevo.')
-      }
-    } catch (error) {
-      console.error(error)
-      alert('Error al procesar el pago. Intenta de nuevo.')
-    }
-    setProcesando(false)
+    window.location.href = '/checkout'
   }
 
   const total = items.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
@@ -163,9 +139,8 @@ export default function CarritoPage() {
               )}
               <button
                 onClick={handlePagar}
-                disabled={procesando}
-                className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black uppercase py-4 rounded-xl transition">
-                {procesando ? 'Procesando...' : '💳 Proceder al pago'}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black uppercase py-4 rounded-xl transition">
+                💳 Proceder al pago
               </button>
               <p className="text-white/20 text-xs text-center mt-3">Pago seguro con Mercado Pago</p>
             </div>
