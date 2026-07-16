@@ -11,6 +11,7 @@ export default function CuentaPage() {
   const [loading, setLoading] = useState(true)
   const [favoritos, setFavoritos] = useState([])
   const [productosF, setProductosF] = useState({})
+  const [pedidos, setPedidos] = useState([])
   const [tab, setTab] = useState('perfil')
   const [perfil, setPerfil] = useState({
     nombre: '',
@@ -34,6 +35,7 @@ export default function CuentaPage() {
         setUser(session.user)
         cargarFavoritos(session.user.id)
         cargarPerfil(session.user.id)
+        cargarPedidos(session.user.id)
       }
       setLoading(false)
     })
@@ -89,6 +91,15 @@ export default function CuentaPage() {
     }
   }
 
+  async function cargarPedidos(userId) {
+    const { data } = await supabase
+      .from('pedidos')
+      .select('id, created_at, total, estado, items')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+    setPedidos(data || [])
+  }
+
   async function eliminarFavorito(productoId) {
     const { data: { session } } = await supabase.auth.getSession()
     await supabase.from('favoritos').delete()
@@ -129,7 +140,7 @@ export default function CuentaPage() {
           {[
             { key: 'perfil', label: 'Perfil' },
             { key: 'favoritos', label: `Favoritos (${favoritos.length})` },
-            { key: 'pedidos', label: 'Pedidos' },
+            { key: 'pedidos', label: `Pedidos (${pedidos.length})` },
           ].map(({ key, label }) => (
             <button key={key} onClick={() => setTab(key)}
               className={`px-4 py-3 text-sm font-black uppercase tracking-widest transition border-b-2 -mb-px ${
@@ -146,14 +157,12 @@ export default function CuentaPage() {
         {tab === 'perfil' && (
           <div className="flex flex-col gap-4">
 
-            {/* Info cuenta */}
             <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Cuenta</h2>
               <p className="text-white/70 text-sm">Correo: <span className="text-white">{user?.email}</span></p>
               <p className="text-white/70 text-sm mt-1">Miembro desde: <span className="text-white">{new Date(user?.created_at).toLocaleDateString('es-MX')}</span></p>
             </div>
 
-            {/* Datos personales */}
             <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Datos personales</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -178,7 +187,6 @@ export default function CuentaPage() {
               </div>
             </div>
 
-            {/* Dirección */}
             <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Dirección de envío</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -293,9 +301,42 @@ export default function CuentaPage() {
 
         {/* Tab: Pedidos */}
         {tab === 'pedidos' && (
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-12 text-center">
-            <p className="text-white/40 mb-2">Historial de pedidos</p>
-            <p className="text-white/20 text-sm">Disponible cuando se active Mercado Pago</p>
+          <div className="flex flex-col gap-4">
+            {pedidos.length === 0 ? (
+              <div className="bg-[#111] border border-white/10 rounded-2xl p-12 text-center">
+                <p className="text-white/40 mb-2">No tienes pedidos aún</p>
+                <Link href="/catalogo"
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase px-6 py-3 rounded-xl transition mt-4 inline-block">
+                  Ver catálogo
+                </Link>
+              </div>
+            ) : (
+              pedidos.map(pedido => (
+                <div key={pedido.id} className="bg-[#111] border border-white/10 rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-white font-black uppercase text-sm">Pedido #{pedido.id}</p>
+                      <p className="text-white/30 text-xs mt-1">{new Date(pedido.created_at).toLocaleDateString('es-MX')}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xs font-black uppercase px-3 py-1 rounded-full ${
+                        pedido.estado === 'pagado'
+                          ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+                          : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
+                      }`}>
+                        {pedido.estado}
+                      </span>
+                      <span className="text-orange-500 font-black">${pedido.total?.toLocaleString('es-MX')} MXN</span>
+                    </div>
+                  </div>
+                  {pedido.items?.length > 0 && (
+                    <div className="border-t border-white/10 pt-4">
+                      <p className="text-white/30 text-xs uppercase font-black mb-2">{pedido.items.length} producto(s)</p>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         )}
 
