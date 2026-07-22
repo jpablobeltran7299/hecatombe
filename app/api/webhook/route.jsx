@@ -2,20 +2,22 @@ import { MercadoPagoConfig, Payment } from 'mercadopago'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+
 export const dynamic = 'force-dynamic'
 
-const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
-})
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-)
-
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export async function POST(request) {
+  // Inicializar clientes dentro de la función
+  const mpClient = new MercadoPagoConfig({
+    accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
+  })
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_KEY
+  )
+
+  const resend = new Resend(process.env.RESEND_API_KEY)
+
   try {
     const body = await request.json()
 
@@ -26,7 +28,7 @@ export async function POST(request) {
     const paymentId = body.data?.id
     if (!paymentId) return NextResponse.json({ ok: true })
 
-    const payment = new Payment(client)
+    const payment = new Payment(mpClient)
     const pago = await payment.get({ id: paymentId })
 
     if (pago.status !== 'approved') {
@@ -35,17 +37,14 @@ export async function POST(request) {
 
     const userId = pago.external_reference
 
-    // Obtener datos del usuario
     const { data: { user } } = await supabase.auth.admin.getUserById(userId)
     const userEmail = user?.email || ''
 
-    // Obtener carrito
     const { data: carritoItems } = await supabase
       .from('carrito')
       .select('producto_id, cantidad')
       .eq('user_id', userId)
 
-    // Obtener perfil para dirección
     const { data: perfil } = await supabase
       .from('perfiles')
       .select('nombre, apellido, telefono, calle, colonia, ciudad, estado, cp, referencias')
@@ -57,7 +56,6 @@ export async function POST(request) {
       ? `${perfil.calle}, ${perfil.colonia}, ${perfil.ciudad}, ${perfil.estado} CP ${perfil.cp}${perfil.referencias ? ` — ${perfil.referencias}` : ''}`
       : 'No proporcionada'
 
-    // Guardar pedido
     const { data: pedido } = await supabase.from('pedidos').insert({
       user_id: userId,
       total: pago.transaction_amount,
@@ -66,10 +64,8 @@ export async function POST(request) {
       mp_payment_id: String(paymentId),
     }).select().single()
 
-    // Vaciar carrito
     await supabase.from('carrito').delete().eq('user_id', userId)
 
-    // Email al cliente
     await resend.emails.send({
       from: 'Hecatombe Coleccionables <noreply@hecatombe.com.mx>',
       to: userEmail,
@@ -114,7 +110,6 @@ export async function POST(request) {
       `
     })
 
-    // Email a Diego
     await resend.emails.send({
       from: 'Hecatombe Sistema <noreply@hecatombe.com.mx>',
       to: 'hecatombe.9194@gmail.com',
