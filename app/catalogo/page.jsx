@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { getTodosProductos, getTematicas, getLineas, getUniversos, urlFor } from '@/lib/sanity'
 import BadgesProducto from '../components/BadgesProducto'
@@ -36,7 +36,7 @@ function SeccionFiltro({ titulo, children, defaultOpen = true }) {
   )
 }
 
-export default function Catalogo() {
+function Catalogo() {
   const searchParams = useSearchParams()
   const [productos, setProductos] = useState([])
   const [tematicas, setTematicas] = useState([])
@@ -73,22 +73,13 @@ export default function Catalogo() {
         setRangoMax(max)
       }
 
-      // Leer params de URL y aplicar filtros
       const busquedaParam = searchParams.get('busqueda')
       const tipoParam = searchParams.get('tipo')
-      const marcaParam = searchParams.get('marca')
       const categoriaParam = searchParams.get('categoria')
 
       if (busquedaParam) setBusqueda(busquedaParam)
       if (tipoParam) setTipoSel([tipoParam])
-      if (marcaParam) {
-        const marca = p.find(prod => prod.marca)
-        // Buscar por nombre de marca
-        const nombreMarca = p.find(prod => prod._id === marcaParam || prod.marca)?.marca
-        if (nombreMarca) setBusqueda(nombreMarca)
-      }
       if (categoriaParam) {
-        // Buscar nombre de tematica por id
         const tematica = t.find(tem => tem._id === categoriaParam)
         if (tematica) setTematicasSel([tematica.nombre])
       }
@@ -285,5 +276,17 @@ export default function Catalogo() {
         </div>
       </div>
     </main>
+  )
+}
+
+export default function CatalogoPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
+      </main>
+    }>
+      <Catalogo />
+    </Suspense>
   )
 }
