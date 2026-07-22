@@ -56,9 +56,9 @@ export default async function Home() {
         <p className="text-black text-xs font-bold uppercase tracking-wide">
           🔥 Preventas abiertas — consulta nuestro catálogo
         </p>
-        <span className="bg-black text-orange-500 text-xs font-black px-3 py-0.5 rounded-full">
+        <Link href="/catalogo?tipo=preventa" className="bg-black text-orange-500 text-xs font-black px-3 py-0.5 rounded-full">
           Ver más
-        </span>
+        </Link>
       </div>
 
       <BannerCarousel />
@@ -106,7 +106,7 @@ export default async function Home() {
           {categorias.map((cat) => (
             <Link
               key={cat._id}
-              href={'/catalogo?categoria=' + cat._id}
+              href={'/catalogo?busqueda=' + encodeURIComponent(cat.nombre)}
               className="bg-black border-2 border-[#222] hover:border-orange-500 rounded-lg p-4 text-center transition"
             >
               <p className="text-white text-xs font-bold uppercase">{cat.nombre}</p>
@@ -116,24 +116,24 @@ export default async function Home() {
       </section>
 
       {/* ── Marcas ── */}
-      <section className="bg-[#111] px-6 pb-8">
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-white text-lg font-black uppercase tracking-wide">
-            Marcas <span className="text-orange-500">disponibles</span>
-          </h2>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {marcas.map((marca) => (
-            <Link
-              key={marca._id}
-              href={'/catalogo?marca=' + marca._id}
-              className="bg-black border border-[#333] hover:border-orange-500 text-gray-300 text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition"
-            >
-              {marca.nombre}
-            </Link>
-          ))}
-        </div>
-      </section>
+<section className="bg-[#111] px-6 pb-8">
+  <div className="flex items-baseline justify-between mb-4">
+    <h2 className="text-white text-lg font-black uppercase tracking-wide">
+      Marcas <span className="text-orange-500">disponibles</span>
+    </h2>
+  </div>
+  <div className="flex gap-2 flex-wrap">
+    {marcas.map((marca) => (
+      <Link
+        key={marca._id}
+        href={'/catalogo?busqueda=' + encodeURIComponent(marca.nombre)}
+        className="bg-black border border-[#333] hover:border-orange-500 text-gray-300 text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition"
+      >
+        {marca.nombre}
+      </Link>
+    ))}
+  </div>
+</section>
 
  {/* ── Destacados ── */}
 <section id="destacados" className="py-16 px-4 bg-[#111111]">
