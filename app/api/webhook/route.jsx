@@ -2,6 +2,7 @@ import { MercadoPagoConfig, Payment } from 'mercadopago'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+export const dynamic = 'force-dynamic'
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
