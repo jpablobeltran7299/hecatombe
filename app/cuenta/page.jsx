@@ -205,12 +205,12 @@ export default function CuentaPage() {
           </button>
         </div>
 
-        <div className="flex gap-2 mb-8 border-b border-white/10 overflow-x-auto">
+        <div className="flex gap-2 mb-8 border-b border-white/10">
           {[
             { key: 'perfil', label: 'Perfil' },
             { key: 'favoritos', label: `Favoritos (${favoritos.length})` },
             { key: 'pedidos', label: `Pedidos (${pedidos.length})` },
-            { key: 'bodega', label: `📦 Bodegatombe${totalBodega > 0 ? ` $${totalBodega.toLocaleString('es-MX')}` : ''}` },
+            { key: 'bodega', label: `📦 Bodega${totalBodega > 0 ? ` $${totalBodega.toLocaleString('es-MX')}` : ''}` },
           ].map(({ key, label }) => (
             <button key={key} onClick={() => setTab(key)}
               className={`px-4 py-3 text-sm font-black uppercase tracking-widest transition border-b-2 -mb-px whitespace-nowrap ${
