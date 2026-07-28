@@ -71,7 +71,7 @@ export async function POST(request) {
     const { data: pedido } = await supabase.from('pedidos').insert({
       user_id: userId,
       total: pago.transaction_amount,
-      estado: tipo_pedido === 'apartado' ? 'apartado' : 'pagado',
+      estado: tipo_pedido === 'apartado' ? 'apartado' : tipo_pedido === 'en_bodega' ? 'en_bodega' : 'pagado',
       items: carritoItems || [],
       mp_payment_id: String(paymentId),
       tipo_pedido: tipo_pedido || 'normal',
@@ -80,19 +80,48 @@ export async function POST(request) {
       monto_liquidacion: monto_liquidacion || null,
     }).select().single()
 
-    // Solo vaciar carrito si es pedido normal
+    // Vaciar carrito solo si no es apartado
     if (tipo_pedido !== 'apartado') {
       await supabase.from('carrito').delete().eq('user_id', userId)
     }
 
+    // Si es bodega, actualizar total acumulado
+    if (tipo_pedido === 'en_bodega') {
+      const { data: bodegaExistente } = await supabase
+        .from('bodega')
+        .select('id, total_acumulado')
+        .eq('user_id', userId)
+        .eq('estado', 'guardando')
+        .single()
+
+      if (bodegaExistente) {
+        await supabase
+          .from('bodega')
+          .update({ total_acumulado: bodegaExistente.total_acumulado + pago.transaction_amount })
+          .eq('id', bodegaExistente.id)
+      } else {
+        await supabase
+          .from('bodega')
+          .insert({
+            user_id: userId,
+            pedido_id: pedido?.id,
+            total_acumulado: pago.transaction_amount,
+            estado: 'guardando'
+          })
+      }
+    }
+
     // Email al cliente
     const esApartado = tipo_pedido === 'apartado'
+    const esBodega = tipo_pedido === 'en_bodega'
 
     await resend.emails.send({
       from: 'Hecatombe Coleccionables <noreply@hecatombe.com.mx>',
       to: userEmail,
       subject: esApartado
         ? '🔒 ¡Producto apartado! — Hecatombe Coleccionables'
+        : esBodega
+        ? '📦 ¡Producto guardado en Bodegatombe! — Hecatombe Coleccionables'
         : '✅ ¡Tu pedido está confirmado! — Hecatombe Coleccionables',
       html: `
         <!DOCTYPE html>
@@ -109,12 +138,14 @@ export async function POST(request) {
                 <tr>
                   <td style="padding:40px;">
                     <h2 style="color:#fff;font-size:24px;font-weight:900;text-transform:uppercase;margin:0 0 16px;">
-                      ${esApartado ? '🔒 ¡Producto apartado!' : '¡Pedido confirmado!'}
+                      ${esApartado ? '🔒 ¡Producto apartado!' : esBodega ? '📦 ¡Guardado en Bodegatombe!' : '¡Pedido confirmado!'}
                     </h2>
                     <p style="color:#aaa;font-size:15px;line-height:1.6;margin:0 0 24px;">
                       Hola ${nombreCliente}, ${esApartado
-                        ? `tu anticipo fue recibido. Tu producto está apartado. Te avisaremos cuando llegue para que puedas liquidar el resto.`
-                        : `tu pago fue procesado exitosamente. En breve nos pondremos en contacto contigo para coordinar el envío.`
+                        ? 'tu anticipo fue recibido. Tu producto está apartado. Te avisaremos cuando llegue para que puedas liquidar el resto.'
+                        : esBodega
+                        ? 'tu producto está guardado en Bodegatombe. Cuando acumules $1,200 MXN en compras, tu envío será gratis. Puedes solicitar tu envío cuando quieras desde tu cuenta.'
+                        : 'tu pago fue procesado exitosamente. En breve nos pondremos en contacto contigo para coordinar el envío.'
                       }
                     </p>
                     <table style="background:#1a1a1a;border-radius:10px;padding:20px;width:100%;margin-bottom:24px;" cellpadding="0" cellspacing="0">
@@ -127,7 +158,7 @@ export async function POST(request) {
                         }
                       </td></tr>
                       ${esApartado && monto_liquidacion ? `<tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Restante a liquidar: <span style="color:#fff;">$${monto_liquidacion?.toLocaleString('es-MX')} MXN</span></td></tr>` : ''}
-                      <tr><td style="color:#aaa;font-size:13px;">Dirección de envío: ${direccion}</td></tr>
+                      ${!esBodega ? `<tr><td style="color:#aaa;font-size:13px;">Dirección de envío: ${direccion}</td></tr>` : ''}
                     </table>
                     <p style="color:#555;font-size:12px;margin:0;">¿Tienes dudas? Escríbenos por WhatsApp al <a href="https://wa.me/524427183787" style="color:#f97316;">524427183787</a></p>
                   </td>
@@ -151,6 +182,8 @@ export async function POST(request) {
       to: 'hecatombe.9194@gmail.com',
       subject: esApartado
         ? `🔒 Producto apartado #${pedido?.id} — $${pago.transaction_amount?.toLocaleString('es-MX')} MXN anticipo`
+        : esBodega
+        ? `📦 Nuevo pedido en bodega #${pedido?.id} — $${pago.transaction_amount?.toLocaleString('es-MX')} MXN`
         : `🛍️ Nuevo pedido #${pedido?.id} — $${pago.transaction_amount?.toLocaleString('es-MX')} MXN`,
       html: `
         <!DOCTYPE html>
@@ -162,7 +195,7 @@ export async function POST(request) {
                 <tr>
                   <td style="background:#f97316;padding:24px 40px;">
                     <h1 style="margin:0;color:#000;font-size:22px;font-weight:900;text-transform:uppercase;letter-spacing:2px;">
-                      ${esApartado ? '🔒 PRODUCTO APARTADO' : '🛍️ NUEVO PEDIDO'}
+                      ${esApartado ? '🔒 PRODUCTO APARTADO' : esBodega ? '📦 PEDIDO EN BODEGA' : '🛍️ NUEVO PEDIDO'}
                     </h1>
                   </td>
                 </tr>
@@ -174,7 +207,7 @@ export async function POST(request) {
                       <tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Nombre: <span style="color:#fff;">${nombreCliente}</span></td></tr>
                       <tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Email: <span style="color:#fff;">${userEmail}</span></td></tr>
                       <tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Teléfono: <span style="color:#fff;">${perfil?.telefono || 'No proporcionado'}</span></td></tr>
-                      <tr><td style="color:#aaa;font-size:13px;">Dirección: <span style="color:#fff;">${direccion}</span></td></tr>
+                      ${!esBodega ? `<tr><td style="color:#aaa;font-size:13px;">Dirección: <span style="color:#fff;">${direccion}</span></td></tr>` : ''}
                     </table>
                     <table style="background:#1a1a1a;border-radius:10px;padding:20px;width:100%;" cellpadding="0" cellspacing="0">
                       <tr><td style="color:#f97316;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;padding-bottom:12px;">Pago</td></tr>

@@ -12,6 +12,8 @@ export default function CuentaPage() {
   const [favoritos, setFavoritos] = useState([])
   const [productosF, setProductosF] = useState({})
   const [pedidos, setPedidos] = useState([])
+  const [bodega, setBodega] = useState(null)
+  const [pedidosBodega, setPedidosBodega] = useState([])
   const [tab, setTab] = useState('perfil')
   const [perfil, setPerfil] = useState({
     nombre: '', apellido: '', telefono: '',
@@ -21,6 +23,7 @@ export default function CuentaPage() {
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
   const [liquidando, setLiquidando] = useState(null)
+  const [solicitandoEnvio, setSolicitandoEnvio] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -31,6 +34,7 @@ export default function CuentaPage() {
         cargarFavoritos(session.user.id)
         cargarPerfil(session.user.id)
         cargarPedidos(session.user.id)
+        cargarBodega(session.user.id)
       }
       setLoading(false)
     })
@@ -82,8 +86,27 @@ export default function CuentaPage() {
       .from('pedidos')
       .select('id, created_at, total, estado, items, tipo_pedido, producto_id, anticipo_pagado, monto_liquidacion')
       .eq('user_id', userId)
+      .not('estado', 'eq', 'en_bodega')
       .order('created_at', { ascending: false })
     setPedidos(data || [])
+  }
+
+  async function cargarBodega(userId) {
+    const { data: bodegaData } = await supabase
+      .from('bodega')
+      .select('id, total_acumulado, estado, created_at')
+      .eq('user_id', userId)
+      .eq('estado', 'guardando')
+      .single()
+    setBodega(bodegaData)
+
+    const { data: pedidosData } = await supabase
+      .from('pedidos')
+      .select('id, created_at, total, items')
+      .eq('user_id', userId)
+      .eq('estado', 'en_bodega')
+      .order('created_at', { ascending: false })
+    setPedidosBodega(pedidosData || [])
   }
 
   async function handleLiquidar(pedido) {
@@ -97,12 +120,6 @@ export default function CuentaPage() {
         cantidad: 1,
         tipo: 'liquidacion'
       }
-      localStorage.setItem('apartar', JSON.stringify({
-        ...itemLiquidar,
-        anticipo: pedido.monto_liquidacion,
-        precioLiquidacion: 0,
-        precioTotal: pedido.anticipo_pagado + pedido.monto_liquidacion,
-      }))
 
       const res = await fetch('/api/checkout', {
         method: 'POST',
@@ -121,6 +138,14 @@ export default function CuentaPage() {
       console.error(err)
     }
     setLiquidando(null)
+  }
+
+  async function handleSolicitarEnvio() {
+    setSolicitandoEnvio(true)
+    // Por ahora mandamos a WhatsApp — cuando esté Solo Envíos se automatiza
+    const msg = `Hola, quiero solicitar el envío de mis productos en Bodegatombe. Mi correo es ${user?.email}. Total acumulado: $${bodega?.total_acumulado?.toLocaleString('es-MX')} MXN`
+    window.open(`https://wa.me/524427183787?text=${encodeURIComponent(msg)}`, '_blank')
+    setSolicitandoEnvio(false)
   }
 
   async function eliminarFavorito(productoId) {
@@ -156,6 +181,10 @@ export default function CuentaPage() {
     }
   }
 
+  const totalBodega = bodega?.total_acumulado || 0
+  const faltaBodega = Math.max(0, 1200 - totalBodega)
+  const porcentajeBodega = Math.min(100, (totalBodega / 1200) * 100)
+
   if (loading) return (
     <main className="min-h-screen bg-black flex items-center justify-center">
       <p className="text-white/50">Cargando...</p>
@@ -176,14 +205,15 @@ export default function CuentaPage() {
           </button>
         </div>
 
-        <div className="flex gap-2 mb-8 border-b border-white/10">
+        <div className="flex gap-2 mb-8 border-b border-white/10 overflow-x-auto">
           {[
             { key: 'perfil', label: 'Perfil' },
             { key: 'favoritos', label: `Favoritos (${favoritos.length})` },
             { key: 'pedidos', label: `Pedidos (${pedidos.length})` },
+            { key: 'bodega', label: `📦 Bodegatombe${totalBodega > 0 ? ` $${totalBodega.toLocaleString('es-MX')}` : ''}` },
           ].map(({ key, label }) => (
             <button key={key} onClick={() => setTab(key)}
-              className={`px-4 py-3 text-sm font-black uppercase tracking-widest transition border-b-2 -mb-px ${
+              className={`px-4 py-3 text-sm font-black uppercase tracking-widest transition border-b-2 -mb-px whitespace-nowrap ${
                 tab === key ? 'border-orange-500 text-orange-500' : 'border-transparent text-white/40 hover:text-white'
               }`}>
               {label}
@@ -314,8 +344,6 @@ export default function CuentaPage() {
                       <span className="text-orange-500 font-black">${pedido.total?.toLocaleString('es-MX')} MXN</span>
                     </div>
                   </div>
-
-                  {/* Info extra para apartados */}
                   {pedido.estado === 'apartado' && (
                     <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 mb-4">
                       <p className="text-orange-400 text-xs font-black uppercase mb-2">Preventa apartada</p>
@@ -327,7 +355,7 @@ export default function CuentaPage() {
                         <span className="text-white/50">Pendiente de liquidar</span>
                         <span className="text-orange-400 font-black">${pedido.monto_liquidacion?.toLocaleString('es-MX')} MXN</span>
                       </div>
-                      <p className="text-white/30 text-xs mb-3">Te avisaremos por correo cuando tu producto llegue y puedas liquidar.</p>
+                      <p className="text-white/30 text-xs mb-3">Te avisaremos por correo cuando tu producto llegue.</p>
                       <button
                         onClick={() => handleLiquidar(pedido)}
                         disabled={liquidando === pedido.id}
@@ -336,7 +364,6 @@ export default function CuentaPage() {
                       </button>
                     </div>
                   )}
-
                   {pedido.items?.length > 0 && (
                     <div className="border-t border-white/10 pt-4">
                       <p className="text-white/30 text-xs uppercase font-black">{pedido.items.length} producto(s)</p>
@@ -345,6 +372,88 @@ export default function CuentaPage() {
                 </div>
               ))
             )}
+          </div>
+        )}
+
+        {/* Tab: Bodegatombe */}
+        {tab === 'bodega' && (
+          <div className="flex flex-col gap-4">
+
+            {/* Progreso */}
+            <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+              <h2 className="text-lg font-black uppercase text-orange-500 mb-2">Bodegatombe</h2>
+              <p className="text-white/40 text-sm mb-6">
+                Acumula $1,200 MXN en compras y obtén envío gratis a todo México.
+              </p>
+
+              {totalBodega > 0 ? (
+                <>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-white/50 text-xs font-black uppercase">Acumulado</span>
+                    <span className="text-orange-500 font-black">${totalBodega.toLocaleString('es-MX')} / $1,200 MXN</span>
+                  </div>
+                  <div className="w-full bg-[#222] rounded-full h-3 mb-4">
+                    <div
+                      className="bg-orange-500 h-3 rounded-full transition-all duration-500"
+                      style={{ width: `${porcentajeBodega}%` }}
+                    />
+                  </div>
+                  {faltaBodega > 0 ? (
+                    <p className="text-white/40 text-sm mb-6">
+                      Te faltan <span className="text-orange-500 font-black">${faltaBodega.toLocaleString('es-MX')} MXN</span> para envío gratis.
+                    </p>
+                  ) : (
+                    <p className="text-green-400 text-sm font-black mb-6">
+                      🎉 ¡Felicidades! Ya tienes envío gratis disponible.
+                    </p>
+                  )}
+
+                  <button
+                    onClick={handleSolicitarEnvio}
+                    disabled={solicitandoEnvio}
+                    className={`w-full font-black uppercase py-4 rounded-xl transition text-sm ${
+                      faltaBodega === 0
+                        ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                        : 'border border-orange-500 text-orange-500 hover:bg-orange-500/10'
+                    }`}>
+                    {solicitandoEnvio ? 'Procesando...' : faltaBodega === 0 ? '🚚 Solicitar envío gratis' : '🚚 Solicitar envío ahora'}
+                  </button>
+                  {faltaBodega > 0 && (
+                    <p className="text-white/20 text-xs text-center mt-2">
+                      Si solicitas envío antes de $1,200 se cobrará el costo de envío
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-white/30 text-4xl mb-4">📦</p>
+                  <p className="text-white/40 mb-2">Tu bodega está vacía</p>
+                  <p className="text-white/20 text-sm mb-6">Al comprar elige "Guardar en Bodegatombe" para acumular tu envío gratis</p>
+                  <Link href="/catalogo" className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase px-6 py-3 rounded-xl transition inline-block">
+                    Ver catálogo
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Pedidos en bodega */}
+            {pedidosBodega.length > 0 && (
+              <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+                <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Productos guardados</h2>
+                <div className="flex flex-col gap-3">
+                  {pedidosBodega.map(pedido => (
+                    <div key={pedido.id} className="flex items-center justify-between border-b border-white/5 pb-3 last:border-0 last:pb-0">
+                      <div>
+                        <p className="text-white text-sm font-black">Pedido #{pedido.id}</p>
+                        <p className="text-white/30 text-xs">{new Date(pedido.created_at).toLocaleDateString('es-MX')}</p>
+                      </div>
+                      <span className="text-orange-500 font-black">${pedido.total?.toLocaleString('es-MX')} MXN</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </div>
         )}
 

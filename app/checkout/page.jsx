@@ -11,6 +11,7 @@ export default function CheckoutPage() {
   const [items, setItems] = useState([])
   const [modoApartar, setModoApartar] = useState(false)
   const [itemApartar, setItemApartar] = useState(null)
+  const [modoEnvio, setModoEnvio] = useState('inmediato') // 'inmediato' | 'bodega'
   const [direccion, setDireccion] = useState({
     nombre: '', apellido: '', telefono: '',
     calle: '', colonia: '', ciudad: '',
@@ -42,18 +43,12 @@ export default function CheckoutPage() {
 
     if (modo === 'apartar') {
       const apartar = JSON.parse(localStorage.getItem('apartar') || 'null')
-      if (!apartar) {
-        router.push('/catalogo')
-        return
-      }
+      if (!apartar) { router.push('/catalogo'); return }
       setModoApartar(true)
       setItemApartar(apartar)
     } else {
       const carritoLocal = JSON.parse(localStorage.getItem('carrito') || '[]')
-      if (carritoLocal.length === 0) {
-        router.push('/carrito')
-        return
-      }
+      if (carritoLocal.length === 0) { router.push('/carrito'); return }
       setItems(carritoLocal)
     }
   }, [])
@@ -61,11 +56,20 @@ export default function CheckoutPage() {
   async function handlePagar() {
     setError('')
 
-    const requeridos = ['nombre', 'apellido', 'telefono', 'calle', 'colonia', 'ciudad', 'estado', 'cp']
-    const faltantes = requeridos.filter(k => !direccion[k]?.trim())
-    if (faltantes.length > 0) {
-      setError('Por favor completa todos los campos obligatorios.')
-      return
+    // Dirección solo requerida si es envío inmediato o apartar
+    if (modoEnvio === 'inmediato' || modoApartar) {
+      const requeridos = ['nombre', 'apellido', 'telefono', 'calle', 'colonia', 'ciudad', 'estado', 'cp']
+      const faltantes = requeridos.filter(k => !direccion[k]?.trim())
+      if (faltantes.length > 0) {
+        setError('Por favor completa todos los campos obligatorios.')
+        return
+      }
+    } else {
+      // Para bodega solo requerimos nombre y teléfono
+      if (!direccion.nombre?.trim() || !direccion.telefono?.trim()) {
+        setError('Por favor ingresa tu nombre y teléfono.')
+        return
+      }
     }
 
     setProcesando(true)
@@ -87,6 +91,8 @@ export default function CheckoutPage() {
         ? [{ ...itemApartar, precio: itemApartar.anticipo, cantidad: 1 }]
         : items
 
+      const tipoPedido = modoApartar ? 'apartado' : modoEnvio === 'bodega' ? 'en_bodega' : 'normal'
+
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -95,7 +101,7 @@ export default function CheckoutPage() {
           userId: user.id,
           userEmail: user.email,
           direccion,
-          tipo_pedido: modoApartar ? 'apartado' : 'normal',
+          tipo_pedido: tipoPedido,
           ...(modoApartar && {
             producto_id: itemApartar.productoId,
             anticipo_pagado: itemApartar.anticipo,
@@ -121,6 +127,8 @@ export default function CheckoutPage() {
     ? itemApartar?.anticipo || 0
     : items.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
 
+  const envioGratis = total >= 1200
+
   const inputClass = "w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-orange-500 transition"
   const labelClass = "text-white/50 text-xs font-black uppercase tracking-widest mb-2 block"
 
@@ -145,8 +153,57 @@ export default function CheckoutPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Formulario dirección */}
+          {/* Formulario */}
           <div className="flex flex-col gap-4">
+
+            {/* Opción de envío — solo para pedidos normales */}
+            {!modoApartar && (
+              <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+                <h2 className="text-lg font-black uppercase text-orange-500 mb-4">¿Cómo quieres recibir tu pedido?</h2>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => setModoEnvio('inmediato')}
+                    className={`flex items-start gap-4 p-4 rounded-xl border-2 transition text-left ${
+                      modoEnvio === 'inmediato'
+                        ? 'border-orange-500 bg-orange-500/10'
+                        : 'border-white/10 hover:border-white/30'
+                    }`}>
+                    <span className="text-2xl mt-0.5">🚚</span>
+                    <div>
+                      <p className="text-white font-black uppercase text-sm">Envío inmediato</p>
+                      <p className="text-white/40 text-xs mt-1">
+                        {envioGratis
+                          ? '✅ ¡Envío gratis! Tu pedido supera $1,200 MXN'
+                          : 'Se coordina el envío al confirmar tu pago'}
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setModoEnvio('bodega')}
+                    className={`flex items-start gap-4 p-4 rounded-xl border-2 transition text-left ${
+                      modoEnvio === 'bodega'
+                        ? 'border-orange-500 bg-orange-500/10'
+                        : 'border-white/10 hover:border-white/30'
+                    }`}>
+                    <span className="text-2xl mt-0.5">📦</span>
+                    <div>
+                      <p className="text-white font-black uppercase text-sm">Guardar en Bodegatomhe</p>
+                      <p className="text-white/40 text-xs mt-1">
+                        Acumula compras hasta $1,200 MXN y obtén envío gratis. Puedes solicitar tu envío cuando quieras.
+                      </p>
+                      {!envioGratis && (
+                        <p className="text-orange-500 text-xs mt-1 font-bold">
+                          Te faltan ${(1200 - total).toLocaleString('es-MX')} MXN para envío gratis
+                        </p>
+                      )}
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Datos personales */}
             <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Datos personales</h2>
               <div className="grid grid-cols-2 gap-4">
@@ -171,50 +228,53 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
-              <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Dirección de envío</h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className={labelClass}>Calle y número *</label>
-                  <input type="text" value={direccion.calle}
-                    onChange={e => setDireccion({ ...direccion, calle: e.target.value })}
-                    placeholder="Ej. Av. Constituyentes 123" className={inputClass} />
-                </div>
-                <div className="col-span-2">
-                  <label className={labelClass}>Colonia *</label>
-                  <input type="text" value={direccion.colonia}
-                    onChange={e => setDireccion({ ...direccion, colonia: e.target.value })}
-                    placeholder="Nombre de tu colonia" className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>Ciudad *</label>
-                  <input type="text" value={direccion.ciudad}
-                    onChange={e => setDireccion({ ...direccion, ciudad: e.target.value })}
-                    placeholder="Tu ciudad" className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>Estado *</label>
-                  <input type="text" value={direccion.estado}
-                    onChange={e => setDireccion({ ...direccion, estado: e.target.value })}
-                    placeholder="Tu estado" className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>Código postal *</label>
-                  <input type="text" value={direccion.cp}
-                    onChange={e => setDireccion({ ...direccion, cp: e.target.value })}
-                    placeholder="CP" className={inputClass} />
-                </div>
-                <div className="col-span-2">
-                  <label className={labelClass}>
-                    Referencias <span className="text-white/20 normal-case font-normal">(opcional)</span>
-                  </label>
-                  <textarea value={direccion.referencias}
-                    onChange={e => setDireccion({ ...direccion, referencias: e.target.value })}
-                    placeholder="Ej. Casa azul, portón negro"
-                    rows={2} className={`${inputClass} resize-none`} />
+            {/* Dirección — solo si es envío inmediato o apartar */}
+            {(modoEnvio === 'inmediato' || modoApartar) && (
+              <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+                <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Dirección de envío</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className={labelClass}>Calle y número *</label>
+                    <input type="text" value={direccion.calle}
+                      onChange={e => setDireccion({ ...direccion, calle: e.target.value })}
+                      placeholder="Ej. Av. Constituyentes 123" className={inputClass} />
+                  </div>
+                  <div className="col-span-2">
+                    <label className={labelClass}>Colonia *</label>
+                    <input type="text" value={direccion.colonia}
+                      onChange={e => setDireccion({ ...direccion, colonia: e.target.value })}
+                      placeholder="Nombre de tu colonia" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Ciudad *</label>
+                    <input type="text" value={direccion.ciudad}
+                      onChange={e => setDireccion({ ...direccion, ciudad: e.target.value })}
+                      placeholder="Tu ciudad" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Estado *</label>
+                    <input type="text" value={direccion.estado}
+                      onChange={e => setDireccion({ ...direccion, estado: e.target.value })}
+                      placeholder="Tu estado" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Código postal *</label>
+                    <input type="text" value={direccion.cp}
+                      onChange={e => setDireccion({ ...direccion, cp: e.target.value })}
+                      placeholder="CP" className={inputClass} />
+                  </div>
+                  <div className="col-span-2">
+                    <label className={labelClass}>
+                      Referencias <span className="text-white/20 normal-case font-normal">(opcional)</span>
+                    </label>
+                    <textarea value={direccion.referencias}
+                      onChange={e => setDireccion({ ...direccion, referencias: e.target.value })}
+                      placeholder="Ej. Casa azul, portón negro"
+                      rows={2} className={`${inputClass} resize-none`} />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Resumen */}
@@ -280,6 +340,14 @@ export default function CheckoutPage() {
                   </span>
                   <span className="text-orange-500 font-black text-2xl">${total.toLocaleString('es-MX')} MXN</span>
                 </div>
+                {modoEnvio === 'bodega' && !modoApartar && (
+                  <div className="mt-3 bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                    <p className="text-blue-400 text-xs font-black uppercase">📦 Bodegatombe</p>
+                    <p className="text-white/40 text-xs mt-1">
+                      Tu pedido se guardará en bodega. Cuando acumules $1,200 MXN el envío es gratis.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {error && <p className="text-red-400 text-sm mb-4">{error}</p>}

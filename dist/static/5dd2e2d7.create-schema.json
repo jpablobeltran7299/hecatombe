@@ -1,0 +1,592 @@
+[
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "nombre",
+        "type": "string"
+      },
+      {
+        "name": "logo",
+        "type": "image"
+      },
+      {
+        "name": "descripcion",
+        "type": "text",
+        "title": "Descripción"
+      }
+    ],
+    "name": "marca",
+    "type": "document"
+  },
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "nombre",
+        "type": "string"
+      },
+      {
+        "name": "imagen",
+        "type": "image"
+      }
+    ],
+    "name": "categoria",
+    "type": "document",
+    "title": "Categoría"
+  },
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "uri",
+                "constraint": {
+                  "options": {
+                    "scheme": [
+                      "/^http$/",
+                      "/^https$/"
+                    ],
+                    "allowRelative": false,
+                    "relativeOnly": false,
+                    "allowCredentials": false
+                  }
+                }
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Link del producto en Mercado Libre (opcional)",
+        "name": "mlUrl",
+        "type": "url",
+        "title": "URL en Mercado Libre"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "nombre",
+        "type": "string"
+      },
+      {
+        "of": [
+          {
+            "type": "image"
+          }
+        ],
+        "name": "imagenes",
+        "type": "array",
+        "title": "Imágenes"
+      },
+      {
+        "name": "descripcion",
+        "type": "text",
+        "title": "Descripción"
+      },
+      {
+        "name": "precio",
+        "type": "number",
+        "title": "Precio referencia"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "to": [
+          {
+            "type": "marca"
+          }
+        ],
+        "name": "marca",
+        "type": "reference"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "to": [
+          {
+            "type": "categoria"
+          }
+        ],
+        "name": "categoria",
+        "type": "reference",
+        "title": "Categoría"
+      },
+      {
+        "to": [
+          {
+            "type": "tematica"
+          }
+        ],
+        "name": "tematica",
+        "type": "reference",
+        "title": "Temática"
+      },
+      {
+        "to": [
+          {
+            "type": "universo"
+          }
+        ],
+        "name": "universo",
+        "type": "reference"
+      },
+      {
+        "to": [
+          {
+            "type": "linea"
+          }
+        ],
+        "name": "linea",
+        "type": "reference",
+        "title": "Línea de producto"
+      },
+      {
+        "initialValue": true,
+        "name": "disponible",
+        "type": "boolean"
+      },
+      {
+        "initialValue": false,
+        "name": "destacado",
+        "type": "boolean",
+        "title": "Destacado (aparece en el home)"
+      },
+      {
+        "options": {
+          "list": [
+            {
+              "title": "Normal",
+              "value": "normal"
+            },
+            {
+              "title": "Preventa",
+              "value": "preventa"
+            }
+          ],
+          "layout": "radio"
+        },
+        "initialValue": "normal",
+        "name": "tipo",
+        "type": "string"
+      },
+      {
+        "hidden": "conditional",
+        "name": "fechaEstimada",
+        "type": "date",
+        "title": "Fecha estimada de llegada (preventas)"
+      },
+      {
+        "description": "Monto en pesos MXN que el cliente paga para apartar. Ej: 120",
+        "hidden": "conditional",
+        "name": "anticipo",
+        "type": "number",
+        "title": "Monto de anticipo (preventas)"
+      },
+      {
+        "description": "Monto restante a pagar cuando llegue el producto. Si se deja vacío se calcula como precio - anticipo.",
+        "hidden": "conditional",
+        "name": "precioLiquidacion",
+        "type": "number",
+        "title": "Precio de liquidación (preventas)"
+      },
+      {
+        "initialValue": true,
+        "name": "activo",
+        "type": "boolean",
+        "title": "Activo (visible en tienda)"
+      },
+      {
+        "initialValue": false,
+        "description": "Activa el badge \"Últimas piezas\" en el catálogo",
+        "name": "ultimasPiezas",
+        "type": "boolean",
+        "title": "Últimas piezas"
+      }
+    ],
+    "name": "producto",
+    "type": "document"
+  },
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "max",
+                "constraint": 30
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "tag",
+        "type": "string",
+        "title": "Etiqueta (ej: PREVENTA ACTIVA, FLASH SALE)"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "max",
+                "constraint": 40
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "titulo",
+        "type": "string",
+        "title": "Título principal"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "max",
+                "constraint": 100
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "subtitulo",
+        "type": "string",
+        "title": "Subtítulo"
+      },
+      {
+        "name": "cta",
+        "type": "string",
+        "title": "Texto del botón (ej: Ver Catálogo)"
+      },
+      {
+        "name": "href",
+        "type": "string",
+        "title": "Link del botón (ej: /catalogo o /#preventas)"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "imagen",
+        "type": "image",
+        "title": "Imagen de fondo"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "min",
+                "constraint": 1
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "orden",
+        "type": "number",
+        "title": "Orden de aparición"
+      },
+      {
+        "initialValue": true,
+        "name": "activo",
+        "type": "boolean"
+      }
+    ],
+    "name": "banner",
+    "type": "document",
+    "title": "Banners"
+  },
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "titulo",
+        "type": "string",
+        "title": "Título"
+      },
+      {
+        "rows": 3,
+        "name": "descripcion",
+        "type": "text",
+        "title": "Descripción"
+      },
+      {
+        "options": {
+          "list": [
+            {
+              "title": "Rifa",
+              "value": "rifa"
+            },
+            {
+              "title": "Concurso",
+              "value": "concurso"
+            },
+            {
+              "title": "Flash Sale",
+              "value": "flash_sale"
+            },
+            {
+              "title": "Trivia",
+              "value": "trivia"
+            }
+          ],
+          "layout": "radio"
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "valid",
+                "constraint": [
+                  "rifa",
+                  "concurso",
+                  "flash_sale",
+                  "trivia"
+                ]
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "tipo",
+        "type": "string"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "name": "imagen",
+        "type": "image"
+      },
+      {
+        "name": "fechaFin",
+        "type": "datetime",
+        "title": "Fecha de cierre"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "uri",
+                "constraint": {
+                  "options": {
+                    "scheme": [
+                      "/^http$/",
+                      "/^https$/"
+                    ],
+                    "allowRelative": false,
+                    "relativeOnly": false,
+                    "allowCredentials": false
+                  }
+                }
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "enlace",
+        "type": "url",
+        "title": "Enlace (WhatsApp / Instagram / externo)"
+      },
+      {
+        "initialValue": true,
+        "name": "activa",
+        "type": "boolean"
+      },
+      {
+        "hidden": "conditional",
+        "name": "numerosTotal",
+        "type": "number",
+        "title": "Total de números (rifas)"
+      },
+      {
+        "of": [
+          {
+            "type": "number"
+          }
+        ],
+        "hidden": "conditional",
+        "name": "numerosVendidos",
+        "type": "array",
+        "title": "Números vendidos (rifas)"
+      }
+    ],
+    "name": "dinamica",
+    "type": "document",
+    "title": "Dinámica"
+  },
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "nombre",
+        "type": "string"
+      },
+      {
+        "initialValue": 0,
+        "name": "orden",
+        "type": "number",
+        "title": "Orden de aparición"
+      }
+    ],
+    "name": "tematica",
+    "type": "document",
+    "title": "Temática"
+  },
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "nombre",
+        "type": "string"
+      },
+      {
+        "initialValue": 0,
+        "name": "orden",
+        "type": "number",
+        "title": "Orden de aparición"
+      }
+    ],
+    "name": "linea",
+    "type": "document",
+    "title": "Línea de producto"
+  },
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "nombre",
+        "type": "string"
+      },
+      {
+        "initialValue": 0,
+        "name": "orden",
+        "type": "number",
+        "title": "Orden de aparición"
+      }
+    ],
+    "name": "universo",
+    "type": "document"
+  }
+]
