@@ -95,6 +95,20 @@ export default {
       hidden: ({ document }) => document?.tipo !== 'preventa'
     },
     {
+      name: 'anticipo',
+      title: 'Monto de anticipo (preventas)',
+      type: 'number',
+      description: 'Monto en pesos MXN que el cliente paga para apartar. Ej: 120',
+      hidden: ({ document }) => document?.tipo !== 'preventa'
+    },
+    {
+      name: 'precioLiquidacion',
+      title: 'Precio de liquidación (preventas)',
+      type: 'number',
+      description: 'Monto restante a pagar cuando llegue el producto. Si se deja vacío se calcula como precio - anticipo.',
+      hidden: ({ document }) => document?.tipo !== 'preventa'
+    },
+    {
       name: 'activo',
       title: 'Activo (visible en tienda)',
       type: 'boolean',
