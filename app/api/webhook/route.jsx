@@ -6,7 +6,6 @@ import { Resend } from 'resend'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request) {
-  // Inicializar clientes dentro de la función
   const mpClient = new MercadoPagoConfig({
     accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
   })
@@ -35,7 +34,19 @@ export async function POST(request) {
       return NextResponse.json({ ok: true })
     }
 
-    const userId = pago.external_reference
+    // Parsear external_reference
+    let userId, tipo_pedido, producto_id, anticipo_pagado, monto_liquidacion
+    try {
+      const ref = JSON.parse(pago.external_reference)
+      userId = ref.userId
+      tipo_pedido = ref.tipo_pedido || 'normal'
+      producto_id = ref.producto_id
+      anticipo_pagado = ref.anticipo_pagado
+      monto_liquidacion = ref.monto_liquidacion
+    } catch {
+      userId = pago.external_reference
+      tipo_pedido = 'normal'
+    }
 
     const { data: { user } } = await supabase.auth.admin.getUserById(userId)
     const userEmail = user?.email || ''
@@ -56,20 +67,33 @@ export async function POST(request) {
       ? `${perfil.calle}, ${perfil.colonia}, ${perfil.ciudad}, ${perfil.estado} CP ${perfil.cp}${perfil.referencias ? ` — ${perfil.referencias}` : ''}`
       : 'No proporcionada'
 
+    // Guardar pedido
     const { data: pedido } = await supabase.from('pedidos').insert({
       user_id: userId,
       total: pago.transaction_amount,
-      estado: 'pagado',
+      estado: tipo_pedido === 'apartado' ? 'apartado' : 'pagado',
       items: carritoItems || [],
       mp_payment_id: String(paymentId),
+      tipo_pedido: tipo_pedido || 'normal',
+      producto_id: producto_id || null,
+      anticipo_pagado: anticipo_pagado || null,
+      monto_liquidacion: monto_liquidacion || null,
     }).select().single()
 
-    await supabase.from('carrito').delete().eq('user_id', userId)
+    // Solo vaciar carrito si es pedido normal
+    if (tipo_pedido !== 'apartado') {
+      await supabase.from('carrito').delete().eq('user_id', userId)
+    }
+
+    // Email al cliente
+    const esApartado = tipo_pedido === 'apartado'
 
     await resend.emails.send({
       from: 'Hecatombe Coleccionables <noreply@hecatombe.com.mx>',
       to: userEmail,
-      subject: '✅ ¡Tu pedido está confirmado! — Hecatombe Coleccionables',
+      subject: esApartado
+        ? '🔒 ¡Producto apartado! — Hecatombe Coleccionables'
+        : '✅ ¡Tu pedido está confirmado! — Hecatombe Coleccionables',
       html: `
         <!DOCTYPE html>
         <html>
@@ -84,14 +108,25 @@ export async function POST(request) {
                 </tr>
                 <tr>
                   <td style="padding:40px;">
-                    <h2 style="color:#fff;font-size:24px;font-weight:900;text-transform:uppercase;margin:0 0 16px;">¡Pedido confirmado!</h2>
+                    <h2 style="color:#fff;font-size:24px;font-weight:900;text-transform:uppercase;margin:0 0 16px;">
+                      ${esApartado ? '🔒 ¡Producto apartado!' : '¡Pedido confirmado!'}
+                    </h2>
                     <p style="color:#aaa;font-size:15px;line-height:1.6;margin:0 0 24px;">
-                      Hola ${nombreCliente}, tu pago fue procesado exitosamente. En breve nos pondremos en contacto contigo para coordinar el envío.
+                      Hola ${nombreCliente}, ${esApartado
+                        ? `tu anticipo fue recibido. Tu producto está apartado. Te avisaremos cuando llegue para que puedas liquidar el resto.`
+                        : `tu pago fue procesado exitosamente. En breve nos pondremos en contacto contigo para coordinar el envío.`
+                      }
                     </p>
                     <table style="background:#1a1a1a;border-radius:10px;padding:20px;width:100%;margin-bottom:24px;" cellpadding="0" cellspacing="0">
-                      <tr><td style="color:#f97316;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;padding-bottom:12px;">Detalles del pedido</td></tr>
+                      <tr><td style="color:#f97316;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;padding-bottom:12px;">Detalles</td></tr>
                       <tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Pedido #${pedido?.id || paymentId}</td></tr>
-                      <tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Total: <span style="color:#f97316;font-weight:900;">$${pago.transaction_amount?.toLocaleString('es-MX')} MXN</span></td></tr>
+                      <tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">
+                        ${esApartado
+                          ? `Anticipo pagado: <span style="color:#f97316;font-weight:900;">$${pago.transaction_amount?.toLocaleString('es-MX')} MXN</span>`
+                          : `Total: <span style="color:#f97316;font-weight:900;">$${pago.transaction_amount?.toLocaleString('es-MX')} MXN</span>`
+                        }
+                      </td></tr>
+                      ${esApartado && monto_liquidacion ? `<tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Restante a liquidar: <span style="color:#fff;">$${monto_liquidacion?.toLocaleString('es-MX')} MXN</span></td></tr>` : ''}
                       <tr><td style="color:#aaa;font-size:13px;">Dirección de envío: ${direccion}</td></tr>
                     </table>
                     <p style="color:#555;font-size:12px;margin:0;">¿Tienes dudas? Escríbenos por WhatsApp al <a href="https://wa.me/524427183787" style="color:#f97316;">524427183787</a></p>
@@ -110,10 +145,13 @@ export async function POST(request) {
       `
     })
 
+    // Email a Diego
     await resend.emails.send({
       from: 'Hecatombe Sistema <noreply@hecatombe.com.mx>',
       to: 'hecatombe.9194@gmail.com',
-      subject: `🛍️ Nuevo pedido #${pedido?.id} — $${pago.transaction_amount?.toLocaleString('es-MX')} MXN`,
+      subject: esApartado
+        ? `🔒 Producto apartado #${pedido?.id} — $${pago.transaction_amount?.toLocaleString('es-MX')} MXN anticipo`
+        : `🛍️ Nuevo pedido #${pedido?.id} — $${pago.transaction_amount?.toLocaleString('es-MX')} MXN`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -123,7 +161,9 @@ export async function POST(request) {
               <table width="600" cellpadding="0" cellspacing="0" style="background:#111;border:1px solid #222;border-radius:16px;overflow:hidden;max-width:600px;width:100%;">
                 <tr>
                   <td style="background:#f97316;padding:24px 40px;">
-                    <h1 style="margin:0;color:#000;font-size:22px;font-weight:900;text-transform:uppercase;letter-spacing:2px;">🛍️ NUEVO PEDIDO</h1>
+                    <h1 style="margin:0;color:#000;font-size:22px;font-weight:900;text-transform:uppercase;letter-spacing:2px;">
+                      ${esApartado ? '🔒 PRODUCTO APARTADO' : '🛍️ NUEVO PEDIDO'}
+                    </h1>
                   </td>
                 </tr>
                 <tr>
@@ -138,7 +178,10 @@ export async function POST(request) {
                     </table>
                     <table style="background:#1a1a1a;border-radius:10px;padding:20px;width:100%;" cellpadding="0" cellspacing="0">
                       <tr><td style="color:#f97316;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;padding-bottom:12px;">Pago</td></tr>
-                      <tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Total: <span style="color:#f97316;font-weight:900;font-size:18px;">$${pago.transaction_amount?.toLocaleString('es-MX')} MXN</span></td></tr>
+                      <tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">
+                        ${esApartado ? 'Anticipo' : 'Total'}: <span style="color:#f97316;font-weight:900;font-size:18px;">$${pago.transaction_amount?.toLocaleString('es-MX')} MXN</span>
+                      </td></tr>
+                      ${esApartado && monto_liquidacion ? `<tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Pendiente de liquidar: <span style="color:#fff;">$${monto_liquidacion?.toLocaleString('es-MX')} MXN</span></td></tr>` : ''}
                       <tr><td style="color:#aaa;font-size:13px;">ID Mercado Pago: <span style="color:#fff;">${paymentId}</span></td></tr>
                     </table>
                   </td>

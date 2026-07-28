@@ -4,6 +4,7 @@ import Link from 'next/link'
 import GaleriaProducto from '@/app/components/GaleriaProducto'
 import BotonCarrito from '@/app/components/BotonCarrito'
 import BotonFavorito from '@/app/components/BotonFavorito'
+import BotonApartar from '@/app/components/BotonApartar'
 
 export async function generateMetadata({ params }) {
   const { id } = await params
@@ -34,6 +35,10 @@ export default async function Producto({ params }) {
     'https://wa.me/524427183787?text=Hola%2C%20me%20interesa%20el%20producto%3A%20' +
     encodeURIComponent(producto.nombre)
 
+  const esPreventa = producto.tipo === 'preventa'
+  const anticipo = producto.anticipo || null
+  const precioLiquidacion = producto.precioLiquidacion || (producto.precio && anticipo ? producto.precio - anticipo : null)
+
   return (
     <main className="min-h-screen bg-[#0d0d0d]">
 
@@ -52,13 +57,8 @@ export default async function Producto({ params }) {
 
       <div className="max-w-5xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-2 gap-8">
 
-        {/* Galería interactiva */}
-        <GaleriaProducto
-          imagenes={producto.imagenes}
-          nombre={producto.nombre}
-        />
+        <GaleriaProducto imagenes={producto.imagenes} nombre={producto.nombre} />
 
-        {/* Columna derecha: info */}
         <div className="flex flex-col">
 
           <div className="flex items-center gap-2 mb-2">
@@ -70,13 +70,41 @@ export default async function Producto({ params }) {
                 {producto.categoria}
               </span>
             )}
+            {esPreventa && (
+              <span className="bg-orange-500 text-black text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full">
+                Preventa
+              </span>
+            )}
           </div>
 
           <h1 className="text-white text-2xl font-black uppercase leading-tight mb-4">
             {producto.nombre}
           </h1>
 
-          {producto.precio ? (
+          {/* Precio — diferente para preventa */}
+          {esPreventa && anticipo ? (
+            <div className="mb-5 bg-orange-500/10 border border-orange-500/30 rounded-xl p-4">
+              <p className="text-orange-500 text-xs font-black uppercase tracking-widest mb-2">Preventa</p>
+              <div className="flex items-baseline gap-3 mb-1">
+                <span className="text-white/50 text-sm line-through">${producto.precio?.toLocaleString('es-MX')} MXN</span>
+                <span className="text-white/50 text-xs">precio total</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-orange-500 font-black text-4xl">${anticipo.toLocaleString('es-MX')}</span>
+                <span className="text-gray-400 text-sm">MXN anticipo</span>
+              </div>
+              {precioLiquidacion && (
+                <p className="text-gray-400 text-xs mt-2">
+                  + ${precioLiquidacion.toLocaleString('es-MX')} MXN al recibir el producto
+                </p>
+              )}
+              {producto.fechaEstimada && (
+                <p className="text-orange-400 text-xs mt-2 font-bold">
+                  🗓 Llegada estimada: {new Date(producto.fechaEstimada).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })}
+                </p>
+              )}
+            </div>
+          ) : producto.precio ? (
             <div className="mb-5">
               <span className="text-orange-500 font-black text-4xl">
                 ${producto.precio.toLocaleString('es-MX')}
@@ -93,7 +121,7 @@ export default async function Producto({ params }) {
               : 'bg-[#1a1a1a] border border-[#333] text-gray-500'
           }`}>
             <span className={`w-2 h-2 rounded-full ${producto.disponible ? 'bg-green-400' : 'bg-gray-600'}`} />
-            {producto.disponible ? 'En existencia' : 'Agotado'}
+            {producto.disponible ? (esPreventa ? 'Preventa abierta' : 'En existencia') : 'Agotado'}
           </div>
 
           {producto.descripcion && (
@@ -117,17 +145,27 @@ export default async function Producto({ params }) {
             ))}
           </div>
 
-          {/* Botón carrito */}
-          {producto.disponible && (
-            <BotonCarrito
+          {/* Botones según tipo */}
+          {esPreventa ? (
+            <BotonApartar
               productoId={producto._id}
               nombre={producto.nombre}
-              precio={producto.precio}
+              anticipo={anticipo}
+              precioLiquidacion={precioLiquidacion}
+              precioTotal={producto.precio}
               imagen={producto.imagenes?.[0] ? urlFor(producto.imagenes[0]).width(200).url() : null}
             />
+          ) : (
+            producto.disponible && (
+              <BotonCarrito
+                productoId={producto._id}
+                nombre={producto.nombre}
+                precio={producto.precio}
+                imagen={producto.imagenes?.[0] ? urlFor(producto.imagenes[0]).width(200).url() : null}
+              />
+            )
           )}
 
-          {/* Botón favorito */}
           <BotonFavorito productoId={producto._id} />
 
           {producto.disponible ? (
@@ -139,7 +177,7 @@ export default async function Producto({ params }) {
               Preguntar por WhatsApp
             </a>
           ) : (
-            <div className="w-full bg-[#1a1a1a] border border-[#333] text-gray-600 font-black text-sm uppercase tracking-widest py-4 rounded-xl text-center">
+            <div className="w-full bg-[#1a1a1a] border border-[#333] text-gray-600 font-black text-sm uppercase tracking-widest py-4 rounded-xl text-center mt-3">
               Producto agotado
             </div>
           )}

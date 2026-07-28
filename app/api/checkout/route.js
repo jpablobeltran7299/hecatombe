@@ -1,13 +1,13 @@
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { NextResponse } from 'next/server'
 
-const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
-})
-
 export async function POST(request) {
+  const client = new MercadoPagoConfig({
+    accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
+  })
+
   try {
-    const { items, userId, userEmail } = await request.json()
+    const { items, userId, userEmail, direccion, tipo_pedido, producto_id, anticipo_pagado, monto_liquidacion } = await request.json()
 
     const preference = new Preference(client)
 
@@ -30,7 +30,13 @@ export async function POST(request) {
           pending: `${process.env.NEXT_PUBLIC_SITE_URL}/carrito?estado=pendiente`,
         },
         auto_return: 'approved',
-        external_reference: userId,
+        external_reference: JSON.stringify({
+          userId,
+          tipo_pedido: tipo_pedido || 'normal',
+          producto_id: producto_id || null,
+          anticipo_pagado: anticipo_pagado || null,
+          monto_liquidacion: monto_liquidacion || null,
+        }),
         notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook`,
       }
     })

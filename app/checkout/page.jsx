@@ -9,6 +9,8 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true)
   const [procesando, setProcesando] = useState(false)
   const [items, setItems] = useState([])
+  const [modoApartar, setModoApartar] = useState(false)
+  const [itemApartar, setItemApartar] = useState(null)
   const [direccion, setDireccion] = useState({
     nombre: '', apellido: '', telefono: '',
     calle: '', colonia: '', ciudad: '',
@@ -18,6 +20,9 @@ export default function CheckoutPage() {
   const router = useRouter()
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const modo = params.get('modo')
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
         router.push('/login')
@@ -25,7 +30,6 @@ export default function CheckoutPage() {
       }
       setUser(session.user)
 
-      // Cargar perfil guardado
       const { data } = await supabase
         .from('perfiles')
         .select('nombre, apellido, telefono, calle, colonia, ciudad, estado, cp, referencias')
@@ -36,15 +40,27 @@ export default function CheckoutPage() {
       setLoading(false)
     })
 
-    const carritoLocal = JSON.parse(localStorage.getItem('carrito') || '[]')
-    if (carritoLocal.length === 0) router.push('/carrito')
-    setItems(carritoLocal)
+    if (modo === 'apartar') {
+      const apartar = JSON.parse(localStorage.getItem('apartar') || 'null')
+      if (!apartar) {
+        router.push('/catalogo')
+        return
+      }
+      setModoApartar(true)
+      setItemApartar(apartar)
+    } else {
+      const carritoLocal = JSON.parse(localStorage.getItem('carrito') || '[]')
+      if (carritoLocal.length === 0) {
+        router.push('/carrito')
+        return
+      }
+      setItems(carritoLocal)
+    }
   }, [])
 
   async function handlePagar() {
     setError('')
 
-    // Validar campos obligatorios
     const requeridos = ['nombre', 'apellido', 'telefono', 'calle', 'colonia', 'ciudad', 'estado', 'cp']
     const faltantes = requeridos.filter(k => !direccion[k]?.trim())
     if (faltantes.length > 0) {
@@ -54,7 +70,6 @@ export default function CheckoutPage() {
 
     setProcesando(true)
 
-    // Guardar dirección actualizada en perfil
     const { data: existente } = await supabase
       .from('perfiles')
       .select('id')
@@ -67,16 +82,25 @@ export default function CheckoutPage() {
       await supabase.from('perfiles').insert({ user_id: user.id, ...direccion })
     }
 
-    // Crear preferencia de pago
     try {
+      const itemsAPagar = modoApartar
+        ? [{ ...itemApartar, precio: itemApartar.anticipo, cantidad: 1 }]
+        : items
+
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items,
+          items: itemsAPagar,
           userId: user.id,
           userEmail: user.email,
           direccion,
+          tipo_pedido: modoApartar ? 'apartado' : 'normal',
+          ...(modoApartar && {
+            producto_id: itemApartar.productoId,
+            anticipo_pagado: itemApartar.anticipo,
+            monto_liquidacion: itemApartar.precioLiquidacion,
+          }),
         }),
       })
 
@@ -93,7 +117,9 @@ export default function CheckoutPage() {
     setProcesando(false)
   }
 
-  const total = items.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
+  const total = modoApartar
+    ? itemApartar?.anticipo || 0
+    : items.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
 
   const inputClass = "w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-orange-500 transition"
   const labelClass = "text-white/50 text-xs font-black uppercase tracking-widest mb-2 block"
@@ -107,13 +133,20 @@ export default function CheckoutPage() {
   return (
     <main className="min-h-screen bg-black px-4 py-12">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-black uppercase text-white mb-8">Confirmar pedido</h1>
+        <h1 className="text-3xl font-black uppercase text-white mb-2">
+          {modoApartar ? 'Apartar producto' : 'Confirmar pedido'}
+        </h1>
+        {modoApartar && (
+          <p className="text-orange-500 text-sm mb-8">
+            Pagas el anticipo ahora y liquidas el resto cuando llegue tu producto.
+          </p>
+        )}
+        {!modoApartar && <div className="mb-8" />}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Formulario dirección */}
           <div className="flex flex-col gap-4">
-
             <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Datos personales</h2>
               <div className="grid grid-cols-2 gap-4">
@@ -184,47 +217,78 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Resumen del pedido */}
+          {/* Resumen */}
           <div className="flex flex-col gap-4">
             <div className="bg-[#111] border border-white/10 rounded-2xl p-6 sticky top-24">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Resumen</h2>
 
-              <div className="flex flex-col gap-3 mb-6">
-                {items.map(item => (
-                  <div key={item.productoId} className="flex items-center gap-3">
-                    {item.imagen ? (
-                      <img src={item.imagen} alt={item.nombre}
+              {modoApartar && itemApartar ? (
+                <div className="flex flex-col gap-3 mb-6">
+                  <div className="flex items-center gap-3">
+                    {itemApartar.imagen ? (
+                      <img src={itemApartar.imagen} alt={itemApartar.nombre}
                         className="w-12 h-12 object-contain rounded-lg bg-white flex-shrink-0" />
                     ) : (
                       <div className="w-12 h-12 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-xl flex-shrink-0">📦</div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-xs font-black uppercase truncate">{item.nombre}</p>
-                      <p className="text-white/40 text-xs">x{item.cantidad}</p>
+                      <p className="text-white text-xs font-black uppercase truncate">{itemApartar.nombre}</p>
+                      <span className="bg-orange-500 text-black text-xs font-black px-2 py-0.5 rounded-full">Preventa</span>
                     </div>
-                    <p className="text-orange-500 font-black text-sm">
-                      ${(item.precio * item.cantidad).toLocaleString('es-MX')}
-                    </p>
                   </div>
-                ))}
-              </div>
+                  <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 mt-2">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-white/50">Precio total</span>
+                      <span className="text-white/50 line-through">${itemApartar.precioTotal?.toLocaleString('es-MX')} MXN</span>
+                    </div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-white/50">Pagas ahora (anticipo)</span>
+                      <span className="text-orange-500 font-black">${itemApartar.anticipo?.toLocaleString('es-MX')} MXN</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-white/50">Al recibir el producto</span>
+                      <span className="text-white/50">${itemApartar.precioLiquidacion?.toLocaleString('es-MX')} MXN</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 mb-6">
+                  {items.map(item => (
+                    <div key={item.productoId} className="flex items-center gap-3">
+                      {item.imagen ? (
+                        <img src={item.imagen} alt={item.nombre}
+                          className="w-12 h-12 object-contain rounded-lg bg-white flex-shrink-0" />
+                      ) : (
+                        <div className="w-12 h-12 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-xl flex-shrink-0">📦</div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-xs font-black uppercase truncate">{item.nombre}</p>
+                        <p className="text-white/40 text-xs">x{item.cantidad}</p>
+                      </div>
+                      <p className="text-orange-500 font-black text-sm">
+                        ${(item.precio * item.cantidad).toLocaleString('es-MX')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="border-t border-white/10 pt-4 mb-6">
                 <div className="flex justify-between items-center">
-                  <span className="text-white/60 font-black uppercase text-sm">Total</span>
+                  <span className="text-white/60 font-black uppercase text-sm">
+                    {modoApartar ? 'Anticipo' : 'Total'}
+                  </span>
                   <span className="text-orange-500 font-black text-2xl">${total.toLocaleString('es-MX')} MXN</span>
                 </div>
               </div>
 
-              {error && (
-                <p className="text-red-400 text-sm mb-4">{error}</p>
-              )}
+              {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
               <button
                 onClick={handlePagar}
                 disabled={procesando}
                 className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black uppercase py-4 rounded-xl transition">
-                {procesando ? 'Procesando...' : '💳 Ir a pagar'}
+                {procesando ? 'Procesando...' : modoApartar ? '🔒 Pagar anticipo' : '💳 Ir a pagar'}
               </button>
               <p className="text-white/20 text-xs text-center mt-3">Pago seguro con Mercado Pago</p>
             </div>
