@@ -14,6 +14,8 @@ export default function CuentaPage() {
   const [pedidos, setPedidos] = useState([])
   const [bodega, setBodega] = useState(null)
   const [pedidosBodega, setPedidosBodega] = useState([])
+  const [hecacoins, setHecacoins] = useState(null)
+  const [movimientos, setMovimientos] = useState([])
   const [tab, setTab] = useState('perfil')
   const [perfil, setPerfil] = useState({
     nombre: '', apellido: '', telefono: '',
@@ -35,6 +37,7 @@ export default function CuentaPage() {
         cargarPerfil(session.user.id)
         cargarPedidos(session.user.id)
         cargarBodega(session.user.id)
+        cargarHecacoins(session.user.id)
       }
       setLoading(false)
     })
@@ -109,6 +112,23 @@ export default function CuentaPage() {
     setPedidosBodega(pedidosData || [])
   }
 
+  async function cargarHecacoins(userId) {
+    const { data: hc } = await supabase
+      .from('hecacoins')
+      .select('saldo, total_ganado, total_canjeado, vencimiento')
+      .eq('user_id', userId)
+      .single()
+    setHecacoins(hc)
+
+    const { data: mov } = await supabase
+      .from('hecacoins_movimientos')
+      .select('id, created_at, tipo, monto, descripcion')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(20)
+    setMovimientos(mov || [])
+  }
+
   async function handleLiquidar(pedido) {
     setLiquidando(pedido.id)
     try {
@@ -120,7 +140,6 @@ export default function CuentaPage() {
         cantidad: 1,
         tipo: 'liquidacion'
       }
-
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -142,7 +161,6 @@ export default function CuentaPage() {
 
   async function handleSolicitarEnvio() {
     setSolicitandoEnvio(true)
-    // Por ahora mandamos a WhatsApp — cuando esté Solo Envíos se automatiza
     const msg = `Hola, quiero solicitar el envío de mis productos en Bodegatombe. Mi correo es ${user?.email}. Total acumulado: $${bodega?.total_acumulado?.toLocaleString('es-MX')} MXN`
     window.open(`https://wa.me/524427183787?text=${encodeURIComponent(msg)}`, '_blank')
     setSolicitandoEnvio(false)
@@ -184,6 +202,7 @@ export default function CuentaPage() {
   const totalBodega = bodega?.total_acumulado || 0
   const faltaBodega = Math.max(0, 1200 - totalBodega)
   const porcentajeBodega = Math.min(100, (totalBodega / 1200) * 100)
+  const saldoHC = hecacoins?.saldo || 0
 
   if (loading) return (
     <main className="min-h-screen bg-black flex items-center justify-center">
@@ -205,12 +224,13 @@ export default function CuentaPage() {
           </button>
         </div>
 
-        <div className="flex gap-2 mb-8 border-b border-white/10">
+        <div className="flex gap-2 mb-8 border-b border-white/10 overflow-x-auto">
           {[
             { key: 'perfil', label: 'Perfil' },
             { key: 'favoritos', label: `Favoritos (${favoritos.length})` },
             { key: 'pedidos', label: `Pedidos (${pedidos.length})` },
             { key: 'bodega', label: `📦 Bodega${totalBodega > 0 ? ` $${totalBodega.toLocaleString('es-MX')}` : ''}` },
+            { key: 'hecacoins', label: `🪙 ${saldoHC > 0 ? `${saldoHC.toLocaleString('es-MX')} HC` : 'Hecacoins'}` },
           ].map(({ key, label }) => (
             <button key={key} onClick={() => setTab(key)}
               className={`px-4 py-3 text-sm font-black uppercase tracking-widest transition border-b-2 -mb-px whitespace-nowrap ${
@@ -356,9 +376,7 @@ export default function CuentaPage() {
                         <span className="text-orange-400 font-black">${pedido.monto_liquidacion?.toLocaleString('es-MX')} MXN</span>
                       </div>
                       <p className="text-white/30 text-xs mb-3">Te avisaremos por correo cuando tu producto llegue.</p>
-                      <button
-                        onClick={() => handleLiquidar(pedido)}
-                        disabled={liquidando === pedido.id}
+                      <button onClick={() => handleLiquidar(pedido)} disabled={liquidando === pedido.id}
                         className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black uppercase py-2 rounded-lg text-sm transition">
                         {liquidando === pedido.id ? 'Procesando...' : `💳 Liquidar $${pedido.monto_liquidacion?.toLocaleString('es-MX')} MXN`}
                       </button>
@@ -375,17 +393,12 @@ export default function CuentaPage() {
           </div>
         )}
 
-        {/* Tab: Bodegatombe */}
+        {/* Tab: Bodega */}
         {tab === 'bodega' && (
           <div className="flex flex-col gap-4">
-
-            {/* Progreso */}
             <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-2">Bodegatombe</h2>
-              <p className="text-white/40 text-sm mb-6">
-                Acumula $1,200 MXN en compras y obtén envío gratis a todo México.
-              </p>
-
+              <p className="text-white/40 text-sm mb-6">Acumula $1,200 MXN en compras y obtén envío gratis a todo México.</p>
               {totalBodega > 0 ? (
                 <>
                   <div className="flex justify-between items-center mb-2">
@@ -393,50 +406,28 @@ export default function CuentaPage() {
                     <span className="text-orange-500 font-black">${totalBodega.toLocaleString('es-MX')} / $1,200 MXN</span>
                   </div>
                   <div className="w-full bg-[#222] rounded-full h-3 mb-4">
-                    <div
-                      className="bg-orange-500 h-3 rounded-full transition-all duration-500"
-                      style={{ width: `${porcentajeBodega}%` }}
-                    />
+                    <div className="bg-orange-500 h-3 rounded-full transition-all duration-500" style={{ width: `${porcentajeBodega}%` }} />
                   </div>
                   {faltaBodega > 0 ? (
-                    <p className="text-white/40 text-sm mb-6">
-                      Te faltan <span className="text-orange-500 font-black">${faltaBodega.toLocaleString('es-MX')} MXN</span> para envío gratis.
-                    </p>
+                    <p className="text-white/40 text-sm mb-6">Te faltan <span className="text-orange-500 font-black">${faltaBodega.toLocaleString('es-MX')} MXN</span> para envío gratis.</p>
                   ) : (
-                    <p className="text-green-400 text-sm font-black mb-6">
-                      🎉 ¡Felicidades! Ya tienes envío gratis disponible.
-                    </p>
+                    <p className="text-green-400 text-sm font-black mb-6">🎉 ¡Ya tienes envío gratis disponible!</p>
                   )}
-
-                  <button
-                    onClick={handleSolicitarEnvio}
-                    disabled={solicitandoEnvio}
-                    className={`w-full font-black uppercase py-4 rounded-xl transition text-sm ${
-                      faltaBodega === 0
-                        ? 'bg-orange-500 hover:bg-orange-600 text-white'
-                        : 'border border-orange-500 text-orange-500 hover:bg-orange-500/10'
-                    }`}>
+                  <button onClick={handleSolicitarEnvio} disabled={solicitandoEnvio}
+                    className={`w-full font-black uppercase py-4 rounded-xl transition text-sm ${faltaBodega === 0 ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'border border-orange-500 text-orange-500 hover:bg-orange-500/10'}`}>
                     {solicitandoEnvio ? 'Procesando...' : faltaBodega === 0 ? '🚚 Solicitar envío gratis' : '🚚 Solicitar envío ahora'}
                   </button>
-                  {faltaBodega > 0 && (
-                    <p className="text-white/20 text-xs text-center mt-2">
-                      Si solicitas envío antes de $1,200 se cobrará el costo de envío
-                    </p>
-                  )}
+                  {faltaBodega > 0 && <p className="text-white/20 text-xs text-center mt-2">Si solicitas envío antes de $1,200 se cobrará el costo de envío</p>}
                 </>
               ) : (
                 <div className="text-center py-8">
                   <p className="text-white/30 text-4xl mb-4">📦</p>
                   <p className="text-white/40 mb-2">Tu bodega está vacía</p>
                   <p className="text-white/20 text-sm mb-6">Al comprar elige "Guardar en Bodegatombe" para acumular tu envío gratis</p>
-                  <Link href="/catalogo" className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase px-6 py-3 rounded-xl transition inline-block">
-                    Ver catálogo
-                  </Link>
+                  <Link href="/catalogo" className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase px-6 py-3 rounded-xl transition inline-block">Ver catálogo</Link>
                 </div>
               )}
             </div>
-
-            {/* Pedidos en bodega */}
             {pedidosBodega.length > 0 && (
               <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
                 <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Productos guardados</h2>
@@ -453,7 +444,79 @@ export default function CuentaPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
 
+        {/* Tab: Hecacoins */}
+        {tab === 'hecacoins' && (
+          <div className="flex flex-col gap-4">
+            <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg font-black uppercase text-orange-500">Hecacoins</h2>
+                  <p className="text-white/40 text-sm mt-1">Ganas 3% de cada compra en Hecacoins. 1 HC = $1 MXN de descuento.</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-orange-500 font-black text-3xl">{saldoHC.toLocaleString('es-MX')}</p>
+                  <p className="text-white/40 text-xs">HC disponibles</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-black rounded-xl p-4 text-center">
+                  <p className="text-orange-500 font-black text-xl">{hecacoins?.total_ganado?.toLocaleString('es-MX') || 0}</p>
+                  <p className="text-white/30 text-xs mt-1 uppercase font-black">Total ganado</p>
+                </div>
+                <div className="bg-black rounded-xl p-4 text-center">
+                  <p className="text-white font-black text-xl">{saldoHC.toLocaleString('es-MX')}</p>
+                  <p className="text-white/30 text-xs mt-1 uppercase font-black">Disponible</p>
+                </div>
+                <div className="bg-black rounded-xl p-4 text-center">
+                  <p className="text-white/40 font-black text-xl">{hecacoins?.total_canjeado?.toLocaleString('es-MX') || 0}</p>
+                  <p className="text-white/30 text-xs mt-1 uppercase font-black">Canjeado</p>
+                </div>
+              </div>
+
+              {hecacoins?.vencimiento && (
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-6">
+                  <p className="text-yellow-400 text-xs font-black">⚠️ Tus Hecacoins vencen el 31 de diciembre de {new Date().getFullYear()}</p>
+                </div>
+              )}
+
+              <Link href="/catalogo"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black uppercase py-3 rounded-xl transition text-center block text-sm">
+                Usar Hecacoins en mi próxima compra →
+              </Link>
+            </div>
+
+            {/* Historial */}
+            {movimientos.length > 0 && (
+              <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+                <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Historial</h2>
+                <div className="flex flex-col gap-3">
+                  {movimientos.map(mov => (
+                    <div key={mov.id} className="flex items-center justify-between border-b border-white/5 pb-3 last:border-0 last:pb-0">
+                      <div>
+                        <p className="text-white text-sm font-black">{mov.descripcion}</p>
+                        <p className="text-white/30 text-xs">{new Date(mov.created_at).toLocaleDateString('es-MX')}</p>
+                      </div>
+                      <span className={`font-black text-sm ${mov.tipo === 'ganado' ? 'text-green-400' : 'text-orange-500'}`}>
+                        {mov.tipo === 'ganado' ? '+' : '-'}{mov.monto?.toLocaleString('es-MX')} HC
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {movimientos.length === 0 && (
+              <div className="bg-[#111] border border-white/10 rounded-2xl p-12 text-center">
+                <p className="text-white/30 text-4xl mb-4">🪙</p>
+                <p className="text-white/40 mb-2">Aún no tienes Hecacoins</p>
+                <p className="text-white/20 text-sm mb-6">Gana 3% en cada compra automáticamente</p>
+                <Link href="/catalogo" className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase px-6 py-3 rounded-xl transition inline-block">Ver catálogo</Link>
+              </div>
+            )}
           </div>
         )}
 

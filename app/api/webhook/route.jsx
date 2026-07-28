@@ -232,6 +232,52 @@ export async function POST(request) {
       `
     })
 
+    // Acumular Hecacoins (3%) — solo en pedidos normales y liquidaciones, no anticipos ni bodega
+const tiposConHecacoins = ['normal', 'liquidacion']
+if (tiposConHecacoins.includes(tipo_pedido)) {
+  const hecacoinsGanadas = Math.floor(pago.transaction_amount * 0.03)
+
+  if (hecacoinsGanadas > 0) {
+    const añoActual = new Date().getFullYear()
+    const vencimiento = `${añoActual}-12-31`
+
+    const { data: saldoActual } = await supabase
+      .from('hecacoins')
+      .select('id, saldo, total_ganado')
+      .eq('user_id', userId)
+      .single()
+
+    if (saldoActual) {
+      await supabase
+        .from('hecacoins')
+        .update({
+          saldo: saldoActual.saldo + hecacoinsGanadas,
+          total_ganado: saldoActual.total_ganado + hecacoinsGanadas,
+          vencimiento,
+        })
+        .eq('id', saldoActual.id)
+    } else {
+      await supabase
+        .from('hecacoins')
+        .insert({
+          user_id: userId,
+          saldo: hecacoinsGanadas,
+          total_ganado: hecacoinsGanadas,
+          total_canjeado: 0,
+          vencimiento,
+        })
+    }
+
+    await supabase.from('hecacoins_movimientos').insert({
+      user_id: userId,
+      pedido_id: pedido?.id,
+      tipo: 'ganado',
+      monto: hecacoinsGanadas,
+      descripcion: `Compra pedido #${pedido?.id}`,
+    })
+  }
+}
+
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('Webhook error:', error)
