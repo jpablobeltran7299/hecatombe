@@ -224,7 +224,7 @@ export default function CuentaPage() {
           </button>
         </div>
 
-        <div className="flex gap-2 mb-8 border-b border-white/10 overflow-x-auto">
+        <div className="flex flex-wrap gap-2 mb-8 border-b border-white/10">
           {[
             { key: 'perfil', label: 'Perfil' },
             { key: 'favoritos', label: `Favoritos (${favoritos.length})` },
