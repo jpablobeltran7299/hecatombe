@@ -13,6 +13,8 @@ export const metadata = {
   },
 }
 
+export const revalidate = 0
+
 export default async function Home() {
   const [destacados, marcas, categorias, preventas, dinamicas] = await Promise.all([
     getProductosDestacados(),
