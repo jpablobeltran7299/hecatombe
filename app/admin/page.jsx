@@ -50,6 +50,7 @@ export default function AdminPage() {
             { titulo: 'Pedidos', desc: 'Historial de ventas', icon: '🛍️', href: '/admin/pedidos' },
             { titulo: 'Clientes', desc: 'Hecacoins y bodega', icon: '👥', href: '/admin/clientes' },
             { titulo: 'Bodegatombe', desc: 'Productos en bodega', icon: '🏪', href: '/admin/bodega' },
+            { titulo: 'Clasificación', desc: 'Temáticas, universos y líneas', icon: '🏷️', href: '/admin/clasificacion' },
           ].map(({ titulo, desc, icon, href }) => (
             <a key={titulo} href={href}
               className="bg-[#111] border border-white/10 hover:border-orange-500 rounded-2xl p-6 flex flex-col gap-2 transition cursor-pointer">
