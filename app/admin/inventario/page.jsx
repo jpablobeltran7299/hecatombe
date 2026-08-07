@@ -74,11 +74,11 @@ export default function AdminInventario() {
   }
 
   const productosFiltrados = productos.filter(p => {
-    const matchBusqueda = p.nombre?.toLowerCase().includes(busqueda.toLowerCase())
-    if (filtro === 'sin_stock') return matchBusqueda && p.stock === 0
-    if (filtro === 'ultimas') return matchBusqueda && p.ultimasPiezas
-    if (filtro === 'sin_stock_config') return matchBusqueda && (p.stock === null || p.stock === undefined)
-    return matchBusqueda
+  const matchBusqueda = p.nombre?.toLowerCase().includes(busqueda.toLowerCase())
+  if (filtro === 'sin_stock') return matchBusqueda && (p.stock === 0 || !p.disponible)
+  if (filtro === 'ultimas') return matchBusqueda && p.ultimasPiezas
+  if (filtro === 'sin_stock_config') return matchBusqueda && (p.stock === null || p.stock === undefined)
+  return matchBusqueda
   })
 
   if (loading) return (
