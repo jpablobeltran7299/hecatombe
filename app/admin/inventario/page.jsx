@@ -4,15 +4,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { getTodosProductos, urlFor } from '@/lib/sanity'
-import { createClient } from 'next-sanity'
 
-const sanityWriter = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
-  apiVersion: '2024-01-01',
-  token: process.env.NEXT_PUBLIC_SANITY_WRITE_TOKEN,
-  useCdn: false,
-})
+const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
 export default function AdminInventario() {
   const [loading, setLoading] = useState(true)
@@ -24,7 +17,7 @@ export default function AdminInventario() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session || session.user.email !== 'hecatombe.9194@gmail.com') {
+      if (!session || !ADMINS.includes(session.user.email)) {
         router.push('/')
         return
       }
@@ -104,7 +97,6 @@ export default function AdminInventario() {
           <span className="text-white/30 text-sm">{productos.length} productos</span>
         </div>
 
-        {/* Filtros */}
         <div className="flex flex-wrap gap-3 mb-6">
           <input
             type="text"
@@ -128,7 +120,6 @@ export default function AdminInventario() {
           ))}
         </div>
 
-        {/* Tabla */}
         <div className="bg-[#111] border border-white/10 rounded-2xl overflow-hidden">
           <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-white/10 text-xs font-black uppercase text-white/30">
             <div className="col-span-1">Img</div>
@@ -143,7 +134,6 @@ export default function AdminInventario() {
             <div key={producto._id}
               className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-white/5 items-center hover:bg-white/2 transition">
 
-              {/* Imagen */}
               <div className="col-span-1">
                 {producto.imagenes?.[0] ? (
                   <img src={urlFor(producto.imagenes[0]).width(48).height(48).url()}
@@ -154,20 +144,17 @@ export default function AdminInventario() {
                 )}
               </div>
 
-              {/* Nombre */}
               <div className="col-span-4">
                 <p className="text-white text-sm font-bold truncate">{producto.nombre}</p>
                 <p className="text-white/30 text-xs">{producto.marca}</p>
               </div>
 
-              {/* Precio */}
               <div className="col-span-2">
                 <span className="text-orange-500 font-black text-sm">
                   ${producto.precio?.toLocaleString('es-MX') || '—'}
                 </span>
               </div>
 
-              {/* Stock editable */}
               <div className="col-span-2">
                 <input
                   type="number"
@@ -187,7 +174,6 @@ export default function AdminInventario() {
                 )}
               </div>
 
-              {/* Estado */}
               <div className="col-span-2">
                 <span className={`text-xs font-black uppercase px-2 py-1 rounded-full ${
                   producto.disponible
@@ -198,7 +184,6 @@ export default function AdminInventario() {
                 </span>
               </div>
 
-              {/* Toggle */}
               <div className="col-span-1">
                 <button
                   onClick={() => toggleDisponible(producto)}

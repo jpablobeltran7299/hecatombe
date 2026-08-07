@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
+const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
+
 export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [autorizado, setAutorizado] = useState(false)
@@ -15,7 +17,7 @@ export default function AdminPage() {
         router.push('/login')
         return
       }
-      if (session.user.email === 'hecatombe.9194@gmail.com') {
+      if (ADMINS.includes(session.user.email)) {
         setAutorizado(true)
       } else {
         router.push('/')

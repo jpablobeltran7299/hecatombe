@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
+const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
+
 export default function AdminPedidos() {
   const [loading, setLoading] = useState(true)
   const [pedidos, setPedidos] = useState([])
@@ -14,7 +16,7 @@ export default function AdminPedidos() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session || session.user.email !== 'hecatombe.9194@gmail.com') {
+      if (!session || !ADMINS.includes(session.user.email)) {
         router.push('/')
         return
       }
@@ -75,7 +77,6 @@ export default function AdminPedidos() {
           <h1 className="text-2xl font-black uppercase text-white">Pedidos</h1>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[
             { label: 'Total pedidos', value: pedidos.length },
@@ -95,7 +96,6 @@ export default function AdminPedidos() {
           <p className="text-orange-500 font-black text-2xl">${totalVentas.toLocaleString('es-MX')} MXN</p>
         </div>
 
-        {/* Filtros */}
         <div className="flex flex-wrap gap-3 mb-6">
           <input
             type="text"
@@ -114,7 +114,6 @@ export default function AdminPedidos() {
           ))}
         </div>
 
-        {/* Lista */}
         <div className="flex flex-col gap-3">
           {pedidosFiltrados.map(pedido => (
             <div key={pedido.id} className="bg-[#111] border border-white/10 rounded-2xl p-5 flex flex-wrap items-center gap-4">
@@ -141,7 +140,6 @@ export default function AdminPedidos() {
                 )}
               </div>
 
-              {/* Cambiar estado */}
               <select
                 value={pedido.estado}
                 onChange={e => cambiarEstado(pedido.id, e.target.value)}

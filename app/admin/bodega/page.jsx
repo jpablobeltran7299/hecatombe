@@ -4,15 +4,17 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
+const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
+
 export default function AdminBodega() {
   const [loading, setLoading] = useState(true)
   const [bodegas, setBodegas] = useState([])
-  const [busqueda, setBusqueda] = useState([])
+  const [busqueda, setBusqueda] = useState('')
   const router = useRouter()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session || session.user.email !== 'hecatombe.9194@gmail.com') {
+      if (!session || !ADMINS.includes(session.user.email)) {
         router.push('/')
         return
       }
@@ -95,7 +97,6 @@ export default function AdminBodega() {
           <h1 className="text-2xl font-black uppercase text-white">Bodegatombe</h1>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
           <div className="bg-[#111] border border-white/10 rounded-2xl p-4 text-center">
             <p className="text-orange-500 font-black text-2xl">{bodegas.filter(b => b.estado === 'guardando').length}</p>
@@ -135,7 +136,6 @@ export default function AdminBodega() {
                 </div>
               </div>
 
-              {/* Barra de progreso */}
               <div className="w-full bg-[#222] rounded-full h-2 mb-4">
                 <div
                   className="bg-orange-500 h-2 rounded-full"
@@ -143,7 +143,6 @@ export default function AdminBodega() {
                 />
               </div>
 
-              {/* Pedidos en bodega */}
               {bodega.pedidos.length > 0 && (
                 <div className="mb-4">
                   <p className="text-white/30 text-xs uppercase font-black mb-2">{bodega.pedidos.length} pedido(s) guardados</p>

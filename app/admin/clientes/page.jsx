@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
+const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
+
 export default function AdminClientes() {
   const [loading, setLoading] = useState(true)
   const [clientes, setClientes] = useState([])
@@ -16,7 +18,7 @@ export default function AdminClientes() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session || session.user.email !== 'hecatombe.9194@gmail.com') {
+      if (!session || !ADMINS.includes(session.user.email)) {
         router.push('/')
         return
       }
@@ -25,7 +27,6 @@ export default function AdminClientes() {
   }, [])
 
   async function cargarClientes() {
-    // Obtener perfiles con sus hecacoins
     const { data: perfiles } = await supabase
       .from('perfiles')
       .select('user_id, nombre, apellido, telefono')
@@ -43,7 +44,6 @@ export default function AdminClientes() {
       .from('pedidos')
       .select('user_id, total, estado')
 
-    // Combinar datos
     const hcMap = {}
     hecacoinsData?.forEach(h => { hcMap[h.user_id] = h })
 
@@ -174,7 +174,6 @@ export default function AdminClientes() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Lista clientes */}
           <div className="flex flex-col gap-3">
             {clientesFiltrados.map(cliente => (
               <button key={cliente.user_id}
@@ -205,7 +204,6 @@ export default function AdminClientes() {
             )}
           </div>
 
-          {/* Panel de edición */}
           {clienteSeleccionado ? (
             <div className="bg-[#111] border border-white/10 rounded-2xl p-6 sticky top-8 self-start">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-6">
@@ -218,7 +216,6 @@ export default function AdminClientes() {
                 </div>
               )}
 
-              {/* Hecacoins */}
               <div className="mb-6">
                 <h3 className="text-white/50 text-xs font-black uppercase mb-3">Hecacoins</h3>
                 <div className="bg-black rounded-xl p-4 mb-3">
@@ -240,7 +237,6 @@ export default function AdminClientes() {
                 </div>
               </div>
 
-              {/* Bodega */}
               <div>
                 <h3 className="text-white/50 text-xs font-black uppercase mb-3">Bodegatombe</h3>
                 <div className="bg-black rounded-xl p-4 mb-3">
