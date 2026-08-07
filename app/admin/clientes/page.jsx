@@ -191,22 +191,23 @@ export default function AdminClientes() {
     })
 
     // Actualizar o crear registro en bodega
-    const { data: bodegaExistente } = await supabase
-      .from('bodega')
-      .select('id, total_acumulado')
-      .eq('user_id', clienteSeleccionado.user_id)
-      .eq('estado', 'guardando')
-      .single()
+    const { data: bodegaRows } = await supabase
+    .from('bodega')
+    .select('id, total_acumulado')
+    .eq('user_id', clienteSeleccionado.user_id)
+    .eq('estado', 'guardando')
+
+    const bodegaExistente = bodegaRows?.[0] || null
 
     if (bodegaExistente) {
-      await supabase.from('bodega').update({
-        total_acumulado: bodegaExistente.total_acumulado + precio
-      }).eq('id', bodegaExistente.id)
+    await supabase.from('bodega').update({
+    total_acumulado: bodegaExistente.total_acumulado + precio
+    }).eq('id', bodegaExistente.id)
     } else {
-      await supabase.from('bodega').insert({
-        user_id: clienteSeleccionado.user_id,
-        total_acumulado: precio,
-        estado: 'guardando',
+    await supabase.from('bodega').insert({
+    user_id: clienteSeleccionado.user_id,
+    total_acumulado: precio,
+    estado: 'guardando',
       })
     }
 
