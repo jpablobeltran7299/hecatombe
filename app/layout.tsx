@@ -15,10 +15,18 @@ export const metadata = {
     locale: 'es_MX',
     type: 'website',
     url: 'https://www.hecatombe.com.mx',
-    images: [{ url: '/logo.png', width: 818, height: 83 }],
+    title: 'Hecatombe Coleccionables',
+    description: 'Tienda de coleccionables geek en Querétaro. Funkos, figuras y cultura pop.',
+    images: [{
+      url: '/tombito.jpeg',
+      width: 1200,
+      height: 1200,
+      alt: 'Hecatombe Coleccionables',
+    }],
   },
   twitter: {
     card: 'summary_large_image',
+    images: ['/tombito.jpeg'],
   },
   icons: {
     icon: '/favicon.png',
