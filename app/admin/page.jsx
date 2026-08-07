@@ -43,9 +43,10 @@ export default function AdminPage() {
           </h1>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           {[
-            { titulo: 'Inventario', desc: 'Stock y productos', icon: '📦', href: '/admin/inventario' },
+            { titulo: 'Productos', desc: 'Crear y editar productos', icon: '🎁', href: '/admin/productos' },
+            { titulo: 'Inventario', desc: 'Stock y disponibilidad', icon: '📦', href: '/admin/inventario' },
             { titulo: 'Pedidos', desc: 'Historial de ventas', icon: '🛍️', href: '/admin/pedidos' },
             { titulo: 'Clientes', desc: 'Hecacoins y bodega', icon: '👥', href: '/admin/clientes' },
             { titulo: 'Bodegatombe', desc: 'Productos en bodega', icon: '🏪', href: '/admin/bodega' },
