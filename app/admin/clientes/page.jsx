@@ -15,8 +15,10 @@ export default function AdminClientes() {
   const [busquedaProducto, setBusquedaProducto] = useState('')
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null)
   const [hecacoinsNuevas, setHecacoinsNuevas] = useState('')
+  const [hecacoinsRestar, setHecacoinsRestar] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
+  const [pedidosBodega, setPedidosBodega] = useState([])
   const router = useRouter()
 
   useEffect(() => {
@@ -30,11 +32,9 @@ export default function AdminClientes() {
   }, [])
 
   async function cargarDatos() {
-    const [, productosData] = await Promise.all([
-      cargarClientes(),
-      getTodosProductos()
-    ])
+    const productosData = await getTodosProductos()
     setProductos(productosData)
+    await cargarClientes()
   }
 
   async function cargarClientes() {
@@ -82,6 +82,25 @@ export default function AdminClientes() {
     return clientesCombinados
   }
 
+  async function cargarPedidosBodega(userId) {
+    const { data } = await supabase
+      .from('pedidos')
+      .select('id, total, created_at, items, producto_id')
+      .eq('user_id', userId)
+      .eq('estado', 'en_bodega')
+      .order('created_at', { ascending: false })
+    setPedidosBodega(data || [])
+  }
+
+  async function seleccionarCliente(cliente) {
+    setClienteSeleccionado(cliente)
+    setMensaje('')
+    setBusquedaProducto('')
+    setHecacoinsNuevas('')
+    setHecacoinsRestar('')
+    await cargarPedidosBodega(cliente.user_id)
+  }
+
   async function asignarHecacoins() {
     if (!clienteSeleccionado || !hecacoinsNuevas) return
     setGuardando(true)
@@ -115,9 +134,42 @@ export default function AdminClientes() {
       descripcion: 'Asignación manual por admin',
     })
 
-    setMensaje(`✅ ${monto} Hecacoins asignadas correctamente`)
+    setMensaje(`✅ ${monto} Hecacoins asignadas`)
     setHecacoinsNuevas('')
-    await cargarClientes()
+    const clientes = await cargarClientes()
+    const actualizado = clientes.find(c => c.user_id === clienteSeleccionado.user_id)
+    if (actualizado) setClienteSeleccionado(actualizado)
+    setGuardando(false)
+  }
+
+  async function restarHecacoins() {
+    if (!clienteSeleccionado || !hecacoinsRestar) return
+    setGuardando(true)
+    setMensaje('')
+
+    const monto = parseFloat(hecacoinsRestar)
+    const hcExistente = clienteSeleccionado.hecacoins
+    if (!hcExistente) { setMensaje('❌ El cliente no tiene Hecacoins'); setGuardando(false); return }
+
+    const nuevoSaldo = Math.max(0, hcExistente.saldo - monto)
+
+    await supabase.from('hecacoins').update({
+      saldo: nuevoSaldo,
+      total_canjeado: hcExistente.total_canjeado + monto,
+    }).eq('user_id', clienteSeleccionado.user_id)
+
+    await supabase.from('hecacoins_movimientos').insert({
+      user_id: clienteSeleccionado.user_id,
+      tipo: 'canjeado',
+      monto,
+      descripcion: 'Ajuste manual por admin',
+    })
+
+    setMensaje(`✅ ${monto} Hecacoins descontadas`)
+    setHecacoinsRestar('')
+    const clientes = await cargarClientes()
+    const actualizado = clientes.find(c => c.user_id === clienteSeleccionado.user_id)
+    if (actualizado) setClienteSeleccionado(actualizado)
     setGuardando(false)
   }
 
@@ -127,7 +179,6 @@ export default function AdminClientes() {
     setMensaje('')
 
     const precio = producto.precio || 0
-    const bodegaExistente = clienteSeleccionado.bodega
 
     // Crear pedido en bodega
     await supabase.from('pedidos').insert({
@@ -139,11 +190,18 @@ export default function AdminClientes() {
       items: [{ producto_id: producto._id, cantidad: 1 }],
     })
 
-    // Actualizar total en bodega
+    // Actualizar o crear registro en bodega
+    const { data: bodegaExistente } = await supabase
+      .from('bodega')
+      .select('id, total_acumulado')
+      .eq('user_id', clienteSeleccionado.user_id)
+      .eq('estado', 'guardando')
+      .single()
+
     if (bodegaExistente) {
       await supabase.from('bodega').update({
         total_acumulado: bodegaExistente.total_acumulado + precio
-      }).eq('user_id', clienteSeleccionado.user_id).eq('estado', 'guardando')
+      }).eq('id', bodegaExistente.id)
     } else {
       await supabase.from('bodega').insert({
         user_id: clienteSeleccionado.user_id,
@@ -152,9 +210,42 @@ export default function AdminClientes() {
       })
     }
 
-    setMensaje(`✅ "${producto.nombre}" agregado a la bodega de ${clienteSeleccionado.nombre || 'cliente'}`)
+    setMensaje(`✅ "${producto.nombre}" agregado a bodega`)
     setBusquedaProducto('')
-    await cargarClientes()
+    await cargarPedidosBodega(clienteSeleccionado.user_id)
+    const clientes = await cargarClientes()
+    const actualizado = clientes.find(c => c.user_id === clienteSeleccionado.user_id)
+    if (actualizado) setClienteSeleccionado(actualizado)
+    setGuardando(false)
+  }
+
+  async function eliminarDeBodega(pedidoId, total) {
+    if (!confirm('¿Eliminar este producto de la bodega?')) return
+    setGuardando(true)
+
+    await supabase.from('pedidos').delete().eq('id', pedidoId)
+
+    const { data: bodegaExistente } = await supabase
+      .from('bodega')
+      .select('id, total_acumulado')
+      .eq('user_id', clienteSeleccionado.user_id)
+      .eq('estado', 'guardando')
+      .single()
+
+    if (bodegaExistente) {
+      const nuevoTotal = Math.max(0, bodegaExistente.total_acumulado - total)
+      if (nuevoTotal === 0) {
+        await supabase.from('bodega').delete().eq('id', bodegaExistente.id)
+      } else {
+        await supabase.from('bodega').update({ total_acumulado: nuevoTotal }).eq('id', bodegaExistente.id)
+      }
+    }
+
+    setMensaje('✅ Producto eliminado de bodega')
+    await cargarPedidosBodega(clienteSeleccionado.user_id)
+    const clientes = await cargarClientes()
+    const actualizado = clientes.find(c => c.user_id === clienteSeleccionado.user_id)
+    if (actualizado) setClienteSeleccionado(actualizado)
     setGuardando(false)
   }
 
@@ -168,6 +259,12 @@ export default function AdminClientes() {
     busquedaProducto.length >= 2 &&
     p.nombre?.toLowerCase().includes(busquedaProducto.toLowerCase())
   ).slice(0, 6)
+
+  // Buscar nombre de producto en la lista cargada
+  function getNombreProducto(productoId) {
+    const p = productos.find(x => x._id === productoId)
+    return p?.nombre || `Producto ${productoId?.slice(-6)}`
+  }
 
   if (loading) return (
     <main className="min-h-screen bg-black flex items-center justify-center">
@@ -196,10 +293,10 @@ export default function AdminClientes() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Lista clientes */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 max-h-screen overflow-y-auto">
             {clientesFiltrados.map(cliente => (
               <button key={cliente.user_id}
-                onClick={() => { setClienteSeleccionado(cliente); setMensaje(''); setBusquedaProducto('') }}
+                onClick={() => seleccionarCliente(cliente)}
                 className={`text-left bg-[#111] border rounded-2xl p-4 transition ${
                   clienteSeleccionado?.user_id === cliente.user_id
                     ? 'border-orange-500 bg-orange-500/5'
@@ -218,7 +315,6 @@ export default function AdminClientes() {
                 </div>
               </button>
             ))}
-
             {clientesFiltrados.length === 0 && (
               <p className="text-white/30 text-center py-8">No hay clientes registrados</p>
             )}
@@ -228,17 +324,17 @@ export default function AdminClientes() {
           {clienteSeleccionado ? (
             <div className="flex flex-col gap-4">
 
+              {mensaje && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3">
+                  <p className="text-green-400 text-sm">{mensaje}</p>
+                </div>
+              )}
+
               <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
-                <h2 className="text-lg font-black uppercase text-orange-500 mb-2">
+                <h2 className="text-lg font-black uppercase text-orange-500 mb-1">
                   {clienteSeleccionado.nombre || 'Cliente'} {clienteSeleccionado.apellido || ''}
                 </h2>
-                <p className="text-white/30 text-xs mb-4">{clienteSeleccionado.telefono || 'Sin teléfono'}</p>
-
-                {mensaje && (
-                  <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 mb-4">
-                    <p className="text-green-400 text-sm">{mensaje}</p>
-                  </div>
-                )}
+                <p className="text-white/30 text-xs mb-6">{clienteSeleccionado.telefono || 'Sin teléfono'}</p>
 
                 {/* Hecacoins */}
                 <h3 className="text-white/50 text-xs font-black uppercase mb-3">Hecacoins</h3>
@@ -246,7 +342,10 @@ export default function AdminClientes() {
                   <p className="text-orange-500 font-black text-2xl">{clienteSeleccionado.hecacoins?.saldo?.toLocaleString('es-MX') || 0} HC</p>
                   <p className="text-white/30 text-xs mt-1">Ganado total: {clienteSeleccionado.hecacoins?.total_ganado?.toLocaleString('es-MX') || 0} HC</p>
                 </div>
-                <div className="flex gap-2 mb-6">
+
+                {/* Agregar HC */}
+                <p className="text-white/30 text-xs mb-1">Agregar Hecacoins</p>
+                <div className="flex gap-2 mb-3">
                   <input
                     type="number"
                     value={hecacoinsNuevas}
@@ -256,7 +355,23 @@ export default function AdminClientes() {
                   />
                   <button onClick={asignarHecacoins} disabled={guardando || !hecacoinsNuevas}
                     className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black font-black uppercase text-xs px-4 py-2 rounded-lg transition">
-                    Agregar
+                    + Agregar
+                  </button>
+                </div>
+
+                {/* Restar HC */}
+                <p className="text-white/30 text-xs mb-1">Quitar Hecacoins</p>
+                <div className="flex gap-2 mb-6">
+                  <input
+                    type="number"
+                    value={hecacoinsRestar}
+                    onChange={e => setHecacoinsRestar(e.target.value)}
+                    placeholder="Cantidad a quitar"
+                    className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500"
+                  />
+                  <button onClick={restarHecacoins} disabled={guardando || !hecacoinsRestar}
+                    className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-black uppercase text-xs px-4 py-2 rounded-lg transition">
+                    - Quitar
                   </button>
                 </div>
 
@@ -267,13 +382,39 @@ export default function AdminClientes() {
                   <p className="text-white/30 text-xs mt-1">de $1,200 para envío gratis</p>
                 </div>
 
+                {/* Productos en bodega */}
+                {pedidosBodega.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-white/30 text-xs uppercase font-black mb-2">Productos guardados ({pedidosBodega.length})</p>
+                    <div className="flex flex-col gap-2">
+                      {pedidosBodega.map(pedido => (
+                        <div key={pedido.id} className="flex items-center justify-between bg-[#1a1a1a] rounded-lg px-3 py-2">
+                          <div>
+                            <p className="text-white text-xs font-black">
+                              {getNombreProducto(pedido.producto_id)}
+                            </p>
+                            <p className="text-orange-500 text-xs">${pedido.total?.toLocaleString('es-MX')} MXN</p>
+                          </div>
+                          <button
+                            onClick={() => eliminarDeBodega(pedido.id, pedido.total)}
+                            disabled={guardando}
+                            className="text-white/20 hover:text-red-400 transition text-xs disabled:opacity-30">
+                            🗑
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Buscar producto para bodega */}
+                <p className="text-white/30 text-xs mb-1">Agregar producto a bodega</p>
                 <div className="relative">
                   <input
                     type="text"
                     value={busquedaProducto}
                     onChange={e => setBusquedaProducto(e.target.value)}
-                    placeholder="Buscar producto para agregar a bodega..."
+                    placeholder="Buscar producto..."
                     className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500 placeholder-white/20"
                   />
                   {productosFiltrados.length > 0 && (
@@ -301,7 +442,7 @@ export default function AdminClientes() {
                     </div>
                   )}
                 </div>
-                <p className="text-white/20 text-xs mt-2">Escribe al menos 2 letras para buscar</p>
+                <p className="text-white/20 text-xs mt-1">Escribe al menos 2 letras para buscar</p>
               </div>
 
             </div>
