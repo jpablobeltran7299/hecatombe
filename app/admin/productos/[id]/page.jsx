@@ -36,6 +36,7 @@ export default function EditarProducto({ params }) {
     activo: true,
     destacado: false,
     ultimasPiezas: false,
+    ordenDestacado: '',
     anticipo: '',
     precioLiquidacion: '',
     fechaEstimada: '',
@@ -44,7 +45,11 @@ export default function EditarProducto({ params }) {
   const router = useRouter()
 
   useEffect(() => {
-    params.then ? params.then(p => setProductoId(p.id)) : setProductoId(params.id)
+    const resolveParams = async () => {
+      const p = await params
+      setProductoId(p.id)
+    }
+    resolveParams()
   }, [params])
 
   useEffect(() => {
@@ -77,7 +82,7 @@ export default function EditarProducto({ params }) {
       setForm({
         nombre: producto.nombre || '',
         descripcion: producto.descripcion || '',
-        precio: producto.precio || '',
+        precio: producto.precio ?? '',
         stock: producto.stock ?? '',
         marca: producto.marca ? m.find(x => x.nombre === producto.marca)?._id || '' : '',
         tematica: producto.tematica ? t.find(x => x.nombre === producto.tematica)?._id || '' : '',
@@ -88,6 +93,7 @@ export default function EditarProducto({ params }) {
         activo: producto.activo ?? true,
         destacado: producto.destacado ?? false,
         ultimasPiezas: producto.ultimasPiezas ?? false,
+        ordenDestacado: producto.ordenDestacado ?? '',
         anticipo: producto.anticipo || '',
         precioLiquidacion: producto.precioLiquidacion || '',
         fechaEstimada: producto.fechaEstimada || '',
@@ -138,6 +144,8 @@ export default function EditarProducto({ params }) {
     const data = await res.json()
     if (data.ok) {
       setMensaje('✅ Producto actualizado correctamente')
+      setImagenesNuevas([])
+      await cargarDatos()
       setTimeout(() => setMensaje(''), 3000)
     } else {
       setError('Error al actualizar el producto')
@@ -146,7 +154,7 @@ export default function EditarProducto({ params }) {
   }
 
   async function handleEliminar() {
-    if (!confirm('¿Estás seguro de eliminar este producto? Esta acción no se puede deshacer.')) return
+    if (!confirm('¿Estás seguro de eliminar este producto?')) return
     setEliminando(true)
     const res = await fetch('/api/admin/producto', {
       method: 'DELETE',
@@ -308,6 +316,20 @@ export default function EditarProducto({ params }) {
                   </button>
                 </div>
               ))}
+
+              {/* Orden destacados — solo si está destacado */}
+              {form.destacado && (
+                <div className="pt-3">
+                  <label className={labelClass}>Orden en destacados</label>
+                  <input
+                    type="number"
+                    value={form.ordenDestacado}
+                    onChange={e => setForm({ ...form, ordenDestacado: e.target.value })}
+                    placeholder="Ej: 1 = primero, 2 = segundo..."
+                    className={inputClass}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
