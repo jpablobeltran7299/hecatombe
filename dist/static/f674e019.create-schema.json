@@ -258,72 +258,6 @@
   {
     "fields": [
       {
-        "validation": [
-          {
-            "rules": [
-              {
-                "flag": "presence",
-                "constraint": "required"
-              },
-              {
-                "flag": "max",
-                "constraint": 30
-              }
-            ],
-            "level": "error"
-          }
-        ],
-        "name": "tag",
-        "type": "string",
-        "title": "Etiqueta (ej: PREVENTA ACTIVA, FLASH SALE)"
-      },
-      {
-        "validation": [
-          {
-            "rules": [
-              {
-                "flag": "presence",
-                "constraint": "required"
-              },
-              {
-                "flag": "max",
-                "constraint": 40
-              }
-            ],
-            "level": "error"
-          }
-        ],
-        "name": "titulo",
-        "type": "string",
-        "title": "Título principal"
-      },
-      {
-        "validation": [
-          {
-            "rules": [
-              {
-                "flag": "max",
-                "constraint": 100
-              }
-            ],
-            "level": "error"
-          }
-        ],
-        "name": "subtitulo",
-        "type": "string",
-        "title": "Subtítulo"
-      },
-      {
-        "name": "cta",
-        "type": "string",
-        "title": "Texto del botón (ej: Ver Catálogo)"
-      },
-      {
-        "name": "href",
-        "type": "string",
-        "title": "Link del botón (ej: /catalogo o /#preventas)"
-      },
-      {
         "options": {
           "hotspot": true
         },
@@ -341,6 +275,76 @@
         "name": "imagen",
         "type": "image",
         "title": "Imagen de fondo"
+      },
+      {
+        "initialValue": false,
+        "description": "Activa esta opción si quieres mostrar título, subtítulo y botón encima de la imagen. Si lo dejas desactivado, la imagen se ve limpia sin nada encima.",
+        "name": "mostrarTexto",
+        "type": "boolean",
+        "title": "¿Mostrar texto sobre el banner?"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "max",
+                "constraint": 30
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "hidden": "conditional",
+        "name": "tag",
+        "type": "string",
+        "title": "Etiqueta (ej: PREVENTA ACTIVA, FLASH SALE)"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "max",
+                "constraint": 40
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "hidden": "conditional",
+        "name": "titulo",
+        "type": "string",
+        "title": "Título principal"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "max",
+                "constraint": 100
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "hidden": "conditional",
+        "name": "subtitulo",
+        "type": "string",
+        "title": "Subtítulo"
+      },
+      {
+        "hidden": "conditional",
+        "name": "cta",
+        "type": "string",
+        "title": "Texto del botón (ej: Ver Catálogo)"
+      },
+      {
+        "hidden": "conditional",
+        "name": "href",
+        "type": "string",
+        "title": "Link del botón (ej: /catalogo o /#preventas)"
       },
       {
         "validation": [
