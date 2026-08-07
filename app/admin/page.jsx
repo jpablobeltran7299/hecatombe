@@ -52,6 +52,7 @@ export default function AdminPage() {
             { titulo: 'Bodegatombe', desc: 'Productos en bodega', icon: '🏪', href: '/admin/bodega' },
             { titulo: 'Clasificación', desc: 'Temáticas, universos y líneas', icon: '🏷️', href: '/admin/clasificacion' },
             { titulo: 'Banners', desc: 'Gestionar banners del home', icon: '🖼️', href: '/admin/banners' },
+            { titulo: 'Dinámicas', desc: 'Rifas, concursos y más', icon: '🎯', href: '/admin/dinamicas' },
           ].map(({ titulo, desc, icon, href }) => (
             <a key={titulo} href={href}
               className="bg-[#111] border border-white/10 hover:border-orange-500 rounded-2xl p-6 flex flex-col gap-2 transition cursor-pointer">
