@@ -26,8 +26,7 @@ export default function AdminBodega() {
   async function cargarBodegas() {
     const { data: bodegaData } = await supabase
       .from('bodega')
-      .select('id, user_id, total_acumulado, estado, created_at')
-      .order('created_at', { ascending: false })
+      .select('user_id, pedido_id, total_acumulado, estado')
 
     const { data: perfilesData } = await supabase
       .from('perfiles')
@@ -35,24 +34,20 @@ export default function AdminBodega() {
 
     const { data: pedidosData } = await supabase
       .from('pedidos')
-      .select('user_id, id, total, created_at, items')
+      .select('user_id, id, total, created_at, producto_id')
       .eq('estado', 'en_bodega')
       .order('created_at', { ascending: false })
 
     const perfilesMap = {}
     perfilesData?.forEach(p => { perfilesMap[p.user_id] = p })
 
-    // Obtener todos los producto_ids de los items
     const todosLosIds = []
     pedidosData?.forEach(pedido => {
-      pedido.items?.forEach(item => {
-        if (item.producto_id && !todosLosIds.includes(item.producto_id)) {
-          todosLosIds.push(item.producto_id)
-        }
-      })
+      if (pedido.producto_id && !todosLosIds.includes(pedido.producto_id)) {
+        todosLosIds.push(pedido.producto_id)
+      }
     })
 
-    // Traer nombres de productos desde Sanity
     const productosInfo = todosLosIds.length > 0 ? await getProductosPorIds(todosLosIds) : []
     const productosMap = {}
     productosInfo.forEach(p => { productosMap[p._id] = p })
@@ -62,10 +57,7 @@ export default function AdminBodega() {
       if (!pedidosMap[pedido.user_id]) pedidosMap[pedido.user_id] = []
       pedidosMap[pedido.user_id].push({
         ...pedido,
-        productosDetalle: (pedido.items || []).map(item => ({
-          ...item,
-          nombre: productosMap[item.producto_id]?.nombre || `Producto #${item.producto_id}`,
-        }))
+        nombreProducto: productosMap[pedido.producto_id]?.nombre || `Pedido #${pedido.id}`
       })
     })
 
@@ -143,8 +135,8 @@ export default function AdminBodega() {
         />
 
         <div className="flex flex-col gap-4">
-          {bodegasFiltradas.map(bodega => (
-            <div key={bodega.id} className="bg-[#111] border border-white/10 rounded-2xl p-6">
+          {bodegasFiltradas.map((bodega, idx) => (
+            <div key={`${bodega.user_id}-${idx}`} className="bg-[#111] border border-white/10 rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-white font-black text-sm">
@@ -165,27 +157,14 @@ export default function AdminBodega() {
                 />
               </div>
 
-              {/* Pedidos con productos */}
               {bodega.pedidos.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-white/30 text-xs uppercase font-black mb-2">{bodega.pedidos.length} pedido(s) guardados</p>
-                  <div className="flex flex-col gap-3">
-                    {bodega.pedidos.map(pedido => (
-                      <div key={pedido.id} className="bg-black rounded-xl p-3">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-white/50 text-xs font-black">Pedido #{pedido.id}</span>
-                          <span className="text-orange-500 font-black text-xs">${pedido.total?.toLocaleString('es-MX')} MXN</span>
-                        </div>
-                        {pedido.productosDetalle?.length > 0 && (
-                          <div className="flex flex-col gap-1">
-                            {pedido.productosDetalle.map((item, idx) => (
-                              <div key={idx} className="flex justify-between text-xs text-white/40">
-                                <span>{item.nombre}</span>
-                                <span>x{item.cantidad || 1}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                  <p className="text-white/30 text-xs uppercase font-black mb-2">{bodega.pedidos.length} producto(s) guardados</p>
+                  <div className="flex flex-col gap-2">
+                    {bodega.pedidos.map(p => (
+                      <div key={p.id} className="flex justify-between items-center text-xs bg-black rounded-lg px-3 py-2">
+                        <span className="text-white/70">{p.nombreProducto}</span>
+                        <span className="text-orange-500 font-black">${p.total?.toLocaleString('es-MX')} MXN</span>
                       </div>
                     ))}
                   </div>

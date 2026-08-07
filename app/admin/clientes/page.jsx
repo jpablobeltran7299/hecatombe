@@ -152,7 +152,6 @@ export default function AdminClientes() {
     if (!hcExistente) { setMensaje('❌ El cliente no tiene Hecacoins'); setGuardando(false); return }
 
     const nuevoSaldo = Math.max(0, hcExistente.saldo - monto)
-
     await supabase.from('hecacoins').update({
       saldo: nuevoSaldo,
       total_canjeado: hcExistente.total_canjeado + monto,
@@ -180,34 +179,39 @@ export default function AdminClientes() {
 
     const precio = producto.precio || 0
 
-    // Crear pedido en bodega
-    await supabase.from('pedidos').insert({
+    const { data: pedidoCreado, error: errorPedido } = await supabase.from('pedidos').insert({
       user_id: clienteSeleccionado.user_id,
       total: precio,
       estado: 'en_bodega',
       tipo_pedido: 'en_bodega',
       producto_id: producto._id,
       items: [{ producto_id: producto._id, cantidad: 1 }],
-    })
+    }).select().single()
 
-    // Actualizar o crear registro en bodega
+    if (errorPedido) {
+      setMensaje('❌ Error al crear el pedido')
+      setGuardando(false)
+      return
+    }
+
     const { data: bodegaRows } = await supabase
-    .from('bodega')
-    .select('id, total_acumulado')
-    .eq('user_id', clienteSeleccionado.user_id)
-    .eq('estado', 'guardando')
+      .from('bodega')
+      .select('pedido_id, total_acumulado')
+      .eq('user_id', clienteSeleccionado.user_id)
+      .eq('estado', 'guardando')
 
     const bodegaExistente = bodegaRows?.[0] || null
 
     if (bodegaExistente) {
-    await supabase.from('bodega').update({
-    total_acumulado: bodegaExistente.total_acumulado + precio
-    }).eq('id', bodegaExistente.id)
+      await supabase.from('bodega').update({
+        total_acumulado: bodegaExistente.total_acumulado + precio
+      }).eq('pedido_id', bodegaExistente.pedido_id)
     } else {
-    await supabase.from('bodega').insert({
-    user_id: clienteSeleccionado.user_id,
-    total_acumulado: precio,
-    estado: 'guardando',
+      await supabase.from('bodega').insert({
+        user_id: clienteSeleccionado.user_id,
+        pedido_id: pedidoCreado.id,
+        total_acumulado: precio,
+        estado: 'guardando',
       })
     }
 
@@ -226,19 +230,22 @@ export default function AdminClientes() {
 
     await supabase.from('pedidos').delete().eq('id', pedidoId)
 
-    const { data: bodegaExistente } = await supabase
+    const { data: bodegaRows } = await supabase
       .from('bodega')
-      .select('id, total_acumulado')
+      .select('pedido_id, total_acumulado')
       .eq('user_id', clienteSeleccionado.user_id)
       .eq('estado', 'guardando')
-      .single()
+
+    const bodegaExistente = bodegaRows?.[0] || null
 
     if (bodegaExistente) {
       const nuevoTotal = Math.max(0, bodegaExistente.total_acumulado - total)
       if (nuevoTotal === 0) {
-        await supabase.from('bodega').delete().eq('id', bodegaExistente.id)
+        await supabase.from('bodega').delete().eq('pedido_id', bodegaExistente.pedido_id)
       } else {
-        await supabase.from('bodega').update({ total_acumulado: nuevoTotal }).eq('id', bodegaExistente.id)
+        await supabase.from('bodega').update({
+          total_acumulado: nuevoTotal
+        }).eq('pedido_id', bodegaExistente.pedido_id)
       }
     }
 
@@ -261,7 +268,6 @@ export default function AdminClientes() {
     p.nombre?.toLowerCase().includes(busquedaProducto.toLowerCase())
   ).slice(0, 6)
 
-  // Buscar nombre de producto en la lista cargada
   function getNombreProducto(productoId) {
     const p = productos.find(x => x._id === productoId)
     return p?.nombre || `Producto ${productoId?.slice(-6)}`
@@ -293,7 +299,6 @@ export default function AdminClientes() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Lista clientes */}
           <div className="flex flex-col gap-3 max-h-screen overflow-y-auto">
             {clientesFiltrados.map(cliente => (
               <button key={cliente.user_id}
@@ -321,13 +326,12 @@ export default function AdminClientes() {
             )}
           </div>
 
-          {/* Panel edición */}
           {clienteSeleccionado ? (
             <div className="flex flex-col gap-4">
 
               {mensaje && (
-                <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3">
-                  <p className="text-green-400 text-sm">{mensaje}</p>
+                <div className={`border rounded-xl p-3 ${mensaje.startsWith('❌') ? 'bg-red-500/10 border-red-500/30' : 'bg-green-500/10 border-green-500/30'}`}>
+                  <p className={`text-sm ${mensaje.startsWith('❌') ? 'text-red-400' : 'text-green-400'}`}>{mensaje}</p>
                 </div>
               )}
 
@@ -337,53 +341,40 @@ export default function AdminClientes() {
                 </h2>
                 <p className="text-white/30 text-xs mb-6">{clienteSeleccionado.telefono || 'Sin teléfono'}</p>
 
-                {/* Hecacoins */}
                 <h3 className="text-white/50 text-xs font-black uppercase mb-3">Hecacoins</h3>
                 <div className="bg-black rounded-xl p-4 mb-3">
                   <p className="text-orange-500 font-black text-2xl">{clienteSeleccionado.hecacoins?.saldo?.toLocaleString('es-MX') || 0} HC</p>
                   <p className="text-white/30 text-xs mt-1">Ganado total: {clienteSeleccionado.hecacoins?.total_ganado?.toLocaleString('es-MX') || 0} HC</p>
                 </div>
 
-                {/* Agregar HC */}
                 <p className="text-white/30 text-xs mb-1">Agregar Hecacoins</p>
                 <div className="flex gap-2 mb-3">
-                  <input
-                    type="number"
-                    value={hecacoinsNuevas}
-                    onChange={e => setHecacoinsNuevas(e.target.value)}
+                  <input type="number" value={hecacoinsNuevas} onChange={e => setHecacoinsNuevas(e.target.value)}
                     placeholder="Cantidad a agregar"
-                    className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500"
-                  />
+                    className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500" />
                   <button onClick={asignarHecacoins} disabled={guardando || !hecacoinsNuevas}
                     className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black font-black uppercase text-xs px-4 py-2 rounded-lg transition">
                     + Agregar
                   </button>
                 </div>
 
-                {/* Restar HC */}
                 <p className="text-white/30 text-xs mb-1">Quitar Hecacoins</p>
                 <div className="flex gap-2 mb-6">
-                  <input
-                    type="number"
-                    value={hecacoinsRestar}
-                    onChange={e => setHecacoinsRestar(e.target.value)}
+                  <input type="number" value={hecacoinsRestar} onChange={e => setHecacoinsRestar(e.target.value)}
                     placeholder="Cantidad a quitar"
-                    className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500"
-                  />
+                    className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
                   <button onClick={restarHecacoins} disabled={guardando || !hecacoinsRestar}
                     className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-black uppercase text-xs px-4 py-2 rounded-lg transition">
                     - Quitar
                   </button>
                 </div>
 
-                {/* Bodega */}
                 <h3 className="text-white/50 text-xs font-black uppercase mb-3">Bodegatombe</h3>
                 <div className="bg-black rounded-xl p-4 mb-3">
                   <p className="text-blue-400 font-black text-2xl">${clienteSeleccionado.bodega?.total_acumulado?.toLocaleString('es-MX') || 0} MXN</p>
                   <p className="text-white/30 text-xs mt-1">de $1,200 para envío gratis</p>
                 </div>
 
-                {/* Productos en bodega */}
                 {pedidosBodega.length > 0 && (
                   <div className="mb-3">
                     <p className="text-white/30 text-xs uppercase font-black mb-2">Productos guardados ({pedidosBodega.length})</p>
@@ -391,14 +382,10 @@ export default function AdminClientes() {
                       {pedidosBodega.map(pedido => (
                         <div key={pedido.id} className="flex items-center justify-between bg-[#1a1a1a] rounded-lg px-3 py-2">
                           <div>
-                            <p className="text-white text-xs font-black">
-                              {getNombreProducto(pedido.producto_id)}
-                            </p>
+                            <p className="text-white text-xs font-black">{getNombreProducto(pedido.producto_id)}</p>
                             <p className="text-orange-500 text-xs">${pedido.total?.toLocaleString('es-MX')} MXN</p>
                           </div>
-                          <button
-                            onClick={() => eliminarDeBodega(pedido.id, pedido.total)}
-                            disabled={guardando}
+                          <button onClick={() => eliminarDeBodega(pedido.id, pedido.total)} disabled={guardando}
                             className="text-white/20 hover:text-red-400 transition text-xs disabled:opacity-30">
                             🗑
                           </button>
@@ -408,27 +395,18 @@ export default function AdminClientes() {
                   </div>
                 )}
 
-                {/* Buscar producto para bodega */}
                 <p className="text-white/30 text-xs mb-1">Agregar producto a bodega</p>
                 <div className="relative">
-                  <input
-                    type="text"
-                    value={busquedaProducto}
-                    onChange={e => setBusquedaProducto(e.target.value)}
+                  <input type="text" value={busquedaProducto} onChange={e => setBusquedaProducto(e.target.value)}
                     placeholder="Buscar producto..."
-                    className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500 placeholder-white/20"
-                  />
+                    className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500 placeholder-white/20" />
                   {productosFiltrados.length > 0 && (
                     <div className="absolute top-full left-0 right-0 bg-[#1a1a1a] border border-white/10 rounded-xl mt-1 z-10 overflow-hidden">
                       {productosFiltrados.map(p => (
-                        <button
-                          key={p._id}
-                          onClick={() => agregarProductoBodega(p)}
-                          disabled={guardando}
+                        <button key={p._id} onClick={() => agregarProductoBodega(p)} disabled={guardando}
                           className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition text-left border-b border-white/5 last:border-0">
                           {p.imagenes?.[0] ? (
-                            <img src={urlFor(p.imagenes[0]).width(40).height(40).url()}
-                              alt={p.nombre}
+                            <img src={urlFor(p.imagenes[0]).width(40).height(40).url()} alt={p.nombre}
                               className="w-8 h-8 object-contain rounded bg-white flex-shrink-0" />
                           ) : (
                             <div className="w-8 h-8 bg-[#222] rounded flex-shrink-0" />
