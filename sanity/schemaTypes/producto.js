@@ -84,6 +84,13 @@ export default {
       initialValue: false
     },
     {
+      name: 'ordenDestacado',
+      title: 'Orden en destacados',
+      type: 'number',
+      description: 'Número de orden en el carrusel de destacados del home. Ej: 1 = primero, 2 = segundo...',
+      hidden: ({ document }) => !document?.destacado,
+    },
+    {
       name: 'tipo',
       title: 'Tipo',
       type: 'string',

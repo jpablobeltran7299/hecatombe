@@ -219,6 +219,13 @@
         "title": "Destacado (aparece en el home)"
       },
       {
+        "description": "Número de orden en el carrusel de destacados del home. Ej: 1 = primero, 2 = segundo...",
+        "hidden": "conditional",
+        "name": "ordenDestacado",
+        "type": "number",
+        "title": "Orden en destacados"
+      },
+      {
         "options": {
           "list": [
             {
