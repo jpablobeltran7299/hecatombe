@@ -64,10 +64,18 @@ export default {
       to: [{ type: 'linea' }],
     },
     {
+      name: 'stock',
+      title: 'Stock disponible',
+      type: 'number',
+      description: 'Número de piezas disponibles. Cuando llegue a 0 el producto se ocultará automáticamente de la tienda. Deja vacío si no quieres llevar control de stock.',
+      validation: Rule => Rule.min(0).integer(),
+    },
+    {
       name: 'disponible',
       title: 'Disponible',
       type: 'boolean',
-      initialValue: true
+      initialValue: true,
+      description: 'Si tienes stock configurado, este campo se actualiza automáticamente. Si no usas stock, manéjalo manualmente.',
     },
     {
       name: 'destacado',
@@ -112,7 +120,8 @@ export default {
       name: 'activo',
       title: 'Activo (visible en tienda)',
       type: 'boolean',
-      initialValue: true
+      initialValue: true,
+      description: 'Desactiva para ocultar el producto de la tienda sin eliminarlo.',
     },
     {
       name: 'ultimasPiezas',

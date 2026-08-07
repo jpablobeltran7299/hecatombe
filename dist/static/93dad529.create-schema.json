@@ -190,7 +190,25 @@
         "title": "Línea de producto"
       },
       {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "min",
+                "constraint": 0
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Número de piezas disponibles. Cuando llegue a 0 el producto se ocultará automáticamente de la tienda. Deja vacío si no quieres llevar control de stock.",
+        "name": "stock",
+        "type": "number",
+        "title": "Stock disponible"
+      },
+      {
         "initialValue": true,
+        "description": "Si tienes stock configurado, este campo se actualiza automáticamente. Si no usas stock, manéjalo manualmente.",
         "name": "disponible",
         "type": "boolean"
       },
@@ -240,6 +258,7 @@
       },
       {
         "initialValue": true,
+        "description": "Desactiva para ocultar el producto de la tienda sin eliminarlo.",
         "name": "activo",
         "type": "boolean",
         "title": "Activo (visible en tienda)"

@@ -1,6 +1,7 @@
 import { MercadoPagoConfig, Payment } from 'mercadopago'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createSanityClient } from 'next-sanity'
 import { Resend } from 'resend'
 
 export const dynamic = 'force-dynamic'
@@ -14,6 +15,14 @@ export async function POST(request) {
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_KEY
   )
+
+  const sanityClient = createSanityClient({
+    projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
+    dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
+    apiVersion: '2024-01-01',
+    token: process.env.SANITY_WRITE_TOKEN,
+    useCdn: false,
+  })
 
   const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -35,7 +44,7 @@ export async function POST(request) {
     }
 
     // Parsear external_reference
-    let userId, tipo_pedido, producto_id, anticipo_pagado, monto_liquidacion
+    let userId, tipo_pedido, producto_id, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas
     try {
       const ref = JSON.parse(pago.external_reference)
       userId = ref.userId
@@ -43,6 +52,7 @@ export async function POST(request) {
       producto_id = ref.producto_id
       anticipo_pagado = ref.anticipo_pagado
       monto_liquidacion = ref.monto_liquidacion
+      hecacoins_canjeadas = ref.hecacoins_canjeadas || 0
     } catch {
       userId = pago.external_reference
       tipo_pedido = 'normal'
@@ -111,7 +121,103 @@ export async function POST(request) {
       }
     }
 
-    // Email al cliente
+    // Descontar stock en Sanity
+    if (tipo_pedido === 'normal' || tipo_pedido === 'liquidacion') {
+      const itemsVendidos = carritoItems || []
+      for (const item of itemsVendidos) {
+        const producto = await sanityClient.fetch(
+          `*[_type == "producto" && _id == $id][0]{ _id, stock, disponible }`,
+          { id: item.producto_id }
+        )
+        if (producto && producto.stock !== null && producto.stock !== undefined) {
+          const nuevoStock = Math.max(0, producto.stock - (item.cantidad || 1))
+          await sanityClient
+            .patch(producto._id)
+            .set({
+              stock: nuevoStock,
+              disponible: nuevoStock > 0,
+              ...(nuevoStock === 0 && { activo: false }),
+              ...(nuevoStock <= 3 && nuevoStock > 0 && { ultimasPiezas: true }),
+            })
+            .commit()
+        }
+      }
+    }
+
+    // Descontar Hecacoins si se canjearon
+    if (hecacoins_canjeadas > 0) {
+      const { data: saldoActual } = await supabase
+        .from('hecacoins')
+        .select('id, saldo, total_canjeado')
+        .eq('user_id', userId)
+        .single()
+
+      if (saldoActual) {
+        await supabase
+          .from('hecacoins')
+          .update({
+            saldo: Math.max(0, saldoActual.saldo - hecacoins_canjeadas),
+            total_canjeado: saldoActual.total_canjeado + hecacoins_canjeadas,
+          })
+          .eq('id', saldoActual.id)
+
+        await supabase.from('hecacoins_movimientos').insert({
+          user_id: userId,
+          pedido_id: pedido?.id,
+          tipo: 'canjeado',
+          monto: hecacoins_canjeadas,
+          descripcion: `Canje en pedido #${pedido?.id}`,
+        })
+      }
+    }
+
+    // Acumular Hecacoins (3%) — solo en pedidos normales y liquidaciones
+    const tiposConHecacoins = ['normal', 'liquidacion']
+    if (tiposConHecacoins.includes(tipo_pedido)) {
+      const hecacoinsGanadas = Math.floor(pago.transaction_amount * 0.03)
+
+      if (hecacoinsGanadas > 0) {
+        const añoActual = new Date().getFullYear()
+        const vencimiento = `${añoActual}-12-31`
+
+        const { data: saldoActual } = await supabase
+          .from('hecacoins')
+          .select('id, saldo, total_ganado')
+          .eq('user_id', userId)
+          .single()
+
+        if (saldoActual) {
+          await supabase
+            .from('hecacoins')
+            .update({
+              saldo: saldoActual.saldo + hecacoinsGanadas,
+              total_ganado: saldoActual.total_ganado + hecacoinsGanadas,
+              vencimiento,
+            })
+            .eq('id', saldoActual.id)
+        } else {
+          await supabase
+            .from('hecacoins')
+            .insert({
+              user_id: userId,
+              saldo: hecacoinsGanadas,
+              total_ganado: hecacoinsGanadas,
+              total_canjeado: 0,
+              vencimiento,
+            })
+        }
+
+        await supabase.from('hecacoins_movimientos').insert({
+          user_id: userId,
+          pedido_id: pedido?.id,
+          tipo: 'ganado',
+          monto: hecacoinsGanadas,
+          descripcion: `Compra pedido #${pedido?.id}`,
+        })
+      }
+    }
+
+    // Emails
     const esApartado = tipo_pedido === 'apartado'
     const esBodega = tipo_pedido === 'en_bodega'
 
@@ -144,7 +250,7 @@ export async function POST(request) {
                       Hola ${nombreCliente}, ${esApartado
                         ? 'tu anticipo fue recibido. Tu producto está apartado. Te avisaremos cuando llegue para que puedas liquidar el resto.'
                         : esBodega
-                        ? 'tu producto está guardado en Bodegatombe. Cuando acumules $1,200 MXN en compras, tu envío será gratis. Puedes solicitar tu envío cuando quieras desde tu cuenta.'
+                        ? 'tu producto está guardado en Bodegatombe. Cuando acumules $1,200 MXN en compras, tu envío será gratis.'
                         : 'tu pago fue procesado exitosamente. En breve nos pondremos en contacto contigo para coordinar el envío.'
                       }
                     </p>
@@ -176,7 +282,6 @@ export async function POST(request) {
       `
     })
 
-    // Email a Diego
     await resend.emails.send({
       from: 'Hecatombe Sistema <noreply@hecatombe.com.mx>',
       to: 'hecatombe.9194@gmail.com',
@@ -231,52 +336,6 @@ export async function POST(request) {
         </html>
       `
     })
-
-    // Acumular Hecacoins (3%) — solo en pedidos normales y liquidaciones, no anticipos ni bodega
-const tiposConHecacoins = ['normal', 'liquidacion']
-if (tiposConHecacoins.includes(tipo_pedido)) {
-  const hecacoinsGanadas = Math.floor(pago.transaction_amount * 0.03)
-
-  if (hecacoinsGanadas > 0) {
-    const añoActual = new Date().getFullYear()
-    const vencimiento = `${añoActual}-12-31`
-
-    const { data: saldoActual } = await supabase
-      .from('hecacoins')
-      .select('id, saldo, total_ganado')
-      .eq('user_id', userId)
-      .single()
-
-    if (saldoActual) {
-      await supabase
-        .from('hecacoins')
-        .update({
-          saldo: saldoActual.saldo + hecacoinsGanadas,
-          total_ganado: saldoActual.total_ganado + hecacoinsGanadas,
-          vencimiento,
-        })
-        .eq('id', saldoActual.id)
-    } else {
-      await supabase
-        .from('hecacoins')
-        .insert({
-          user_id: userId,
-          saldo: hecacoinsGanadas,
-          total_ganado: hecacoinsGanadas,
-          total_canjeado: 0,
-          vencimiento,
-        })
-    }
-
-    await supabase.from('hecacoins_movimientos').insert({
-      user_id: userId,
-      pedido_id: pedido?.id,
-      tipo: 'ganado',
-      monto: hecacoinsGanadas,
-      descripcion: `Compra pedido #${pedido?.id}`,
-    })
-  }
-}
 
     return NextResponse.json({ ok: true })
   } catch (error) {
