@@ -13,6 +13,8 @@ const LINKS = [
   { href: '/#faq', label: 'FAQ' },
 ]
 
+const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
+
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -55,6 +57,8 @@ export default function Navbar() {
       setMenuOpen(false)
     }
   }
+
+  const esAdmin = ADMINS.includes(user?.email)
 
   return (
     <>
@@ -111,6 +115,14 @@ export default function Navbar() {
               </span>
             )}
           </Link>
+
+          {/* Botón Admin — solo para admins */}
+          {esAdmin && (
+            <Link href="/admin"
+              className="border border-white/20 hover:border-orange-500 text-white/50 hover:text-orange-500 text-xs font-black uppercase px-3 py-2 rounded-lg transition">
+              Admin
+            </Link>
+          )}
 
           {/* Botón login/cuenta desktop */}
           {user ? (
@@ -196,6 +208,13 @@ export default function Navbar() {
               {label}
             </Link>
           ))}
+          {esAdmin && (
+            <Link href="/admin"
+              onClick={() => setMenuOpen(false)}
+              className="text-white/50 text-sm font-black uppercase tracking-widest hover:text-orange-500 transition border-b border-[#1a1a1a] pb-3">
+              Admin
+            </Link>
+          )}
           <Link href={user ? '/cuenta' : '/login'}
             onClick={() => setMenuOpen(false)}
             className="text-orange-500 text-sm font-black uppercase tracking-widest hover:text-orange-400 transition">

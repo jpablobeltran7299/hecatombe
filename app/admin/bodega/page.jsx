@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { getProductosPorIds } from '@/lib/sanity'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
@@ -41,10 +42,31 @@ export default function AdminBodega() {
     const perfilesMap = {}
     perfilesData?.forEach(p => { perfilesMap[p.user_id] = p })
 
+    // Obtener todos los producto_ids de los items
+    const todosLosIds = []
+    pedidosData?.forEach(pedido => {
+      pedido.items?.forEach(item => {
+        if (item.producto_id && !todosLosIds.includes(item.producto_id)) {
+          todosLosIds.push(item.producto_id)
+        }
+      })
+    })
+
+    // Traer nombres de productos desde Sanity
+    const productosInfo = todosLosIds.length > 0 ? await getProductosPorIds(todosLosIds) : []
+    const productosMap = {}
+    productosInfo.forEach(p => { productosMap[p._id] = p })
+
     const pedidosMap = {}
-    pedidosData?.forEach(p => {
-      if (!pedidosMap[p.user_id]) pedidosMap[p.user_id] = []
-      pedidosMap[p.user_id].push(p)
+    pedidosData?.forEach(pedido => {
+      if (!pedidosMap[pedido.user_id]) pedidosMap[pedido.user_id] = []
+      pedidosMap[pedido.user_id].push({
+        ...pedido,
+        productosDetalle: (pedido.items || []).map(item => ({
+          ...item,
+          nombre: productosMap[item.producto_id]?.nombre || `Producto #${item.producto_id}`,
+        }))
+      })
     })
 
     const bodegasCombinadas = (bodegaData || []).map(b => ({
@@ -143,14 +165,27 @@ export default function AdminBodega() {
                 />
               </div>
 
+              {/* Pedidos con productos */}
               {bodega.pedidos.length > 0 && (
                 <div className="mb-4">
                   <p className="text-white/30 text-xs uppercase font-black mb-2">{bodega.pedidos.length} pedido(s) guardados</p>
-                  <div className="flex flex-col gap-2">
-                    {bodega.pedidos.map(p => (
-                      <div key={p.id} className="flex justify-between text-xs bg-black rounded-lg px-3 py-2">
-                        <span className="text-white/50">Pedido #{p.id}</span>
-                        <span className="text-orange-500 font-black">${p.total?.toLocaleString('es-MX')} MXN</span>
+                  <div className="flex flex-col gap-3">
+                    {bodega.pedidos.map(pedido => (
+                      <div key={pedido.id} className="bg-black rounded-xl p-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-white/50 text-xs font-black">Pedido #{pedido.id}</span>
+                          <span className="text-orange-500 font-black text-xs">${pedido.total?.toLocaleString('es-MX')} MXN</span>
+                        </div>
+                        {pedido.productosDetalle?.length > 0 && (
+                          <div className="flex flex-col gap-1">
+                            {pedido.productosDetalle.map((item, idx) => (
+                              <div key={idx} className="flex justify-between text-xs text-white/40">
+                                <span>{item.nombre}</span>
+                                <span>x{item.cantidad || 1}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
