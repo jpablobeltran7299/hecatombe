@@ -19,6 +19,13 @@ export default function AdminClientes() {
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
   const [pedidosBodega, setPedidosBodega] = useState([])
+  const [historial, setHistorial] = useState([])
+  const [mostrarFormHistorial, setMostrarFormHistorial] = useState(false)
+  const [historialNombre, setHistorialNombre] = useState('')
+  const [historialPrecio, setHistorialPrecio] = useState('')
+  const [historialFecha, setHistorialFecha] = useState('')
+  const [historialImagenUrl, setHistorialImagenUrl] = useState(null)
+  const [subiendoImagenHistorial, setSubiendoImagenHistorial] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -92,13 +99,86 @@ export default function AdminClientes() {
     setPedidosBodega(data || [])
   }
 
+  async function cargarHistorial(userId) {
+    const res = await fetch(`/api/admin/historial?userId=${userId}`)
+    const data = await res.json()
+    setHistorial(data.ok ? data.historial : [])
+  }
+
   async function seleccionarCliente(cliente) {
     setClienteSeleccionado(cliente)
     setMensaje('')
     setBusquedaProducto('')
     setHecacoinsNuevas('')
     setHecacoinsRestar('')
+    setMostrarFormHistorial(false)
+    setHistorialNombre('')
+    setHistorialPrecio('')
+    setHistorialFecha('')
+    setHistorialImagenUrl(null)
     await cargarPedidosBodega(cliente.user_id)
+    await cargarHistorial(cliente.user_id)
+  }
+
+  async function subirImagenHistorial(file) {
+    setSubiendoImagenHistorial(true)
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+    const data = await res.json()
+    if (data.url) setHistorialImagenUrl(data.url)
+    setSubiendoImagenHistorial(false)
+  }
+
+  async function agregarHistorial() {
+    if (!clienteSeleccionado || !historialNombre || !historialFecha) return
+    setGuardando(true)
+    setMensaje('')
+
+    const res = await fetch('/api/admin/historial', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: clienteSeleccionado.user_id,
+        productoNombre: historialNombre,
+        productoImagen: historialImagenUrl,
+        precio: historialPrecio,
+        fechaCompra: historialFecha,
+      })
+    })
+    const data = await res.json()
+    if (data.ok) {
+      setMensaje(`✅ "${historialNombre}" agregado al historial`)
+      setHistorialNombre('')
+      setHistorialPrecio('')
+      setHistorialFecha('')
+      setHistorialImagenUrl(null)
+      setMostrarFormHistorial(false)
+      await cargarHistorial(clienteSeleccionado.user_id)
+    } else {
+      setMensaje('❌ Error al agregar al historial')
+    }
+    setGuardando(false)
+  }
+
+  async function eliminarHistorial(id, nombre) {
+    if (!confirm(`¿Eliminar "${nombre}" del historial?`)) return
+    setGuardando(true)
+    setMensaje('')
+
+    const res = await fetch('/api/admin/historial', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    })
+    const data = await res.json()
+    if (data.ok) {
+      setMensaje('✅ Eliminado del historial')
+      await cargarHistorial(clienteSeleccionado.user_id)
+    } else {
+      setMensaje('❌ Error al eliminar del historial')
+    }
+    setGuardando(false)
   }
 
   async function asignarHecacoins() {
@@ -422,6 +502,78 @@ export default function AdminClientes() {
                   )}
                 </div>
                 <p className="text-white/20 text-xs mt-1">Escribe al menos 2 letras para buscar</p>
+
+                <h3 className="text-white/50 text-xs font-black uppercase mb-3 mt-6">Historial de compras</h3>
+                {historial.length > 0 ? (
+                  <div className="flex flex-col gap-2 mb-3">
+                    {historial.map(h => (
+                      <div key={h.id} className="flex items-center gap-3 bg-black rounded-lg px-3 py-2">
+                        {h.producto_imagen ? (
+                          <img src={h.producto_imagen} alt={h.producto_nombre}
+                            className="w-8 h-8 object-contain rounded bg-white flex-shrink-0" />
+                        ) : (
+                          <div className="w-8 h-8 bg-[#1a1a1a] rounded flex-shrink-0 flex items-center justify-center text-sm">🎁</div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-xs font-black truncate">{h.producto_nombre}</p>
+                          <p className="text-white/30 text-xs">
+                            {h.fecha_compra}{h.origen === 'manual' ? ' · manual' : ''}
+                          </p>
+                        </div>
+                        {h.precio != null && (
+                          <span className="text-orange-500 text-xs font-black flex-shrink-0">
+                            ${Number(h.precio).toLocaleString('es-MX')}
+                          </span>
+                        )}
+                        <button onClick={() => eliminarHistorial(h.id, h.producto_nombre)} disabled={guardando}
+                          className="text-white/20 hover:text-red-400 transition text-xs disabled:opacity-30 flex-shrink-0">
+                          🗑
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-white/20 text-xs mb-3">Sin compras registradas</p>
+                )}
+
+                {mostrarFormHistorial ? (
+                  <div className="bg-black rounded-xl p-3 flex flex-col gap-2">
+                    <input type="text" value={historialNombre} onChange={e => setHistorialNombre(e.target.value)}
+                      placeholder="Nombre del producto"
+                      className="bg-[#111] border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500 placeholder-white/20" />
+                    <div className="flex gap-2">
+                      <input type="number" value={historialPrecio} onChange={e => setHistorialPrecio(e.target.value)}
+                        placeholder="Precio"
+                        className="flex-1 bg-[#111] border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500 placeholder-white/20" />
+                      <input type="date" value={historialFecha} onChange={e => setHistorialFecha(e.target.value)}
+                        className="flex-1 bg-[#111] border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input type="file" accept="image/*"
+                        onChange={e => e.target.files[0] && subirImagenHistorial(e.target.files[0])}
+                        className="flex-1 text-white/50 text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer" />
+                      {subiendoImagenHistorial && <span className="text-orange-500 text-xs flex-shrink-0">Subiendo...</span>}
+                      {historialImagenUrl && !subiendoImagenHistorial && (
+                        <img src={historialImagenUrl} alt="" className="w-8 h-8 object-contain rounded bg-white flex-shrink-0" />
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={agregarHistorial} disabled={guardando || !historialNombre || !historialFecha}
+                        className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black font-black uppercase text-xs px-4 py-2 rounded-lg transition">
+                        {guardando ? 'Guardando...' : '✅ Guardar'}
+                      </button>
+                      <button onClick={() => setMostrarFormHistorial(false)}
+                        className="text-white/30 hover:text-white text-xs font-black uppercase px-3 py-2">
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setMostrarFormHistorial(true)}
+                    className="w-full border border-white/10 hover:border-orange-500 text-white/40 hover:text-orange-500 text-xs font-black uppercase px-4 py-2 rounded-lg transition">
+                    + Agregar al historial
+                  </button>
+                )}
               </div>
 
             </div>
