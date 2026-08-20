@@ -44,7 +44,7 @@ export default function BannerCarousel() {
             <img
               src={urlFor(b.imagen).width(1400).url()}
               alt={b.titulo || 'Banner'}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           )}
         </div>

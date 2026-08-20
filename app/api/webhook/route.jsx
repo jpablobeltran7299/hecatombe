@@ -36,6 +36,16 @@ export async function POST(request) {
     const paymentId = body.data?.id
     if (!paymentId) return NextResponse.json({ ok: true })
 
+    const { data: pedidoExistente } = await supabase
+      .from('pedidos')
+      .select('id')
+      .eq('mp_payment_id', String(paymentId))
+      .limit(1)
+
+    if (pedidoExistente && pedidoExistente.length > 0) {
+      return NextResponse.json({ ok: true })
+    }
+
     const payment = new Payment(mpClient)
     const pago = await payment.get({ id: paymentId })
 
