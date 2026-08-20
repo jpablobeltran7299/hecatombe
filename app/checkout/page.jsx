@@ -92,7 +92,8 @@ export default function CheckoutPage() {
         ? [{ ...itemApartar, precio: itemApartar.anticipo, cantidad: 1 }]
         : items
 
-      const tipoPedido = modoApartar ? 'apartado' : modoEnvio === 'bodega' ? 'en_bodega' : 'normal'
+      const tipoPedido = modoApartar ? 'apartado' : 'normal'
+      const destino = modoEnvio === 'bodega' ? 'bodega' : 'directo'
       const hecacoinsACanjear = usarHecacoins && !modoApartar ? hecacoins : 0
 
       const res = await fetch('/api/checkout', {
@@ -104,6 +105,7 @@ export default function CheckoutPage() {
           userEmail: user.email,
           direccion,
           tipo_pedido: tipoPedido,
+          destino,
           hecacoins_a_canjear: hecacoinsACanjear,
           ...(modoApartar && {
             producto_id: itemApartar.productoId,

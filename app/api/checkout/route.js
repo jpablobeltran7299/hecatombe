@@ -16,7 +16,7 @@ export async function POST(request) {
     const {
       items, userId, userEmail, direccion,
       tipo_pedido, producto_id, anticipo_pagado, monto_liquidacion,
-      hecacoins_a_canjear
+      hecacoins_a_canjear, destino
     } = await request.json()
 
     // Calcular total original
@@ -98,6 +98,7 @@ export async function POST(request) {
         external_reference: JSON.stringify({
           userId,
           tipo_pedido: tipo_pedido || 'normal',
+          destino: destino || 'directo',
           producto_id: producto_id || null,
           anticipo_pagado: anticipo_pagado || null,
           monto_liquidacion: monto_liquidacion || null,

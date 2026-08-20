@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
@@ -27,7 +28,7 @@ export default function AdminPedidos() {
   async function cargarPedidos() {
     const { data } = await supabase
       .from('pedidos')
-      .select('id, created_at, total, estado, tipo_pedido, mp_payment_id, anticipo_pagado, monto_liquidacion, user_id')
+      .select('id, created_at, total, estado, tipo_pedido, destino, bodega_estado, mp_payment_id, anticipo_pagado, monto_liquidacion, user_id')
       .order('created_at', { ascending: false })
     setPedidos(data || [])
     setLoading(false)
@@ -44,7 +45,6 @@ export default function AdminPedidos() {
     switch (estado) {
       case 'pagado': return 'bg-green-500/10 text-green-400 border border-green-500/30'
       case 'apartado': return 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
-      case 'en_bodega': return 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
       case 'enviado': return 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
       case 'entregado': return 'bg-green-500/10 text-green-400 border border-green-500/30'
       case 'cancelado': return 'bg-red-500/10 text-red-400 border border-red-500/30'
@@ -82,13 +82,24 @@ export default function AdminPedidos() {
             { label: 'Total pedidos', value: pedidos.length },
             { label: 'Ventas confirmadas', value: pedidos.filter(p => ['pagado','enviado','entregado'].includes(p.estado)).length },
             { label: 'Apartados', value: pedidos.filter(p => p.estado === 'apartado').length },
-            { label: 'En bodega', value: pedidos.filter(p => p.estado === 'en_bodega').length },
-          ].map(({ label, value }) => (
-            <div key={label} className="bg-[#111] border border-white/10 rounded-2xl p-4 text-center">
-              <p className="text-orange-500 font-black text-2xl">{value}</p>
-              <p className="text-white/30 text-xs uppercase font-black mt-1">{label}</p>
-            </div>
-          ))}
+            { label: 'En bodega', value: pedidos.filter(p => p.destino === 'bodega' && p.bodega_estado === 'guardando').length, href: '/admin/bodega' },
+          ].map(({ label, value, href }) => {
+            const contenido = (
+              <>
+                <p className="text-orange-500 font-black text-2xl">{value}</p>
+                <p className="text-white/30 text-xs uppercase font-black mt-1">{label}</p>
+              </>
+            )
+            return href ? (
+              <Link key={label} href={href} className="bg-[#111] border border-white/10 hover:border-orange-500 rounded-2xl p-4 text-center transition">
+                {contenido}
+              </Link>
+            ) : (
+              <div key={label} className="bg-[#111] border border-white/10 rounded-2xl p-4 text-center">
+                {contenido}
+              </div>
+            )
+          })}
         </div>
 
         <div className="bg-[#111] border border-white/10 rounded-xl px-6 py-4 mb-6 flex items-center justify-between">
@@ -104,7 +115,7 @@ export default function AdminPedidos() {
             placeholder="Buscar por # pedido o ID MP..."
             className="flex-1 min-w-[200px] bg-[#111] border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm"
           />
-          {['todos', 'pagado', 'apartado', 'en_bodega', 'enviado', 'entregado', 'cancelado'].map(estado => (
+          {['todos', 'pagado', 'apartado', 'enviado', 'entregado', 'cancelado'].map(estado => (
             <button key={estado} onClick={() => setFiltroEstado(estado)}
               className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition ${
                 filtroEstado === estado ? 'bg-orange-500 text-black' : 'bg-[#111] text-white/40 hover:text-white border border-white/10'
@@ -147,7 +158,6 @@ export default function AdminPedidos() {
                 className="bg-black border border-white/20 text-white text-xs px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500 disabled:opacity-50">
                 <option value="pagado">Pagado</option>
                 <option value="apartado">Apartado</option>
-                <option value="en_bodega">En bodega</option>
                 <option value="enviado">Enviado</option>
                 <option value="entregado">Entregado</option>
                 <option value="cancelado">Cancelado</option>

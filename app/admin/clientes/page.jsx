@@ -53,10 +53,11 @@ export default function AdminClientes() {
       .from('hecacoins')
       .select('user_id, saldo, total_ganado, total_canjeado, vencimiento')
 
-    const { data: bodegaData } = await supabase
-      .from('bodega')
-      .select('user_id, total_acumulado, estado')
-      .eq('estado', 'guardando')
+    const { data: bodegaPedidos } = await supabase
+      .from('pedidos')
+      .select('user_id, total')
+      .eq('destino', 'bodega')
+      .eq('bodega_estado', 'guardando')
 
     const { data: pedidosData } = await supabase
       .from('pedidos')
@@ -66,7 +67,10 @@ export default function AdminClientes() {
     hecacoinsData?.forEach(h => { hcMap[h.user_id] = h })
 
     const bodegaMap = {}
-    bodegaData?.forEach(b => { bodegaMap[b.user_id] = b })
+    bodegaPedidos?.forEach(p => {
+      if (!bodegaMap[p.user_id]) bodegaMap[p.user_id] = { total_acumulado: 0, estado: 'guardando' }
+      bodegaMap[p.user_id].total_acumulado += p.total || 0
+    })
 
     const pedidosMap = {}
     pedidosData?.forEach(p => {
@@ -94,7 +98,8 @@ export default function AdminClientes() {
       .from('pedidos')
       .select('id, total, created_at, items, producto_id')
       .eq('user_id', userId)
-      .eq('estado', 'en_bodega')
+      .eq('destino', 'bodega')
+      .eq('bodega_estado', 'guardando')
       .order('created_at', { ascending: false })
     setPedidosBodega(data || [])
   }
@@ -259,40 +264,21 @@ export default function AdminClientes() {
 
     const precio = producto.precio || 0
 
-    const { data: pedidoCreado, error: errorPedido } = await supabase.from('pedidos').insert({
+    const { error: errorPedido } = await supabase.from('pedidos').insert({
       user_id: clienteSeleccionado.user_id,
       total: precio,
-      estado: 'en_bodega',
-      tipo_pedido: 'en_bodega',
+      estado: 'pagado',
+      tipo_pedido: 'normal',
+      destino: 'bodega',
+      bodega_estado: 'guardando',
       producto_id: producto._id,
       items: [{ producto_id: producto._id, cantidad: 1 }],
-    }).select().single()
+    })
 
     if (errorPedido) {
       setMensaje('❌ Error al crear el pedido')
       setGuardando(false)
       return
-    }
-
-    const { data: bodegaRows } = await supabase
-      .from('bodega')
-      .select('pedido_id, total_acumulado')
-      .eq('user_id', clienteSeleccionado.user_id)
-      .eq('estado', 'guardando')
-
-    const bodegaExistente = bodegaRows?.[0] || null
-
-    if (bodegaExistente) {
-      await supabase.from('bodega').update({
-        total_acumulado: bodegaExistente.total_acumulado + precio
-      }).eq('pedido_id', bodegaExistente.pedido_id)
-    } else {
-      await supabase.from('bodega').insert({
-        user_id: clienteSeleccionado.user_id,
-        pedido_id: pedidoCreado.id,
-        total_acumulado: precio,
-        estado: 'guardando',
-      })
     }
 
     setMensaje(`✅ "${producto.nombre}" agregado a bodega`)
@@ -304,30 +290,11 @@ export default function AdminClientes() {
     setGuardando(false)
   }
 
-  async function eliminarDeBodega(pedidoId, total) {
+  async function eliminarDeBodega(pedidoId) {
     if (!confirm('¿Eliminar este producto de la bodega?')) return
     setGuardando(true)
 
     await supabase.from('pedidos').delete().eq('id', pedidoId)
-
-    const { data: bodegaRows } = await supabase
-      .from('bodega')
-      .select('pedido_id, total_acumulado')
-      .eq('user_id', clienteSeleccionado.user_id)
-      .eq('estado', 'guardando')
-
-    const bodegaExistente = bodegaRows?.[0] || null
-
-    if (bodegaExistente) {
-      const nuevoTotal = Math.max(0, bodegaExistente.total_acumulado - total)
-      if (nuevoTotal === 0) {
-        await supabase.from('bodega').delete().eq('pedido_id', bodegaExistente.pedido_id)
-      } else {
-        await supabase.from('bodega').update({
-          total_acumulado: nuevoTotal
-        }).eq('pedido_id', bodegaExistente.pedido_id)
-      }
-    }
 
     setMensaje('✅ Producto eliminado de bodega')
     await cargarPedidosBodega(clienteSeleccionado.user_id)
@@ -465,7 +432,7 @@ export default function AdminClientes() {
                             <p className="text-white text-xs font-black">{getNombreProducto(pedido.producto_id)}</p>
                             <p className="text-orange-500 text-xs">${pedido.total?.toLocaleString('es-MX')} MXN</p>
                           </div>
-                          <button onClick={() => eliminarDeBodega(pedido.id, pedido.total)} disabled={guardando}
+                          <button onClick={() => eliminarDeBodega(pedido.id)} disabled={guardando}
                             className="text-white/20 hover:text-red-400 transition text-xs disabled:opacity-30">
                             🗑
                           </button>

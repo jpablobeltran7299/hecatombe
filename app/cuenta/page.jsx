@@ -89,27 +89,24 @@ export default function CuentaPage() {
       .from('pedidos')
       .select('id, created_at, total, estado, items, tipo_pedido, producto_id, anticipo_pagado, monto_liquidacion')
       .eq('user_id', userId)
-      .not('estado', 'eq', 'en_bodega')
+      .not('destino', 'eq', 'bodega')
       .order('created_at', { ascending: false })
     setPedidos(data || [])
   }
 
   async function cargarBodega(userId) {
-    const { data: bodegaData } = await supabase
-      .from('bodega')
-      .select('id, total_acumulado, estado, created_at')
-      .eq('user_id', userId)
-      .eq('estado', 'guardando')
-      .single()
-    setBodega(bodegaData)
-
     const { data: pedidosData } = await supabase
       .from('pedidos')
       .select('id, created_at, total, items')
       .eq('user_id', userId)
-      .eq('estado', 'en_bodega')
+      .eq('destino', 'bodega')
+      .eq('bodega_estado', 'guardando')
       .order('created_at', { ascending: false })
-    setPedidosBodega(pedidosData || [])
+
+    const piezas = pedidosData || []
+    const totalAcumulado = piezas.reduce((acc, p) => acc + (p.total || 0), 0)
+    setBodega(piezas.length > 0 ? { total_acumulado: totalAcumulado } : null)
+    setPedidosBodega(piezas)
   }
 
   async function cargarHecacoins(userId) {
@@ -183,7 +180,6 @@ export default function CuentaPage() {
     switch (estado) {
       case 'pagado': return 'bg-green-500/10 text-green-400 border border-green-500/30'
       case 'apartado': return 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
-      case 'en_bodega': return 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
       case 'liquidado': return 'bg-green-500/10 text-green-400 border border-green-500/30'
       default: return 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
     }
@@ -193,7 +189,6 @@ export default function CuentaPage() {
     switch (estado) {
       case 'pagado': return '✅ Pagado'
       case 'apartado': return '🔒 Apartado'
-      case 'en_bodega': return '📦 En bodega'
       case 'liquidado': return '✅ Liquidado'
       default: return estado
     }

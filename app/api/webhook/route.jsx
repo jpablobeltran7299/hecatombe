@@ -54,11 +54,12 @@ export async function POST(request) {
     }
 
     // Parsear external_reference
-    let userId, tipo_pedido, producto_id, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas
+    let userId, tipo_pedido, destino, producto_id, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas
     try {
       const ref = JSON.parse(pago.external_reference)
       userId = ref.userId
       tipo_pedido = ref.tipo_pedido || 'normal'
+      destino = ref.destino || 'directo'
       producto_id = ref.producto_id
       anticipo_pagado = ref.anticipo_pagado
       monto_liquidacion = ref.monto_liquidacion
@@ -66,6 +67,7 @@ export async function POST(request) {
     } catch {
       userId = pago.external_reference
       tipo_pedido = 'normal'
+      destino = 'directo'
     }
 
     const { data: { user } } = await supabase.auth.admin.getUserById(userId)
@@ -91,10 +93,12 @@ export async function POST(request) {
     const { data: pedido } = await supabase.from('pedidos').insert({
       user_id: userId,
       total: pago.transaction_amount,
-      estado: tipo_pedido === 'apartado' ? 'apartado' : tipo_pedido === 'en_bodega' ? 'en_bodega' : 'pagado',
+      estado: tipo_pedido === 'apartado' ? 'apartado' : 'pagado',
       items: carritoItems || [],
       mp_payment_id: String(paymentId),
       tipo_pedido: tipo_pedido || 'normal',
+      destino: destino || 'directo',
+      bodega_estado: destino === 'bodega' ? 'guardando' : null,
       producto_id: producto_id || null,
       anticipo_pagado: anticipo_pagado || null,
       monto_liquidacion: monto_liquidacion || null,
@@ -103,32 +107,6 @@ export async function POST(request) {
     // Vaciar carrito solo si no es apartado
     if (tipo_pedido !== 'apartado') {
       await supabase.from('carrito').delete().eq('user_id', userId)
-    }
-
-    // Si es bodega, actualizar total acumulado
-    if (tipo_pedido === 'en_bodega') {
-      const { data: bodegaExistente } = await supabase
-        .from('bodega')
-        .select('id, total_acumulado')
-        .eq('user_id', userId)
-        .eq('estado', 'guardando')
-        .single()
-
-      if (bodegaExistente) {
-        await supabase
-          .from('bodega')
-          .update({ total_acumulado: bodegaExistente.total_acumulado + pago.transaction_amount })
-          .eq('id', bodegaExistente.id)
-      } else {
-        await supabase
-          .from('bodega')
-          .insert({
-            user_id: userId,
-            pedido_id: pedido?.id,
-            total_acumulado: pago.transaction_amount,
-            estado: 'guardando'
-          })
-      }
     }
 
     // Descontar stock en Sanity
@@ -229,7 +207,7 @@ export async function POST(request) {
 
     // Emails
     const esApartado = tipo_pedido === 'apartado'
-    const esBodega = tipo_pedido === 'en_bodega'
+    const esBodega = destino === 'bodega'
 
     await resend.emails.send({
       from: 'Hecatombe Coleccionables <noreply@hecatombe.com.mx>',

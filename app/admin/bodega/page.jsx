@@ -24,25 +24,21 @@ export default function AdminBodega() {
   }, [])
 
   async function cargarBodegas() {
-    const { data: bodegaData } = await supabase
-      .from('bodega')
-      .select('user_id, pedido_id, total_acumulado, estado')
+    const { data: pedidosBodega } = await supabase
+      .from('pedidos')
+      .select('user_id, id, total, created_at, producto_id, bodega_estado')
+      .eq('destino', 'bodega')
+      .order('created_at', { ascending: false })
 
     const { data: perfilesData } = await supabase
       .from('perfiles')
       .select('user_id, nombre, apellido, telefono')
 
-    const { data: pedidosData } = await supabase
-      .from('pedidos')
-      .select('user_id, id, total, created_at, producto_id')
-      .eq('estado', 'en_bodega')
-      .order('created_at', { ascending: false })
-
     const perfilesMap = {}
     perfilesData?.forEach(p => { perfilesMap[p.user_id] = p })
 
     const todosLosIds = []
-    pedidosData?.forEach(pedido => {
+    pedidosBodega?.forEach(pedido => {
       if (pedido.producto_id && !todosLosIds.includes(pedido.producto_id)) {
         todosLosIds.push(pedido.producto_id)
       }
@@ -52,19 +48,28 @@ export default function AdminBodega() {
     const productosMap = {}
     productosInfo.forEach(p => { productosMap[p._id] = p })
 
-    const pedidosMap = {}
-    pedidosData?.forEach(pedido => {
-      if (!pedidosMap[pedido.user_id]) pedidosMap[pedido.user_id] = []
-      pedidosMap[pedido.user_id].push({
+    // Agrupar por usuario + bodega_estado (reemplaza a la antigua fila "bodega")
+    const grupos = {}
+    pedidosBodega?.forEach(pedido => {
+      const key = `${pedido.user_id}|${pedido.bodega_estado}`
+      if (!grupos[key]) {
+        grupos[key] = {
+          user_id: pedido.user_id,
+          estado: pedido.bodega_estado,
+          total_acumulado: 0,
+          pedidos: [],
+        }
+      }
+      grupos[key].total_acumulado += pedido.total || 0
+      grupos[key].pedidos.push({
         ...pedido,
         nombreProducto: productosMap[pedido.producto_id]?.nombre || `Pedido #${pedido.id}`
       })
     })
 
-    const bodegasCombinadas = (bodegaData || []).map(b => ({
-      ...b,
-      perfil: perfilesMap[b.user_id] || null,
-      pedidos: pedidosMap[b.user_id] || [],
+    const bodegasCombinadas = Object.values(grupos).map(g => ({
+      ...g,
+      perfil: perfilesMap[g.user_id] || null,
     }))
 
     setBodegas(bodegasCombinadas)
@@ -72,17 +77,14 @@ export default function AdminBodega() {
   }
 
   async function marcarEnviado(userId) {
-    await supabase
-      .from('bodega')
-      .update({ estado: 'enviado' })
-      .eq('user_id', userId)
-      .eq('estado', 'guardando')
-
+    // Solo se actualiza bodega_estado (estado físico en la bodega).
+    // No se toca `estado` (estado de pago del pedido: pagado/apartado/etc.)
     await supabase
       .from('pedidos')
-      .update({ estado: 'enviado' })
+      .update({ bodega_estado: 'enviado' })
       .eq('user_id', userId)
-      .eq('estado', 'en_bodega')
+      .eq('destino', 'bodega')
+      .eq('bodega_estado', 'guardando')
 
     cargarBodegas()
   }
