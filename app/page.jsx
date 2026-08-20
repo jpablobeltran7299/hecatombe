@@ -128,7 +128,7 @@ export default async function Home() {
     {marcas.map((marca) => (
       <Link
         key={marca._id}
-        href={'/catalogo?busqueda=' + encodeURIComponent(marca.nombre)}
+        href={'/catalogo?marca=' + marca._id}
         className="bg-black border border-[#333] hover:border-orange-500 text-gray-300 text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition"
       >
         {marca.nombre}

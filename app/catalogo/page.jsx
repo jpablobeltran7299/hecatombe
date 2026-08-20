@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useMemo, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { getTodosProductos, getTematicas, getLineas, getUniversos, getCategorias, urlFor } from '@/lib/sanity'
+import { getTodosProductos, getTematicas, getLineas, getUniversos, getCategorias, getMarcas, urlFor } from '@/lib/sanity'
 import BadgesProducto from '../components/BadgesProducto'
 import BotonFavoritoCard from '../components/BotonFavoritoCard'
 import Link from 'next/link'
@@ -39,6 +39,7 @@ function SeccionFiltro({ titulo, children, defaultOpen = true }) {
 function Catalogo() {
   const searchParams = useSearchParams()
   const [productos, setProductos] = useState([])
+  const [marcas, setMarcas] = useState([])
   const [categorias, setCategorias] = useState([])
   const [tematicas, setTematicas] = useState([])
   const [universos, setUniversos] = useState([])
@@ -47,6 +48,7 @@ function Catalogo() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const [busqueda, setBusqueda] = useState('')
+  const [marcasSel, setMarcasSel] = useState([])
   const [categoriasSel, setCategoriasSel] = useState([])
   const [tematicasSel, setTematicasSel] = useState([])
   const [universosSel, setUniversosSel] = useState([])
@@ -60,12 +62,13 @@ function Catalogo() {
   const [ordenar, setOrdenar] = useState('recientes')
 
   useEffect(() => {
-    Promise.all([getTodosProductos(), getTematicas(), getUniversos(), getLineas(), getCategorias()]).then(([p, t, u, l, cat]) => {
+    Promise.all([getTodosProductos(), getTematicas(), getUniversos(), getLineas(), getCategorias(), getMarcas()]).then(([p, t, u, l, cat, m]) => {
       setProductos(p)
       setTematicas(t)
       setUniversos(u)
       setLineas(l)
       setCategorias(cat)
+      setMarcas(m)
       const precios = p.map(x => x.precio).filter(Boolean)
       if (precios.length) {
         const min = Math.min(...precios)
@@ -79,12 +82,17 @@ function Catalogo() {
       const busquedaParam = searchParams.get('busqueda')
       const tipoParam = searchParams.get('tipo')
       const categoriaParam = searchParams.get('categoria')
+      const marcaParam = searchParams.get('marca')
 
       if (busquedaParam) setBusqueda(busquedaParam)
       if (tipoParam) setTipoSel([tipoParam])
       if (categoriaParam) {
         const categoria = cat.find(c => c._id === categoriaParam)
         if (categoria) setCategoriasSel([categoria.nombre])
+      }
+      if (marcaParam) {
+        const marca = m.find(x => x._id === marcaParam)
+        if (marca) setMarcasSel([marca.nombre])
       }
 
       setCargando(false)
@@ -107,6 +115,7 @@ function Catalogo() {
           p.linea?.toLowerCase().includes(q)
         if (!coincide) return false
       }
+      if (marcasSel.length && !marcasSel.includes(p.marca)) return false
       if (categoriasSel.length && !categoriasSel.includes(p.categoria)) return false
       if (tematicasSel.length && !tematicasSel.includes(p.tematica)) return false
       if (universosSel.length && !universosSel.includes(p.universo)) return false
@@ -120,10 +129,11 @@ function Catalogo() {
     else if (ordenar === 'precio_desc') result.sort((a, b) => (b.precio || 0) - (a.precio || 0))
     else if (ordenar === 'nombre') result.sort((a, b) => a.nombre?.localeCompare(b.nombre))
     return result
-  }, [productos, busqueda, categoriasSel, tematicasSel, universosSel, lineasSel, tipoSel, soloDisponibles, rangoMin, rangoMax, ordenar])
+  }, [productos, busqueda, marcasSel, categoriasSel, tematicasSel, universosSel, lineasSel, tipoSel, soloDisponibles, rangoMin, rangoMax, ordenar])
 
   const limpiarFiltros = () => {
     setBusqueda('')
+    setMarcasSel([])
     setCategoriasSel([])
     setTematicasSel([])
     setUniversosSel([])
@@ -135,7 +145,7 @@ function Catalogo() {
     setOrdenar('recientes')
   }
 
-  const filtrosActivos = categoriasSel.length + tematicasSel.length + universosSel.length + lineasSel.length + tipoSel.length + (soloDisponibles ? 1 : 0)
+  const filtrosActivos = marcasSel.length + categoriasSel.length + tematicasSel.length + universosSel.length + lineasSel.length + tipoSel.length + (soloDisponibles ? 1 : 0)
 
   const sidebar = (
     <div className="flex flex-col">
@@ -150,6 +160,13 @@ function Catalogo() {
       <SeccionFiltro titulo="Tipo">
         <Checkbox label="Normal" checked={tipoSel.includes('normal')} onChange={() => toggleItem('normal', tipoSel, setTipoSel)} />
         <Checkbox label="Preventa" checked={tipoSel.includes('preventa')} onChange={() => toggleItem('preventa', tipoSel, setTipoSel)} />
+      </SeccionFiltro>
+      <SeccionFiltro titulo="Marca" defaultOpen={false}>
+        {marcas.map(m => (
+          <Checkbox key={m._id} label={m.nombre} checked={marcasSel.includes(m.nombre)}
+            onChange={() => toggleItem(m.nombre, marcasSel, setMarcasSel)}
+            count={productos.filter(p => p.marca === m.nombre).length} />
+        ))}
       </SeccionFiltro>
       <SeccionFiltro titulo="Categoría" defaultOpen={false}>
         {categorias.map(c => (
