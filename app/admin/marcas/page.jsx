@@ -108,6 +108,8 @@ export default function AdminMarcas() {
     if (data.ok) {
       await cargarMarcas()
       setModoEditar(null)
+    } else if (data.error === 'REFERENCIADO') {
+      setError(`No se puede eliminar: ${data.count} producto(s) usan esta marca. Reasígnalos primero.`)
     } else {
       setError('Error al eliminar')
     }

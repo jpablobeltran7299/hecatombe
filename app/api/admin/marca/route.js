@@ -46,6 +46,10 @@ export async function DELETE(request) {
   const client = getSanityClient()
   try {
     const { id } = await request.json()
+    const referencias = await client.fetch(`count(*[references($id)])`, { id })
+    if (referencias > 0) {
+      return NextResponse.json({ error: 'REFERENCIADO', count: referencias }, { status: 409 })
+    }
     await client.delete(id)
     return NextResponse.json({ ok: true })
   } catch (error) {

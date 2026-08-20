@@ -7,6 +7,12 @@ import { getTematicas, getLineas, getUniversos } from '@/lib/sanity'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
+const ETIQUETAS_TIPO = {
+  tematica: 'esta temática',
+  universo: 'este universo',
+  linea: 'esta línea',
+}
+
 // Componente fuera del padre para evitar re-render
 function SeccionClasificacion({ titulo, tipo, items, onCrear, onEliminar, guardando }) {
   const [nuevo, setNuevo] = useState('')
@@ -43,7 +49,7 @@ function SeccionClasificacion({ titulo, tipo, items, onCrear, onEliminar, guarda
           <div key={item._id} className="flex items-center justify-between bg-black rounded-lg px-3 py-2 gap-2">
             <span className="text-white text-sm truncate">{item.nombre}</span>
             <button
-              onClick={() => onEliminar(item._id, item.nombre)}
+              onClick={() => onEliminar(item._id, item.nombre, tipo)}
               disabled={guardando}
               className="text-white/20 hover:text-red-400 transition text-xs disabled:opacity-30 flex-shrink-0">
               🗑
@@ -91,38 +97,51 @@ export default function AdminClasificacion() {
     setError('')
     setMensaje('')
 
-    const res = await fetch('/api/admin/clasificacion', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tipo, nombre })
-    })
+    try {
+      const res = await fetch('/api/clasificacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo, nombre })
+      })
 
-    const data = await res.json()
-    if (data.ok) {
-      setMensaje(`✅ "${nombre}" creado correctamente`)
-      cargarDatos()
-    } else {
-      setError('Error al crear')
+      const data = await res.json()
+      if (data.ok) {
+        setMensaje(`✅ "${nombre}" creado correctamente`)
+        cargarDatos()
+      } else {
+        setError('Error al crear')
+      }
+    } catch (err) {
+      setError('Error al crear: no se pudo conectar con el servidor')
     }
     setGuardando(false)
   }
 
-  async function eliminar(id, nombre) {
+  async function eliminar(id, nombre, tipo) {
     if (!confirm(`¿Eliminar "${nombre}"? Asegúrate de que ningún producto lo use.`)) return
     setGuardando(true)
+    setError('')
+    setMensaje('')
 
-    const res = await fetch('/api/admin/clasificacion', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
-    })
+    try {
+      const res = await fetch('/api/clasificacion', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
 
-    const data = await res.json()
-    if (data.ok) {
-      setMensaje(`✅ "${nombre}" eliminado`)
-      cargarDatos()
-    } else {
-      setError('Error al eliminar')
+      const data = await res.json()
+      if (data.ok) {
+        setMensaje(`✅ "${nombre}" eliminado`)
+        cargarDatos()
+      } else if (data.error === 'REFERENCIADO') {
+        const etiqueta = ETIQUETAS_TIPO[tipo] || 'esta clasificación'
+        setError(`No se puede eliminar: ${data.count} producto(s) usan ${etiqueta}. Reasígnalos primero.`)
+      } else {
+        setError('Error al eliminar')
+      }
+    } catch (err) {
+      setError('Error al eliminar: no se pudo conectar con el servidor')
     }
     setGuardando(false)
   }
