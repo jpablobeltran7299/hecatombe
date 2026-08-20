@@ -7,12 +7,56 @@ import { getTodosProductos, urlFor } from '@/lib/sanity'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
+// Componente fuera del padre para que cada fila maneje su propio input/estado de guardado
+function FilaStock({ producto, onGuardar }) {
+  const [valor, setValor] = useState(producto.stock ?? '')
+  const [guardando, setGuardando] = useState(false)
+  const [guardadoOk, setGuardadoOk] = useState(false)
+
+  async function handleGuardar() {
+    const val = parseInt(valor)
+    if (isNaN(val)) return
+    setGuardando(true)
+    const ok = await onGuardar(producto._id, val)
+    setGuardando(false)
+    if (ok) {
+      setGuardadoOk(true)
+      setTimeout(() => setGuardadoOk(false), 1500)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <input
+        type="number"
+        min="0"
+        value={valor}
+        placeholder="—"
+        onChange={e => setValor(e.target.value)}
+        className="w-20 bg-black border border-white/20 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-orange-500 text-center"
+      />
+      <button
+        onClick={handleGuardar}
+        disabled={guardando}
+        className="text-xs font-black uppercase px-2 py-1 rounded-lg bg-orange-500 hover:bg-orange-600 text-black disabled:opacity-50 transition">
+        {guardando ? 'Guardando...' : guardadoOk ? '✅' : 'Guardar'}
+      </button>
+      {producto.ultimasPiezas && (
+        <span className="text-yellow-400 text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/30 whitespace-nowrap">
+          Últimas piezas
+        </span>
+      )}
+    </div>
+  )
+}
+
 export default function AdminInventario() {
   const [loading, setLoading] = useState(true)
   const [productos, setProductos] = useState([])
   const [busqueda, setBusqueda] = useState('')
   const [guardando, setGuardando] = useState(null)
   const [filtro, setFiltro] = useState('todos')
+  const [error, setError] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -32,28 +76,35 @@ export default function AdminInventario() {
   }
 
   async function actualizarStock(productoId, nuevoStock) {
-    setGuardando(productoId)
+    setError('')
     try {
-      await fetch('/api/admin/stock', {
+      const res = await fetch('/api/admin/stock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productoId, stock: nuevoStock })
       })
-      setProductos(prev => prev.map(p =>
-        p._id === productoId
-          ? { ...p, stock: nuevoStock, disponible: nuevoStock > 0 }
-          : p
-      ))
+      const data = await res.json()
+      if (data.ok) {
+        setProductos(prev => prev.map(p =>
+          p._id === productoId
+            ? { ...p, stock: nuevoStock, disponible: nuevoStock > 0, ultimasPiezas: nuevoStock <= 3 && nuevoStock > 0 }
+            : p
+        ))
+        return true
+      }
+      setError('Error al guardar')
+      return false
     } catch (err) {
-      console.error(err)
+      setError('Error al guardar')
+      return false
     }
-    setGuardando(null)
   }
 
   async function toggleDisponible(producto) {
     setGuardando(producto._id)
+    setError('')
     try {
-      await fetch('/api/admin/stock', {
+      const res = await fetch('/api/admin/stock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -62,13 +113,18 @@ export default function AdminInventario() {
           activo: !producto.disponible
         })
       })
-      setProductos(prev => prev.map(p =>
-        p._id === producto._id
-          ? { ...p, disponible: !p.disponible, activo: !p.disponible }
-          : p
-      ))
+      const data = await res.json()
+      if (data.ok) {
+        setProductos(prev => prev.map(p =>
+          p._id === producto._id
+            ? { ...p, disponible: !p.disponible, activo: !p.disponible }
+            : p
+        ))
+      } else {
+        setError('Error al guardar')
+      }
     } catch (err) {
-      console.error(err)
+      setError('Error al guardar')
     }
     setGuardando(null)
   }
@@ -96,6 +152,8 @@ export default function AdminInventario() {
           <h1 className="text-2xl font-black uppercase text-white">Inventario</h1>
           <span className="text-white/30 text-sm">{productos.length} productos</span>
         </div>
+
+        {error && <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6"><p className="text-red-400 text-sm">{error}</p></div>}
 
         <div className="flex flex-wrap gap-3 mb-6">
           <input
@@ -156,22 +214,7 @@ export default function AdminInventario() {
               </div>
 
               <div className="col-span-2">
-                <input
-                  type="number"
-                  min="0"
-                  defaultValue={producto.stock ?? ''}
-                  placeholder="—"
-                  onBlur={e => {
-                    const val = parseInt(e.target.value)
-                    if (!isNaN(val) && val !== producto.stock) {
-                      actualizarStock(producto._id, val)
-                    }
-                  }}
-                  className="w-20 bg-black border border-white/20 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-orange-500 text-center"
-                />
-                {producto.ultimasPiezas && (
-                  <span className="ml-2 text-yellow-400 text-xs font-black">⚠️</span>
-                )}
+                <FilaStock producto={producto} onGuardar={actualizarStock} />
               </div>
 
               <div className="col-span-2">
