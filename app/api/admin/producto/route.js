@@ -14,7 +14,7 @@ const getSanityClient = () => createClient({
 export async function POST(request) {
   const client = getSanityClient()
   try {
-    const { nombre, descripcion, precio, stock, marca, tematica, universo, linea,
+    const { nombre, descripcion, precio, stock, marca, categoria, tematica, universo, linea,
       tipo, disponible, activo, destacado, ultimasPiezas, anticipo, precioLiquidacion,
       fechaEstimada, imagenes, ordenDestacado } = await request.json()
 
@@ -31,6 +31,7 @@ export async function POST(request) {
       ...(stock !== '' && stock !== undefined && { stock: parseInt(stock) }),
       ...(ordenDestacado !== '' && ordenDestacado !== undefined && { ordenDestacado: parseInt(ordenDestacado) }),
       ...(marca && { marca: { _type: 'reference', _ref: marca } }),
+      ...(categoria && { categoria: { _type: 'reference', _ref: categoria } }),
       ...(tematica && { tematica: { _type: 'reference', _ref: tematica } }),
       ...(universo && { universo: { _type: 'reference', _ref: universo } }),
       ...(linea && { linea: { _type: 'reference', _ref: linea } }),
@@ -57,7 +58,7 @@ export async function POST(request) {
 export async function PUT(request) {
   const client = getSanityClient()
   try {
-    const { id, nombre, descripcion, precio, stock, marca, tematica, universo, linea,
+    const { id, nombre, descripcion, precio, stock, marca, categoria, tematica, universo, linea,
       tipo, disponible, activo, destacado, ultimasPiezas, anticipo, precioLiquidacion,
       fechaEstimada, imagenes, ordenDestacado } = await request.json()
 
@@ -75,6 +76,7 @@ export async function PUT(request) {
     if (stock !== '' && stock !== undefined) campos.stock = parseInt(stock)
     if (ordenDestacado !== '' && ordenDestacado !== undefined) campos.ordenDestacado = parseInt(ordenDestacado)
     if (marca) campos.marca = { _type: 'reference', _ref: marca }
+    if (categoria) campos.categoria = { _type: 'reference', _ref: categoria }
     if (tematica) campos.tematica = { _type: 'reference', _ref: tematica }
     if (universo) campos.universo = { _type: 'reference', _ref: universo }
     if (linea) campos.linea = { _type: 'reference', _ref: linea }

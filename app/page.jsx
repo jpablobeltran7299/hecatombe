@@ -108,7 +108,7 @@ export default async function Home() {
           {categorias.map((cat) => (
             <Link
               key={cat._id}
-              href={'/catalogo?busqueda=' + encodeURIComponent(cat.nombre)}
+              href={'/catalogo?categoria=' + cat._id}
               className="bg-black border-2 border-[#222] hover:border-orange-500 rounded-lg p-4 text-center transition"
             >
               <p className="text-white text-xs font-bold uppercase">{cat.nombre}</p>
