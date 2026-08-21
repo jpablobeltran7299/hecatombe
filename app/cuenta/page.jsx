@@ -148,6 +148,7 @@ export default function CuentaPage() {
           tipo_pedido: 'liquidacion',
           destino,
           producto_id: pedido.producto_id,
+          pedido_id: pedido.id,
         }),
       })
       const data = await res.json()

@@ -40,17 +40,15 @@ export async function POST(request) {
   try {
     const {
       items, userId, userEmail, direccion,
-      tipo_pedido, producto_id, anticipo_pagado, monto_liquidacion,
+      tipo_pedido, producto_id, pedido_id, anticipo_pagado, monto_liquidacion,
       hecacoins_a_canjear, destino
     } = await request.json()
 
     // Validar precios reales contra Sanity — nunca confiar en el precio que manda el cliente.
-    // Nota: 'liquidacion' NO valida el monto exacto aquí porque ese monto correcto no vive en
-    // Sanity (puede haber cambiado desde que se apartó); vive en pedidos.monto_liquidacion en
-    // Supabase, y esta ruta hoy no manda el pedido_id necesario para verificarlo — ver resumen.
-    // Mitigante temporal: al menos exige que exista una preventa apartada real de por medio,
-    // para que nadie pueda inventar una "liquidación" desde cero mandando tipo_pedido a mano.
+    // Para 'liquidacion' el monto correcto no vive en Sanity (puede haber cambiado desde que
+    // se apartó); vive en pedidos.monto_liquidacion en Supabase, atado al pedido_id exacto.
     let itemsValidados = items
+    let montoLiquidacionReal = null
 
     if (tipo_pedido === 'apartado') {
       const item = items[0]
@@ -63,22 +61,28 @@ export async function POST(request) {
       }
       itemsValidados = [{ ...item, precio: real.anticipo }]
     } else if (tipo_pedido === 'liquidacion') {
-      if (!producto_id) {
-        return NextResponse.json({ error: 'Falta producto_id para procesar la liquidación.' }, { status: 400 })
+      if (!pedido_id) {
+        return NextResponse.json({ error: 'Falta pedido_id para procesar la liquidación.' }, { status: 400 })
       }
 
       const { data: pedidoApartado } = await supabase
         .from('pedidos')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('producto_id', producto_id)
-        .eq('estado', 'apartado')
-        .eq('tipo_pedido', 'apartado')
-        .limit(1)
+        .select('id, user_id, producto_id, estado, tipo_pedido, monto_liquidacion')
+        .eq('id', pedido_id)
+        .single()
 
-      if (!pedidoApartado || pedidoApartado.length === 0) {
-        return NextResponse.json({ error: 'No se encontró una preventa apartada para este producto.' }, { status: 400 })
+      if (!pedidoApartado || pedidoApartado.user_id !== userId) {
+        return NextResponse.json({ error: 'No se encontró una preventa apartada para este pedido.' }, { status: 400 })
       }
+      if (pedidoApartado.estado !== 'apartado' || pedidoApartado.tipo_pedido !== 'apartado') {
+        return NextResponse.json({ error: 'Esta preventa ya no está disponible para liquidar.' }, { status: 400 })
+      }
+      if (pedidoApartado.monto_liquidacion == null) {
+        return NextResponse.json({ error: 'Este pedido no tiene un monto de liquidación definido. Contacta a soporte.' }, { status: 400 })
+      }
+
+      montoLiquidacionReal = pedidoApartado.monto_liquidacion
+      itemsValidados = [{ ...items[0], precio: montoLiquidacionReal }]
     } else {
       const ids = items.map(i => i.productoId)
       const productosReales = await getProductosPorIds(ids)
@@ -178,7 +182,7 @@ export async function POST(request) {
           destino: destino || 'directo',
           producto_id: producto_id || null,
           anticipo_pagado: anticipo_pagado || null,
-          monto_liquidacion: monto_liquidacion || null,
+          monto_liquidacion: tipo_pedido === 'liquidacion' ? montoLiquidacionReal : (monto_liquidacion || null),
           hecacoins_canjeadas: descuentoHecacoins,
         }),
         notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook`,
