@@ -1,8 +1,33 @@
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getProducto, getProductosPorIds } from '@/lib/sanity'
+
+// Rate limit en memoria: 10 solicitudes por IP cada 60s.
+// Vive solo en la instancia serverless que lo procesa (no es un límite
+// global distribuido) — mitiga abuso/spam básico sin depender de Redis.
+const RATE_LIMIT_WINDOW_MS = 60_000
+const RATE_LIMIT_MAX = 10
+const rateLimitMap = new Map()
+
+function checkRateLimit(ip) {
+  const now = Date.now()
+  const entry = rateLimitMap.get(ip)
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    return true
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false
+  entry.count++
+  return true
+}
 
 export async function POST(request) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json({ error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' }, { status: 429 })
+  }
+
   const client = new MercadoPagoConfig({
     accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
   })
@@ -19,8 +44,60 @@ export async function POST(request) {
       hecacoins_a_canjear, destino
     } = await request.json()
 
-    // Calcular total original
-    const totalOriginal = items.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
+    // Validar precios reales contra Sanity — nunca confiar en el precio que manda el cliente.
+    // Nota: 'liquidacion' NO valida el monto exacto aquí porque ese monto correcto no vive en
+    // Sanity (puede haber cambiado desde que se apartó); vive en pedidos.monto_liquidacion en
+    // Supabase, y esta ruta hoy no manda el pedido_id necesario para verificarlo — ver resumen.
+    // Mitigante temporal: al menos exige que exista una preventa apartada real de por medio,
+    // para que nadie pueda inventar una "liquidación" desde cero mandando tipo_pedido a mano.
+    let itemsValidados = items
+
+    if (tipo_pedido === 'apartado') {
+      const item = items[0]
+      const real = await getProducto(item.productoId)
+      if (!real || real.activo === false) {
+        return NextResponse.json({ error: `"${item.nombre}" ya no está disponible.` }, { status: 400 })
+      }
+      if (real.anticipo == null) {
+        return NextResponse.json({ error: `"${item.nombre}" ya no está disponible para apartar.` }, { status: 400 })
+      }
+      itemsValidados = [{ ...item, precio: real.anticipo }]
+    } else if (tipo_pedido === 'liquidacion') {
+      if (!producto_id) {
+        return NextResponse.json({ error: 'Falta producto_id para procesar la liquidación.' }, { status: 400 })
+      }
+
+      const { data: pedidoApartado } = await supabase
+        .from('pedidos')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('producto_id', producto_id)
+        .eq('estado', 'apartado')
+        .eq('tipo_pedido', 'apartado')
+        .limit(1)
+
+      if (!pedidoApartado || pedidoApartado.length === 0) {
+        return NextResponse.json({ error: 'No se encontró una preventa apartada para este producto.' }, { status: 400 })
+      }
+    } else {
+      const ids = items.map(i => i.productoId)
+      const productosReales = await getProductosPorIds(ids)
+      const productosMap = {}
+      productosReales.forEach(p => { productosMap[p._id] = p })
+
+      const faltante = items.find(i => !productosMap[i.productoId])
+      if (faltante) {
+        return NextResponse.json({ error: `"${faltante.nombre}" ya no está disponible.` }, { status: 400 })
+      }
+
+      itemsValidados = items.map(item => ({
+        ...item,
+        precio: productosMap[item.productoId].precio,
+      }))
+    }
+
+    // Calcular total original (con precios ya validados contra Sanity)
+    const totalOriginal = itemsValidados.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
 
     // Validar Hecacoins si se quieren canjear
     let descuentoHecacoins = 0
@@ -60,7 +137,7 @@ export async function POST(request) {
     // Items ajustados con descuento si aplica
     const itemsMP = descuentoHecacoins > 0
       ? [
-          ...items.map(item => ({
+          ...itemsValidados.map(item => ({
             id: item.productoId,
             title: item.nombre,
             quantity: item.cantidad,
@@ -76,7 +153,7 @@ export async function POST(request) {
             currency_id: 'MXN',
           }
         ]
-      : items.map(item => ({
+      : itemsValidados.map(item => ({
           id: item.productoId,
           title: item.nombre,
           quantity: item.cantidad,

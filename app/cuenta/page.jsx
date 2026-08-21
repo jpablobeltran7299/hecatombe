@@ -25,6 +25,7 @@ export default function CuentaPage() {
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
   const [liquidando, setLiquidando] = useState(null)
+  const [destinoLiquidacion, setDestinoLiquidacion] = useState({})
   const [solicitandoEnvio, setSolicitandoEnvio] = useState(false)
   const router = useRouter()
 
@@ -126,7 +127,7 @@ export default function CuentaPage() {
     setMovimientos(mov || [])
   }
 
-  async function handleLiquidar(pedido) {
+  async function handleLiquidar(pedido, destino) {
     setLiquidando(pedido.id)
     try {
       const itemLiquidar = {
@@ -145,6 +146,7 @@ export default function CuentaPage() {
           userId: user.id,
           userEmail: user.email,
           tipo_pedido: 'liquidacion',
+          destino,
           producto_id: pedido.producto_id,
         }),
       })
@@ -371,7 +373,28 @@ export default function CuentaPage() {
                         <span className="text-orange-400 font-black">${pedido.monto_liquidacion?.toLocaleString('es-MX')} MXN</span>
                       </div>
                       <p className="text-white/30 text-xs mb-3">Te avisaremos por correo cuando tu producto llegue.</p>
-                      <button onClick={() => handleLiquidar(pedido)} disabled={liquidando === pedido.id}
+
+                      <p className="text-white/50 text-xs font-black uppercase mb-2">¿Cómo quieres recibirlo?</p>
+                      <div className="flex gap-2 mb-3">
+                        <button onClick={() => setDestinoLiquidacion(prev => ({ ...prev, [pedido.id]: 'directo' }))}
+                          className={`flex-1 flex items-center justify-center gap-1 text-xs font-black uppercase py-2 rounded-lg border-2 transition ${
+                            (destinoLiquidacion[pedido.id] || 'directo') === 'directo'
+                              ? 'border-orange-500 bg-orange-500/10 text-orange-500'
+                              : 'border-white/10 text-white/40 hover:border-white/30'
+                          }`}>
+                          🚚 Envío directo
+                        </button>
+                        <button onClick={() => setDestinoLiquidacion(prev => ({ ...prev, [pedido.id]: 'bodega' }))}
+                          className={`flex-1 flex items-center justify-center gap-1 text-xs font-black uppercase py-2 rounded-lg border-2 transition ${
+                            destinoLiquidacion[pedido.id] === 'bodega'
+                              ? 'border-orange-500 bg-orange-500/10 text-orange-500'
+                              : 'border-white/10 text-white/40 hover:border-white/30'
+                          }`}>
+                          📦 Guardar en bodega
+                        </button>
+                      </div>
+
+                      <button onClick={() => handleLiquidar(pedido, destinoLiquidacion[pedido.id] || 'directo')} disabled={liquidando === pedido.id}
                         className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black uppercase py-2 rounded-lg text-sm transition">
                         {liquidando === pedido.id ? 'Procesando...' : `💳 Liquidar $${pedido.monto_liquidacion?.toLocaleString('es-MX')} MXN`}
                       </button>
