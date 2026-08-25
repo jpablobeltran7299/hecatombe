@@ -215,9 +215,9 @@ export default async function Home() {
           <p className="text-white font-black text-sm uppercase leading-tight mb-2 flex-1 line-clamp-2">
             {producto.nombre}
           </p>
-          {producto.precio && (
+          {producto.anticipo && (
             <p className="text-orange-500 font-black text-base">
-              Anticipo: ${(producto.precio * 0.5).toLocaleString('es-MX')} MXN
+              Anticipo: ${producto.anticipo.toLocaleString('es-MX')} MXN
             </p>
           )}
           {producto.fechaEstimada && (

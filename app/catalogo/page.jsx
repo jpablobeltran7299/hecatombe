@@ -290,7 +290,9 @@ function Catalogo() {
                     <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">{producto.marca}</p>
                     <p className="text-white font-bold text-sm leading-snug mb-2 flex-1">{producto.nombre}</p>
                     <div className="flex items-center justify-between mt-auto">
-                      {producto.precio ? (
+                      {producto.tipo === 'preventa' && producto.anticipo ? (
+                        <span className="text-orange-500 font-black text-base">Anticipo: ${producto.anticipo.toLocaleString('es-MX')} MXN</span>
+                      ) : producto.precio ? (
                         <span className="text-orange-500 font-black text-base">${producto.precio.toLocaleString('es-MX')}</span>
                       ) : (
                         <span className="text-gray-600 text-xs font-bold uppercase">Consultar</span>

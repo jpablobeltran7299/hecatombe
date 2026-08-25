@@ -86,7 +86,7 @@ export default async function Producto({ params }) {
             <div className="mb-5 bg-orange-500/10 border border-orange-500/30 rounded-xl p-4">
               <p className="text-orange-500 text-xs font-black uppercase tracking-widest mb-2">Preventa</p>
               <div className="flex items-baseline gap-3 mb-1">
-                <span className="text-white/50 text-sm line-through">${producto.precio?.toLocaleString('es-MX')} MXN</span>
+                <span className="text-white/50 text-sm">${producto.precio?.toLocaleString('es-MX')} MXN</span>
                 <span className="text-white/50 text-xs">precio total</span>
               </div>
               <div className="flex items-baseline gap-2">
