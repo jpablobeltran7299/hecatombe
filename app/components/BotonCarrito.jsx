@@ -32,12 +32,12 @@ export default function BotonCarrito({ productoId, nombre, precio, imagen }) {
       if (existente) {
         await supabase
           .from('carrito')
-          .update({ cantidad: existente.cantidad + 1 })
+          .update({ cantidad: existente.cantidad + 1, updated_at: new Date().toISOString() })
           .eq('id', existente.id)
       } else {
         await supabase
           .from('carrito')
-          .insert({ user_id: session.user.id, producto_id: productoId, cantidad: 1 })
+          .insert({ user_id: session.user.id, producto_id: productoId, cantidad: 1, updated_at: new Date().toISOString() })
       }
     }
 
