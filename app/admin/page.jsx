@@ -54,6 +54,7 @@ export default function AdminPage() {
             { titulo: 'Banners', desc: 'Gestionar banners del home', icon: '🖼️', href: '/admin/banners' },
             { titulo: 'Dinámicas', desc: 'Rifas, concursos y más', icon: '🎯', href: '/admin/dinamicas' },
             { titulo: 'Marcas', desc: 'Gestionar marcas de productos', icon: '🏷️', href: '/admin/marcas' },
+            { titulo: 'Configuración', desc: 'Ajustes generales del home', icon: '⚙️', href: '/admin/configuracion' },
           ].map(({ titulo, desc, icon, href }) => (
             <a key={titulo} href={href}
               className="bg-[#111] border border-white/10 hover:border-orange-500 rounded-2xl p-6 flex flex-col gap-2 transition cursor-pointer">

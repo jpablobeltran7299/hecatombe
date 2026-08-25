@@ -62,6 +62,13 @@ export default {
       type: 'boolean',
       initialValue: true
     },
+    {
+      name: 'destacada',
+      title: 'Destacada (popup del home)',
+      type: 'boolean',
+      description: 'Si está activa, esta dinámica se muestra en el popup promocional del home. Si hay varias marcadas, se usa la más reciente.',
+      initialValue: false
+    },
     // — Solo para rifas —
     {
       name: 'numerosTotal',

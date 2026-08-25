@@ -14,13 +14,14 @@ const getSanityClient = () => createClient({
 export async function POST(request) {
   const client = getSanityClient()
   try {
-    const { titulo, descripcion, tipo, fechaFin, enlace, activa, numerosTotal, precio, imagenId } = await request.json()
+    const { titulo, descripcion, tipo, fechaFin, enlace, activa, destacada, numerosTotal, precio, imagenId } = await request.json()
     const doc = await client.create({
       _type: 'dinamica',
       titulo,
       descripcion,
       tipo,
       activa: activa ?? true,
+      destacada: destacada ?? false,
       ...(fechaFin && { fechaFin: new Date(fechaFin).toISOString() }),
       ...(enlace && { enlace }),
       ...(numerosTotal && { numerosTotal: parseInt(numerosTotal) }),
@@ -36,12 +37,13 @@ export async function POST(request) {
 export async function PUT(request) {
   const client = getSanityClient()
   try {
-    const { id, titulo, descripcion, tipo, fechaFin, enlace, activa, numerosTotal, precio, imagenId } = await request.json()
+    const { id, titulo, descripcion, tipo, fechaFin, enlace, activa, destacada, numerosTotal, precio, imagenId } = await request.json()
     await client.patch(id).set({
       titulo,
       descripcion,
       tipo,
       activa: activa ?? true,
+      destacada: destacada ?? false,
       ...(fechaFin && { fechaFin: new Date(fechaFin).toISOString() }),
       ...(enlace && { enlace }),
       ...(numerosTotal && { numerosTotal: parseInt(numerosTotal) }),

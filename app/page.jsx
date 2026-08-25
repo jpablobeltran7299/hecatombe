@@ -1,7 +1,8 @@
 import Link from 'next/link'
-import { getProductosDestacados, getMarcas, getCategorias, getPreventas, getDinamicas, urlFor } from '@/lib/sanity'
+import { getProductosDestacados, getMarcas, getCategorias, getPreventas, getDinamicas, getConfiguracion, urlFor } from '@/lib/sanity'
 import BannerCarousel from "./components/BannerCarousel";
 import CarruselDestacados from './components/CarruselDestacados'
+import DinamicaPopup from './components/DinamicaPopup'
 
 export const metadata = {
   title: 'Inicio',
@@ -16,13 +17,19 @@ export const metadata = {
 export const revalidate = 0
 
 export default async function Home() {
-  const [destacados, marcas, categorias, preventas, dinamicas] = await Promise.all([
+  const [destacados, marcas, categorias, preventas, dinamicas, configuracion] = await Promise.all([
     getProductosDestacados(),
     getMarcas(),
     getCategorias(),
     getPreventas(),
     getDinamicas(),
+    getConfiguracion(),
   ])
+
+  const heroStat = configuracion?.heroStat ?? { mostrar: true, texto: '800+ Productos', link: '' }
+
+  // getDinamicas() ya ordena por _createdAt desc, así que la primera coincidencia es la más reciente
+  const dinamicaPopup = dinamicas.find(d => d.activa && d.destacada) || null
 
   const faqs = [
     {
@@ -53,6 +60,8 @@ export default async function Home() {
 
   return (
     <main>
+      <DinamicaPopup dinamica={dinamicaPopup} />
+
       {/* ── Banner preventa ── */}
       <div className="bg-orange-500 px-6 py-2 flex items-center gap-3">
         <p className="text-black text-xs font-bold uppercase tracking-wide">
@@ -91,10 +100,17 @@ export default async function Home() {
             </Link>
           </div>
         </div>
-        <div className="bg-orange-500 rounded-xl p-6 text-center min-w-32">
-          <span className="text-black text-4xl font-black block">800+</span>
-          <span className="text-black text-xs font-black uppercase">Productos</span>
-        </div>
+        {heroStat.mostrar && (
+          heroStat.link ? (
+            <Link href={heroStat.link} className="bg-orange-500 hover:bg-orange-400 transition-colors rounded-xl p-6 text-center min-w-32 max-w-60">
+              <span className="text-black text-xl font-black uppercase leading-tight block">{heroStat.texto}</span>
+            </Link>
+          ) : (
+            <div className="bg-orange-500 rounded-xl p-6 text-center min-w-32 max-w-60">
+              <span className="text-black text-xl font-black uppercase leading-tight block">{heroStat.texto}</span>
+            </div>
+          )
+        )}
       </section>
 
       {/* ── Categorías ── */}

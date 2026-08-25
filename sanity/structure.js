@@ -8,4 +8,13 @@ export const structure = (S) =>
       S.documentTypeListItem('tematica').title('Temática'),
       S.documentTypeListItem('linea').title('Línea de producto'),
       S.documentTypeListItem('universo').title('Universo'),
+      S.divider(),
+      S.listItem()
+        .title('Configuración del sitio')
+        .id('configuracion')
+        .child(
+          S.document()
+            .schemaType('configuracion')
+            .documentId('configuracion')
+        ),
     ])

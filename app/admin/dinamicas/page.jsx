@@ -29,7 +29,7 @@ export default function AdminDinamicas() {
   const [imagenPreview, setImagenPreview] = useState(null)
   const [form, setForm] = useState({
     titulo: '', descripcion: '', tipo: 'rifa',
-    fechaFin: '', enlace: '', activa: true,
+    fechaFin: '', enlace: '', activa: true, destacada: false,
     numerosTotal: '', numerosVendidos: [], precio: ''
   })
   const router = useRouter()
@@ -64,7 +64,7 @@ export default function AdminDinamicas() {
   }
 
   function abrirNuevo() {
-    setForm({ titulo: '', descripcion: '', tipo: 'rifa', fechaFin: '', enlace: '', activa: true, numerosTotal: '', numerosVendidos: [], precio: '' })
+    setForm({ titulo: '', descripcion: '', tipo: 'rifa', fechaFin: '', enlace: '', activa: true, destacada: false, numerosTotal: '', numerosVendidos: [], precio: '' })
     setImagenId(null)
     setImagenPreview(null)
     setModoEditar('nuevo')
@@ -80,6 +80,7 @@ export default function AdminDinamicas() {
       fechaFin: dinamica.fechaFin ? dinamica.fechaFin.slice(0, 16) : '',
       enlace: dinamica.enlace || '',
       activa: dinamica.activa ?? true,
+      destacada: dinamica.destacada ?? false,
       numerosTotal: dinamica.numerosTotal || '',
       numerosVendidos: dinamica.numerosVendidos || [],
       precio: dinamica.precio || '',
@@ -220,7 +221,7 @@ export default function AdminDinamicas() {
           )}
 
           {/* Opciones */}
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+          <div className="bg-[#111] border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-white text-sm font-black">Activa</p>
@@ -229,6 +230,16 @@ export default function AdminDinamicas() {
               <button onClick={() => setForm({ ...form, activa: !form.activa })}
                 className={`w-12 h-6 rounded-full transition-colors ${form.activa ? 'bg-orange-500' : 'bg-[#333]'}`}>
                 <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${form.activa ? 'translate-x-6' : 'translate-x-0'}`} />
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white text-sm font-black">Destacada</p>
+                <p className="text-white/30 text-xs">Se muestra en el popup del home (requiere estar activa)</p>
+              </div>
+              <button onClick={() => setForm({ ...form, destacada: !form.destacada })}
+                className={`w-12 h-6 rounded-full transition-colors ${form.destacada ? 'bg-orange-500' : 'bg-[#333]'}`}>
+                <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${form.destacada ? 'translate-x-6' : 'translate-x-0'}`} />
               </button>
             </div>
           </div>
