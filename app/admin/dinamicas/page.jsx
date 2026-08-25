@@ -12,6 +12,9 @@ const TIPOS = [
   { value: 'concurso', label: 'Concurso' },
   { value: 'flash_sale', label: 'Flash Sale' },
   { value: 'trivia', label: 'Trivia' },
+  { value: 'ruleta', label: 'Ruleta' },
+  { value: 'carrera', label: 'Carrera' },
+  { value: 'loteria', label: 'Lotería' },
 ]
 
 export default function AdminDinamicas() {
@@ -27,7 +30,7 @@ export default function AdminDinamicas() {
   const [form, setForm] = useState({
     titulo: '', descripcion: '', tipo: 'rifa',
     fechaFin: '', enlace: '', activa: true,
-    numerosTotal: '', numerosVendidos: []
+    numerosTotal: '', numerosVendidos: [], precio: ''
   })
   const router = useRouter()
 
@@ -61,7 +64,7 @@ export default function AdminDinamicas() {
   }
 
   function abrirNuevo() {
-    setForm({ titulo: '', descripcion: '', tipo: 'rifa', fechaFin: '', enlace: '', activa: true, numerosTotal: '', numerosVendidos: [] })
+    setForm({ titulo: '', descripcion: '', tipo: 'rifa', fechaFin: '', enlace: '', activa: true, numerosTotal: '', numerosVendidos: [], precio: '' })
     setImagenId(null)
     setImagenPreview(null)
     setModoEditar('nuevo')
@@ -79,6 +82,7 @@ export default function AdminDinamicas() {
       activa: dinamica.activa ?? true,
       numerosTotal: dinamica.numerosTotal || '',
       numerosVendidos: dinamica.numerosVendidos || [],
+      precio: dinamica.precio || '',
     })
     setImagenId(dinamica.imagen?.asset?._ref || null)
     setImagenPreview(dinamica.imagen ? urlFor(dinamica.imagen).width(400).url() : null)
@@ -95,6 +99,7 @@ export default function AdminDinamicas() {
     const body = {
       ...form,
       numerosTotal: form.numerosTotal ? parseInt(form.numerosTotal) : undefined,
+      precio: form.precio ? parseFloat(form.precio) : undefined,
       imagenId: imagenId || undefined,
     }
 
@@ -196,6 +201,10 @@ export default function AdminDinamicas() {
                   <input type="url" value={form.enlace} onChange={e => setForm({ ...form, enlace: e.target.value })} placeholder="https://..." className={inputClass} />
                 </div>
               </div>
+              <div>
+                <label className={labelClass}>Precio (MXN)</label>
+                <input type="number" min="0" step="0.01" value={form.precio} onChange={e => setForm({ ...form, precio: e.target.value })} placeholder="Déjalo vacío si es gratis" className={inputClass} />
+              </div>
             </div>
           </div>
 
@@ -273,6 +282,7 @@ export default function AdminDinamicas() {
                 <div className="flex gap-3 text-xs text-white/30 mt-1">
                   <span className="capitalize">{dinamica.tipo}</span>
                   <span className={dinamica.activa ? 'text-green-400' : 'text-red-400'}>{dinamica.activa ? 'Activa' : 'Inactiva'}</span>
+                  {dinamica.precio && <span>${dinamica.precio} MXN</span>}
                   {dinamica.fechaFin && <span>Cierre: {new Date(dinamica.fechaFin).toLocaleDateString('es-MX')}</span>}
                 </div>
               </div>

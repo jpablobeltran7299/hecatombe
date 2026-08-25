@@ -25,11 +25,20 @@ export default {
           { title: 'Rifa', value: 'rifa' },
           { title: 'Concurso', value: 'concurso' },
           { title: 'Flash Sale', value: 'flash_sale' },
-          { title: 'Trivia', value: 'trivia' }
+          { title: 'Trivia', value: 'trivia' },
+          { title: 'Ruleta', value: 'ruleta' },
+          { title: 'Carrera', value: 'carrera' },
+          { title: 'Lotería', value: 'loteria' }
         ],
         layout: 'radio'
       },
       validation: Rule => Rule.required()
+    },
+    {
+      name: 'precio',
+      title: 'Precio',
+      type: 'number',
+      description: 'Monto en pesos MXN que el cliente paga para participar. Déjalo vacío si la dinámica es gratuita.'
     },
     {
       name: 'imagen',
