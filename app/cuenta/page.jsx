@@ -203,26 +203,26 @@ export default function CuentaPage() {
   const saldoHC = hecacoins?.saldo || 0
 
   if (loading) return (
-    <main className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-white/50">Cargando...</p>
+    <main className="min-h-screen bg-page flex items-center justify-center">
+      <p className="text-ink/50">Cargando...</p>
     </main>
   )
 
-  const inputClass = "w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-orange-500 transition"
-  const labelClass = "text-white/50 text-xs font-black uppercase tracking-widest mb-2 block"
+  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink/20 focus:outline-none focus:border-orange-500 transition"
+  const labelClass = "text-ink/50 text-xs font-black uppercase tracking-widest mb-2 block"
 
   return (
-    <main className="min-h-screen bg-black px-4 py-12">
+    <main className="min-h-screen bg-page px-4 py-12">
       <div className="max-w-4xl mx-auto">
 
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-black uppercase text-white">Mi cuenta</h1>
-          <button onClick={handleLogout} className="text-white/50 hover:text-orange-500 text-sm transition">
+          <h1 className="text-3xl font-black uppercase text-ink">Mi cuenta</h1>
+          <button onClick={handleLogout} className="text-ink/50 hover:text-orange-500 text-sm transition">
             Cerrar sesión
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-8 border-b border-white/10">
+        <div className="flex flex-wrap gap-2 mb-8 border-b border-line">
           {[
             { key: 'perfil', label: 'Perfil' },
             { key: 'favoritos', label: `Favoritos (${favoritos.length})` },
@@ -232,7 +232,7 @@ export default function CuentaPage() {
           ].map(({ key, label }) => (
             <button key={key} onClick={() => setTab(key)}
               className={`px-4 py-3 text-sm font-black uppercase tracking-widest transition border-b-2 -mb-px whitespace-nowrap ${
-                tab === key ? 'border-orange-500 text-orange-500' : 'border-transparent text-white/40 hover:text-white'
+                tab === key ? 'border-orange-500 text-orange-500' : 'border-transparent text-ink/40 hover:text-ink'
               }`}>
               {label}
             </button>
@@ -242,12 +242,12 @@ export default function CuentaPage() {
         {/* Tab: Perfil */}
         {tab === 'perfil' && (
           <div className="flex flex-col gap-4">
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+            <div className="bg-surface border border-line rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Cuenta</h2>
-              <p className="text-white/70 text-sm">Correo: <span className="text-white">{user?.email}</span></p>
-              <p className="text-white/70 text-sm mt-1">Miembro desde: <span className="text-white">{new Date(user?.created_at).toLocaleDateString('es-MX')}</span></p>
+              <p className="text-ink/70 text-sm">Correo: <span className="text-ink">{user?.email}</span></p>
+              <p className="text-ink/70 text-sm mt-1">Miembro desde: <span className="text-ink">{new Date(user?.created_at).toLocaleDateString('es-MX')}</span></p>
             </div>
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+            <div className="bg-surface border border-line rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Datos personales</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -264,7 +264,7 @@ export default function CuentaPage() {
                 </div>
               </div>
             </div>
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+            <div className="bg-surface border border-line rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Dirección de envío</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
@@ -288,7 +288,7 @@ export default function CuentaPage() {
                   <input type="text" value={perfil.cp} onChange={e => setPerfil({ ...perfil, cp: e.target.value })} placeholder="CP" className={inputClass} />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className={labelClass}>Referencias <span className="text-white/20 normal-case font-normal">(opcional)</span></label>
+                  <label className={labelClass}>Referencias <span className="text-ink/20 normal-case font-normal">(opcional)</span></label>
                   <textarea value={perfil.referencias} onChange={e => setPerfil({ ...perfil, referencias: e.target.value })} placeholder="Ej. Casa azul, entre Calle 5 y Calle 6, portón negro" rows={2} className={`${inputClass} resize-none`} />
                 </div>
               </div>
@@ -305,8 +305,8 @@ export default function CuentaPage() {
         {tab === 'favoritos' && (
           <div>
             {favoritos.length === 0 ? (
-              <div className="bg-[#111] border border-white/10 rounded-2xl p-12 text-center">
-                <p className="text-white/40 mb-4">No tienes favoritos guardados</p>
+              <div className="bg-surface border border-line rounded-2xl p-12 text-center">
+                <p className="text-ink/40 mb-4">No tienes favoritos guardados</p>
                 <Link href="/catalogo" className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase px-6 py-3 rounded-xl transition">Ver catálogo</Link>
               </div>
             ) : (
@@ -314,20 +314,20 @@ export default function CuentaPage() {
                 {favoritos.map(f => {
                   const p = productosF[f.producto_id]
                   return (
-                    <div key={f.producto_id} className="bg-[#111] border border-white/10 rounded-2xl p-4 flex items-center gap-4">
+                    <div key={f.producto_id} className="bg-surface border border-line rounded-2xl p-4 flex items-center gap-4">
                       {p?.imagenes?.[0] ? (
                         <img src={urlFor(p.imagenes[0]).width(80).height(80).url()} alt={p.nombre} className="w-16 h-16 object-contain rounded-lg bg-white flex-shrink-0" />
                       ) : (
-                        <div className="w-16 h-16 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-2xl flex-shrink-0">📦</div>
+                        <div className="w-16 h-16 bg-surface-alt rounded-lg flex items-center justify-center text-2xl flex-shrink-0">📦</div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-white font-black uppercase text-xs truncate">{p?.nombre || 'Cargando...'}</p>
+                        <p className="text-ink font-black uppercase text-xs truncate">{p?.nombre || 'Cargando...'}</p>
                         {p?.precio && <p className="text-orange-500 font-black text-sm">${p.precio.toLocaleString('es-MX')} MXN</p>}
-                        <p className="text-white/20 text-xs mt-1">{new Date(f.created_at).toLocaleDateString('es-MX')}</p>
+                        <p className="text-ink/20 text-xs mt-1">{new Date(f.created_at).toLocaleDateString('es-MX')}</p>
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         <Link href={`/producto/${f.producto_id}`} className="text-orange-500 hover:underline text-xs font-black uppercase">Ver</Link>
-                        <button onClick={() => eliminarFavorito(f.producto_id)} className="text-white/20 hover:text-red-400 transition">
+                        <button onClick={() => eliminarFavorito(f.producto_id)} className="text-ink/20 hover:text-red-400 transition">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                         </button>
                       </div>
@@ -343,17 +343,17 @@ export default function CuentaPage() {
         {tab === 'pedidos' && (
           <div className="flex flex-col gap-4">
             {pedidos.length === 0 ? (
-              <div className="bg-[#111] border border-white/10 rounded-2xl p-12 text-center">
-                <p className="text-white/40 mb-2">No tienes pedidos aún</p>
+              <div className="bg-surface border border-line rounded-2xl p-12 text-center">
+                <p className="text-ink/40 mb-2">No tienes pedidos aún</p>
                 <Link href="/catalogo" className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase px-6 py-3 rounded-xl transition mt-4 inline-block">Ver catálogo</Link>
               </div>
             ) : (
               pedidos.map(pedido => (
-                <div key={pedido.id} className="bg-[#111] border border-white/10 rounded-2xl p-6">
+                <div key={pedido.id} className="bg-surface border border-line rounded-2xl p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <p className="text-white font-black uppercase text-sm">Pedido #{pedido.id}</p>
-                      <p className="text-white/30 text-xs mt-1">{new Date(pedido.created_at).toLocaleDateString('es-MX')}</p>
+                      <p className="text-ink font-black uppercase text-sm">Pedido #{pedido.id}</p>
+                      <p className="text-ink/30 text-xs mt-1">{new Date(pedido.created_at).toLocaleDateString('es-MX')}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className={`text-xs font-black uppercase px-3 py-1 rounded-full ${getBadgeEstado(pedido.estado)}`}>
@@ -366,22 +366,22 @@ export default function CuentaPage() {
                     <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 mb-4">
                       <p className="text-orange-400 text-xs font-black uppercase mb-2">Preventa apartada</p>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-white/50">Anticipo pagado</span>
-                        <span className="text-white">${pedido.anticipo_pagado?.toLocaleString('es-MX')} MXN</span>
+                        <span className="text-ink/50">Anticipo pagado</span>
+                        <span className="text-ink">${pedido.anticipo_pagado?.toLocaleString('es-MX')} MXN</span>
                       </div>
                       <div className="flex justify-between text-xs mb-3">
-                        <span className="text-white/50">Pendiente de liquidar</span>
+                        <span className="text-ink/50">Pendiente de liquidar</span>
                         <span className="text-orange-400 font-black">${pedido.monto_liquidacion?.toLocaleString('es-MX')} MXN</span>
                       </div>
-                      <p className="text-white/30 text-xs mb-3">Te avisaremos por correo cuando tu producto llegue.</p>
+                      <p className="text-ink/30 text-xs mb-3">Te avisaremos por correo cuando tu producto llegue.</p>
 
-                      <p className="text-white/50 text-xs font-black uppercase mb-2">¿Cómo quieres recibirlo?</p>
+                      <p className="text-ink/50 text-xs font-black uppercase mb-2">¿Cómo quieres recibirlo?</p>
                       <div className="flex gap-2 mb-3">
                         <button onClick={() => setDestinoLiquidacion(prev => ({ ...prev, [pedido.id]: 'directo' }))}
                           className={`flex-1 flex items-center justify-center gap-1 text-xs font-black uppercase py-2 rounded-lg border-2 transition ${
                             (destinoLiquidacion[pedido.id] || 'directo') === 'directo'
                               ? 'border-orange-500 bg-orange-500/10 text-orange-500'
-                              : 'border-white/10 text-white/40 hover:border-white/30'
+                              : 'border-line text-ink/40 hover:border-ink/30'
                           }`}>
                           🚚 Envío directo
                         </button>
@@ -389,7 +389,7 @@ export default function CuentaPage() {
                           className={`flex-1 flex items-center justify-center gap-1 text-xs font-black uppercase py-2 rounded-lg border-2 transition ${
                             destinoLiquidacion[pedido.id] === 'bodega'
                               ? 'border-orange-500 bg-orange-500/10 text-orange-500'
-                              : 'border-white/10 text-white/40 hover:border-white/30'
+                              : 'border-line text-ink/40 hover:border-ink/30'
                           }`}>
                           📦 Guardar en bodega
                         </button>
@@ -402,8 +402,8 @@ export default function CuentaPage() {
                     </div>
                   )}
                   {pedido.items?.length > 0 && (
-                    <div className="border-t border-white/10 pt-4">
-                      <p className="text-white/30 text-xs uppercase font-black">{pedido.items.length} producto(s)</p>
+                    <div className="border-t border-line pt-4">
+                      <p className="text-ink/30 text-xs uppercase font-black">{pedido.items.length} producto(s)</p>
                     </div>
                   )}
                 </div>
@@ -415,20 +415,20 @@ export default function CuentaPage() {
         {/* Tab: Bodega */}
         {tab === 'bodega' && (
           <div className="flex flex-col gap-4">
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+            <div className="bg-surface border border-line rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-2">Bodegatombe</h2>
-              <p className="text-white/40 text-sm mb-6">Acumula $1,200 MXN en compras y obtén envío gratis a todo México.</p>
+              <p className="text-ink/40 text-sm mb-6">Acumula $1,200 MXN en compras y obtén envío gratis a todo México.</p>
               {totalBodega > 0 ? (
                 <>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-white/50 text-xs font-black uppercase">Acumulado</span>
+                    <span className="text-ink/50 text-xs font-black uppercase">Acumulado</span>
                     <span className="text-orange-500 font-black">${totalBodega.toLocaleString('es-MX')} / $1,200 MXN</span>
                   </div>
-                  <div className="w-full bg-[#222] rounded-full h-3 mb-4">
+                  <div className="w-full bg-surface-alt rounded-full h-3 mb-4">
                     <div className="bg-orange-500 h-3 rounded-full transition-all duration-500" style={{ width: `${porcentajeBodega}%` }} />
                   </div>
                   {faltaBodega > 0 ? (
-                    <p className="text-white/40 text-sm mb-6">Te faltan <span className="text-orange-500 font-black">${faltaBodega.toLocaleString('es-MX')} MXN</span> para envío gratis.</p>
+                    <p className="text-ink/40 text-sm mb-6">Te faltan <span className="text-orange-500 font-black">${faltaBodega.toLocaleString('es-MX')} MXN</span> para envío gratis.</p>
                   ) : (
                     <p className="text-green-400 text-sm font-black mb-6">🎉 ¡Ya tienes envío gratis disponible!</p>
                   )}
@@ -436,26 +436,26 @@ export default function CuentaPage() {
                     className={`w-full font-black uppercase py-4 rounded-xl transition text-sm ${faltaBodega === 0 ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'border border-orange-500 text-orange-500 hover:bg-orange-500/10'}`}>
                     {solicitandoEnvio ? 'Procesando...' : faltaBodega === 0 ? '🚚 Solicitar envío gratis' : '🚚 Solicitar envío ahora'}
                   </button>
-                  {faltaBodega > 0 && <p className="text-white/20 text-xs text-center mt-2">Si solicitas envío antes de $1,200 se cobrará el costo de envío</p>}
+                  {faltaBodega > 0 && <p className="text-ink/20 text-xs text-center mt-2">Si solicitas envío antes de $1,200 se cobrará el costo de envío</p>}
                 </>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-white/30 text-4xl mb-4">📦</p>
-                  <p className="text-white/40 mb-2">Tu bodega está vacía</p>
-                  <p className="text-white/20 text-sm mb-6">Al comprar elige "Guardar en Bodegatombe" para acumular tu envío gratis</p>
+                  <p className="text-ink/30 text-4xl mb-4">📦</p>
+                  <p className="text-ink/40 mb-2">Tu bodega está vacía</p>
+                  <p className="text-ink/20 text-sm mb-6">Al comprar elige "Guardar en Bodegatombe" para acumular tu envío gratis</p>
                   <Link href="/catalogo" className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase px-6 py-3 rounded-xl transition inline-block">Ver catálogo</Link>
                 </div>
               )}
             </div>
             {pedidosBodega.length > 0 && (
-              <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+              <div className="bg-surface border border-line rounded-2xl p-6">
                 <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Productos guardados</h2>
                 <div className="flex flex-col gap-3">
                   {pedidosBodega.map(pedido => (
-                    <div key={pedido.id} className="flex items-center justify-between border-b border-white/5 pb-3 last:border-0 last:pb-0">
+                    <div key={pedido.id} className="flex items-center justify-between border-b border-ink/5 pb-3 last:border-0 last:pb-0">
                       <div>
-                        <p className="text-white text-sm font-black">Pedido #{pedido.id}</p>
-                        <p className="text-white/30 text-xs">{new Date(pedido.created_at).toLocaleDateString('es-MX')}</p>
+                        <p className="text-ink text-sm font-black">Pedido #{pedido.id}</p>
+                        <p className="text-ink/30 text-xs">{new Date(pedido.created_at).toLocaleDateString('es-MX')}</p>
                       </div>
                       <span className="text-orange-500 font-black">${pedido.total?.toLocaleString('es-MX')} MXN</span>
                     </div>
@@ -469,30 +469,30 @@ export default function CuentaPage() {
         {/* Tab: Hecacoins */}
         {tab === 'hecacoins' && (
           <div className="flex flex-col gap-4">
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+            <div className="bg-surface border border-line rounded-2xl p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-lg font-black uppercase text-orange-500">Hecacoins</h2>
-                  <p className="text-white/40 text-sm mt-1">Ganas 3% de cada compra en Hecacoins. 1 HC = $1 MXN de descuento.</p>
+                  <p className="text-ink/40 text-sm mt-1">Ganas 3% de cada compra en Hecacoins. 1 HC = $1 MXN de descuento.</p>
                 </div>
                 <div className="text-right">
                   <p className="text-orange-500 font-black text-3xl">{saldoHC.toLocaleString('es-MX')}</p>
-                  <p className="text-white/40 text-xs">HC disponibles</p>
+                  <p className="text-ink/40 text-xs">HC disponibles</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-black rounded-xl p-4 text-center">
+                <div className="bg-page rounded-xl p-4 text-center">
                   <p className="text-orange-500 font-black text-xl">{hecacoins?.total_ganado?.toLocaleString('es-MX') || 0}</p>
-                  <p className="text-white/30 text-xs mt-1 uppercase font-black">Total ganado</p>
+                  <p className="text-ink/30 text-xs mt-1 uppercase font-black">Total ganado</p>
                 </div>
-                <div className="bg-black rounded-xl p-4 text-center">
-                  <p className="text-white font-black text-xl">{saldoHC.toLocaleString('es-MX')}</p>
-                  <p className="text-white/30 text-xs mt-1 uppercase font-black">Disponible</p>
+                <div className="bg-page rounded-xl p-4 text-center">
+                  <p className="text-ink font-black text-xl">{saldoHC.toLocaleString('es-MX')}</p>
+                  <p className="text-ink/30 text-xs mt-1 uppercase font-black">Disponible</p>
                 </div>
-                <div className="bg-black rounded-xl p-4 text-center">
-                  <p className="text-white/40 font-black text-xl">{hecacoins?.total_canjeado?.toLocaleString('es-MX') || 0}</p>
-                  <p className="text-white/30 text-xs mt-1 uppercase font-black">Canjeado</p>
+                <div className="bg-page rounded-xl p-4 text-center">
+                  <p className="text-ink/40 font-black text-xl">{hecacoins?.total_canjeado?.toLocaleString('es-MX') || 0}</p>
+                  <p className="text-ink/30 text-xs mt-1 uppercase font-black">Canjeado</p>
                 </div>
               </div>
 
@@ -510,14 +510,14 @@ export default function CuentaPage() {
 
             {/* Historial */}
             {movimientos.length > 0 && (
-              <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+              <div className="bg-surface border border-line rounded-2xl p-6">
                 <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Historial</h2>
                 <div className="flex flex-col gap-3">
                   {movimientos.map(mov => (
-                    <div key={mov.id} className="flex items-center justify-between border-b border-white/5 pb-3 last:border-0 last:pb-0">
+                    <div key={mov.id} className="flex items-center justify-between border-b border-ink/5 pb-3 last:border-0 last:pb-0">
                       <div>
-                        <p className="text-white text-sm font-black">{mov.descripcion}</p>
-                        <p className="text-white/30 text-xs">{new Date(mov.created_at).toLocaleDateString('es-MX')}</p>
+                        <p className="text-ink text-sm font-black">{mov.descripcion}</p>
+                        <p className="text-ink/30 text-xs">{new Date(mov.created_at).toLocaleDateString('es-MX')}</p>
                       </div>
                       <span className={`font-black text-sm ${mov.tipo === 'ganado' ? 'text-green-400' : 'text-orange-500'}`}>
                         {mov.tipo === 'ganado' ? '+' : '-'}{mov.monto?.toLocaleString('es-MX')} HC
@@ -529,10 +529,10 @@ export default function CuentaPage() {
             )}
 
             {movimientos.length === 0 && (
-              <div className="bg-[#111] border border-white/10 rounded-2xl p-12 text-center">
-                <p className="text-white/30 text-4xl mb-4">🪙</p>
-                <p className="text-white/40 mb-2">Aún no tienes Hecacoins</p>
-                <p className="text-white/20 text-sm mb-6">Gana 3% en cada compra automáticamente</p>
+              <div className="bg-surface border border-line rounded-2xl p-12 text-center">
+                <p className="text-ink/30 text-4xl mb-4">🪙</p>
+                <p className="text-ink/40 mb-2">Aún no tienes Hecacoins</p>
+                <p className="text-ink/20 text-sm mb-6">Gana 3% en cada compra automáticamente</p>
                 <Link href="/catalogo" className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase px-6 py-3 rounded-xl transition inline-block">Ver catálogo</Link>
               </div>
             )}

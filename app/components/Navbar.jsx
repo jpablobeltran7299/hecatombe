@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { useAuth } from './AuthProvider'
 
 const LINKS = [
   { href: '/catalogo', label: 'Catálogo' },
@@ -19,19 +19,9 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const [user, setUser] = useState(null)
   const [cantidadCarrito, setCantidadCarrito] = useState(0)
   const router = useRouter()
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-    })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
+  const { user } = useAuth()
 
   useEffect(() => {
     function actualizarContador() {

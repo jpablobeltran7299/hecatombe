@@ -1,5 +1,28 @@
 @import "tailwindcss";
 
+/*
+ * Tokens de tema — fase 1 de la migración a variables centralizadas.
+ * Valores actuales = tema oscuro (sin cambio visual). Cambiar a claro
+ * en el futuro = editar solo este bloque.
+ *
+ * --color-page         reemplaza: bg-black, bg-[#0d0d0d]        (fondo de página)
+ * --color-surface      reemplaza: bg-[#111], bg-[#111111]       (tarjetas/paneles)
+ * --color-surface-alt  reemplaza: bg-[#1a1a1a], bg-[#333]       (superficie anidada / toggle off)
+ * --color-ink          reemplaza: text-white                    (texto principal)
+ * --color-ink-muted    reemplaza: text-white/40-60, text-gray-400/500/600/700  (texto secundario)
+ * --color-line         reemplaza: border-white/10, border-[#222], border-[#2a2a2a]  (borde sutil)
+ * --color-line-strong  reemplaza: border-white/20, border-[#333]  (borde de inputs/hover)
+ */
+@theme {
+  --color-page: #000000;
+  --color-surface: #111111;
+  --color-surface-alt: #1a1a1a;
+  --color-ink: #ffffff;
+  --color-ink-muted: #6b7280;
+  --color-line: rgba(255, 255, 255, 0.1);
+  --color-line-strong: rgba(255, 255, 255, 0.2);
+}
+
 body {
   background: #111111;
   color: #ffffff;

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import Navbar from './components/Navbar'
 import BotonesFlotantes from './components/BotonesFlotantes'
+import { AuthProvider } from './components/AuthProvider'
 
 export const metadata = {
   title: {
@@ -41,9 +42,11 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body>
-        <Navbar />
-        {children}
-        <BotonesFlotantes />
+        <AuthProvider>
+          <Navbar />
+          {children}
+          <BotonesFlotantes />
+        </AuthProvider>
       </body>
     </html>
   )

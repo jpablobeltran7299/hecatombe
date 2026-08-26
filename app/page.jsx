@@ -75,14 +75,14 @@ export default async function Home() {
       <BannerCarousel />
 
       {/* ── Hero ── */}
-      <section className="bg-black px-6 py-12 flex items-center justify-between gap-6 flex-wrap">
+      <section className="bg-page px-6 py-12 flex items-center justify-between gap-6 flex-wrap">
         <div>
-          <h1 className="text-white text-4xl font-black uppercase leading-tight mb-3">
+          <h1 className="text-ink text-4xl font-black uppercase leading-tight mb-3">
             La tienda<br />
             <span className="text-orange-500">geek</span> que<br />
             te entiende
           </h1>
-          <p className="text-gray-400 text-sm mb-6 max-w-xs">
+          <p className="text-ink-muted text-sm mb-6 max-w-xs">
             Funkos, figuras y coleccionables de cultura pop. Comunidad activa, preventas y dinámicas.
           </p>
           <div className="flex gap-3 flex-wrap">
@@ -114,9 +114,9 @@ export default async function Home() {
       </section>
 
       {/* ── Categorías ── */}
-      <section className="bg-[#111] px-6 py-8">
+      <section className="bg-surface px-6 py-8">
         <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-white text-lg font-black uppercase tracking-wide">
+          <h2 className="text-ink text-lg font-black uppercase tracking-wide">
             Categorías <span className="text-orange-500">populares</span>
           </h2>
         </div>
@@ -125,18 +125,18 @@ export default async function Home() {
             <Link
               key={cat._id}
               href={'/catalogo?categoria=' + cat._id}
-              className="bg-black border-2 border-[#222] hover:border-orange-500 rounded-lg p-4 text-center transition"
+              className="bg-page border-2 border-line hover:border-orange-500 rounded-lg p-4 text-center transition"
             >
-              <p className="text-white text-xs font-bold uppercase">{cat.nombre}</p>
+              <p className="text-ink text-xs font-bold uppercase">{cat.nombre}</p>
             </Link>
           ))}
         </div>
       </section>
 
       {/* ── Marcas ── */}
-<section className="bg-[#111] px-6 pb-8">
+<section className="bg-surface px-6 pb-8">
   <div className="flex items-baseline justify-between mb-4">
-    <h2 className="text-white text-lg font-black uppercase tracking-wide">
+    <h2 className="text-ink text-lg font-black uppercase tracking-wide">
       Marcas <span className="text-orange-500">disponibles</span>
     </h2>
   </div>
@@ -145,7 +145,7 @@ export default async function Home() {
       <Link
         key={marca._id}
         href={'/catalogo?marca=' + marca._id}
-        className="bg-black border border-[#333] hover:border-orange-500 text-gray-300 text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition"
+        className="bg-page border border-line-strong hover:border-orange-500 text-ink-muted text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition"
       >
         {marca.nombre}
       </Link>
@@ -154,10 +154,10 @@ export default async function Home() {
 </section>
 
  {/* ── Destacados ── */}
-<section id="destacados" className="py-16 px-4 bg-[#111111]">
+<section id="destacados" className="py-16 px-4 bg-surface">
   <div className="max-w-6xl mx-auto">
     <p className="text-orange-500 font-black uppercase text-sm tracking-widest mb-2">Esta semana</p>
-    <h2 className="text-white font-black uppercase text-4xl mb-10">DESTACADOS</h2>
+    <h2 className="text-ink font-black uppercase text-4xl mb-10">DESTACADOS</h2>
     <CarruselDestacados productos={destacados} />
     <div className="text-center mt-10">
       <Link href="/catalogo" className="inline-block border border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black font-black uppercase px-8 py-3 rounded-xl transition-colors">
@@ -170,17 +170,17 @@ export default async function Home() {
       {/* ════════════════════════════════════════════
           SECCIÓN 1 — PREVENTAS
       ════════════════════════════════════════════ */}
-      <section id="preventas" className="bg-black px-6 py-10 border-t-2 border-[#222]">
+      <section id="preventas" className="bg-page px-6 py-10 border-t-2 border-line">
         {/* Encabezado */}
         <div className="flex items-baseline justify-between mb-2">
-          <h2 className="text-white text-lg font-black uppercase tracking-wide">
+          <h2 className="text-ink text-lg font-black uppercase tracking-wide">
             🔥 <span className="text-orange-500">Preventas</span> abiertas
           </h2>
           <Link href="/catalogo?tipo=preventa" className="text-orange-500 text-xs font-bold uppercase">
             Ver todas →
           </Link>
         </div>
-        <p className="text-gray-500 text-xs mb-6 max-w-md">
+        <p className="text-ink-muted text-xs mb-6 max-w-md">
           Aparta tu pieza antes de que llegue al almacén. Solo necesitas el 50% de anticipo — liquidas el resto al momento de la entrega.
         </p>
 
@@ -191,10 +191,10 @@ export default async function Home() {
             { paso: '02', titulo: 'Espera', desc: 'Te avisamos por WhatsApp cuando llegue tu producto al almacén.' },
             { paso: '03', titulo: 'Liquida', desc: 'Pagas el restante y coordinamos envío o entrega en Querétaro.' },
           ].map(({ paso, titulo, desc }) => (
-            <div key={paso} className="bg-[#111] border border-[#2a2a2a] rounded-xl p-4">
+            <div key={paso} className="bg-surface border border-line rounded-xl p-4">
               <span className="text-orange-500 font-black text-2xl block mb-1">{paso}</span>
-              <p className="text-white font-black text-sm uppercase mb-1">{titulo}</p>
-              <p className="text-gray-500 text-xs leading-relaxed">{desc}</p>
+              <p className="text-ink font-black text-sm uppercase mb-1">{titulo}</p>
+              <p className="text-ink-muted text-xs leading-relaxed">{desc}</p>
             </div>
           ))}
         </div>
@@ -205,10 +205,10 @@ export default async function Home() {
       <Link
         key={producto._id}
         href={'/producto/' + producto._id}
-        className="group bg-[#111] border border-[#333] hover:border-orange-500 rounded-2xl overflow-hidden transition-colors flex flex-col"
+        className="group bg-surface border border-line-strong hover:border-orange-500 rounded-2xl overflow-hidden transition-colors flex flex-col"
       >
         {/* Imagen */}
-        <div className="aspect-square bg-[#1a1a1a] overflow-hidden relative flex-shrink-0">
+        <div className="aspect-square bg-surface-alt overflow-hidden relative flex-shrink-0">
           {producto.imagenes?.[0] ? (
             <img
               src={urlFor(producto.imagenes[0]).width(400).height(400).url()}
@@ -225,10 +225,10 @@ export default async function Home() {
 
         {/* Info */}
         <div className="p-4 flex flex-col flex-1">
-          <p className="text-gray-400 text-xs uppercase font-black tracking-widest mb-1 truncate">
+          <p className="text-ink-muted text-xs uppercase font-black tracking-widest mb-1 truncate">
             {producto.marca}
           </p>
-          <p className="text-white font-black text-sm uppercase leading-tight mb-2 flex-1 line-clamp-2">
+          <p className="text-ink font-black text-sm uppercase leading-tight mb-2 flex-1 line-clamp-2">
             {producto.nombre}
           </p>
           {producto.anticipo && (
@@ -237,7 +237,7 @@ export default async function Home() {
             </p>
           )}
           {producto.fechaEstimada && (
-            <p className="text-gray-600 text-xs mt-1">
+            <p className="text-ink-muted text-xs mt-1">
               🗓 Llega: {new Date(producto.fechaEstimada).toLocaleDateString('es-MX', { month: 'short', year: 'numeric' })}
             </p>
           )}
@@ -246,17 +246,17 @@ export default async function Home() {
     ))}
   </div>
 ) : (
-  <div className="border-2 border-dashed border-[#2a2a2a] rounded-xl p-8 text-center">
-    <p className="text-gray-600 text-sm font-bold uppercase">No hay preventas abiertas en este momento</p>
-    <p className="text-gray-700 text-xs mt-1">Síguenos en redes para ser el primero en enterarte</p>
+  <div className="border-2 border-dashed border-line rounded-xl p-8 text-center">
+    <p className="text-ink-muted text-sm font-bold uppercase">No hay preventas abiertas en este momento</p>
+    <p className="text-ink-muted text-xs mt-1">Síguenos en redes para ser el primero en enterarte</p>
   </div>
 )}
 
         {/* CTA WhatsApp */}
-        <div className="mt-6 bg-[#111] border border-[#2a2a2a] rounded-xl px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+        <div className="mt-6 bg-surface border border-line rounded-xl px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-white font-black text-sm uppercase">¿Tienes dudas sobre alguna preventa?</p>
-            <p className="text-gray-500 text-xs">Te respondemos en minutos por WhatsApp</p>
+            <p className="text-ink font-black text-sm uppercase">¿Tienes dudas sobre alguna preventa?</p>
+            <p className="text-ink-muted text-xs">Te respondemos en minutos por WhatsApp</p>
           </div>
           <a
             href="https://wa.me/524427183787?text=Hola%2C%20tengo%20dudas%20sobre%20una%20preventa"
@@ -270,13 +270,13 @@ export default async function Home() {
       {/* ════════════════════════════════════════════
           SECCIÓN 2 — DINÁMICAS
       ════════════════════════════════════════════ */}
-      <section id="dinamicas" className="bg-[#111] px-6 py-10 border-t-2 border-[#222]">
+      <section id="dinamicas" className="bg-surface px-6 py-10 border-t-2 border-line">
         <div className="flex items-baseline justify-between mb-2">
-          <h2 className="text-white text-lg font-black uppercase tracking-wide">
+          <h2 className="text-ink text-lg font-black uppercase tracking-wide">
             🎲 <span className="text-orange-500">Dinámicas</span> activas
           </h2>
         </div>
-        <p className="text-gray-500 text-xs mb-6 max-w-md">
+        <p className="text-ink-muted text-xs mb-6 max-w-md">
           Concursos, rifas y retos para la comunidad. Gana coleccionables, descuentos y merchandise exclusivo.
         </p>
 
@@ -285,14 +285,14 @@ export default async function Home() {
             {dinamicas.map((din) => (
               <div
                 key={din._id}
-                className="bg-black border-2 border-[#222] hover:border-orange-500 rounded-xl p-5 transition"
+                className="bg-page border-2 border-line hover:border-orange-500 rounded-xl p-5 transition"
               >
                 {/* Tipo badge */}
                 <span className="bg-orange-500 text-black text-xs font-black px-2 py-0.5 rounded uppercase tracking-wide mb-3 inline-block">
                   {din.tipo ?? 'Concurso'}
                 </span>
-                <p className="text-white font-black text-sm uppercase mb-1">{din.titulo}</p>
-                <p className="text-gray-500 text-xs leading-relaxed mb-3">{din.descripcion}</p>
+                <p className="text-ink font-black text-sm uppercase mb-1">{din.titulo}</p>
+                <p className="text-ink-muted text-xs leading-relaxed mb-3">{din.descripcion}</p>
                 {din.fechaFin && (
                   <p className="text-orange-500 text-xs font-bold">
                     ⏳ Termina:{' '}
@@ -346,14 +346,14 @@ export default async function Home() {
             ].map(({ tipo, titulo, desc, badge }) => (
               <div
                 key={titulo}
-                className="bg-black border-2 border-[#222] rounded-xl p-5"
+                className="bg-page border-2 border-line rounded-xl p-5"
               >
                 <span className={`${badge} text-white text-xs font-black px-2 py-0.5 rounded uppercase tracking-wide mb-3 inline-block`}>
                   {tipo}
                 </span>
-                <p className="text-white font-black text-sm uppercase mb-1">{titulo}</p>
-                <p className="text-gray-500 text-xs leading-relaxed">{desc}</p>
-                <p className="text-gray-700 text-xs mt-3 italic">Próximamente — mantente al tanto en redes</p>
+                <p className="text-ink font-black text-sm uppercase mb-1">{titulo}</p>
+                <p className="text-ink-muted text-xs leading-relaxed">{desc}</p>
+                <p className="text-ink-muted text-xs mt-3 italic">Próximamente — mantente al tanto en redes</p>
               </div>
             ))}
           </div>
@@ -365,7 +365,7 @@ export default async function Home() {
             href="https://instagram.com/hecatombegeek"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-black border border-[#333] hover:border-orange-500 text-gray-300 text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition"
+            className="bg-page border border-line-strong hover:border-orange-500 text-ink-muted text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition"
           >
             📸 Instagram
           </a>
@@ -373,7 +373,7 @@ export default async function Home() {
             href="https://tiktok.com/@hecatombegeek"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-black border border-[#333] hover:border-orange-500 text-gray-300 text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition"
+            className="bg-page border border-line-strong hover:border-orange-500 text-ink-muted text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition"
           >
             🎵 TikTok
           </a>
@@ -381,7 +381,7 @@ export default async function Home() {
             href="https://wa.me/524427183787"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-black border border-[#333] hover:border-orange-500 text-gray-300 text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition"
+            className="bg-page border border-line-strong hover:border-orange-500 text-ink-muted text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition"
           >
             💬 Canal WhatsApp
           </a>
@@ -391,33 +391,33 @@ export default async function Home() {
       {/* ════════════════════════════════════════════
           SECCIÓN 3 — NOSOTROS
       ════════════════════════════════════════════ */}
-      <section id="nosotros" className="bg-black px-6 py-10 border-t-2 border-[#222]">
+      <section id="nosotros" className="bg-page px-6 py-10 border-t-2 border-line">
         <div className="mb-6">
-          <h2 className="text-white text-lg font-black uppercase tracking-wide mb-1">
+          <h2 className="text-ink text-lg font-black uppercase tracking-wide mb-1">
             👾 Quiénes <span className="text-orange-500">somos</span>
           </h2>
-          <p className="text-gray-500 text-xs max-w-sm">
+          <p className="text-ink-muted text-xs max-w-sm">
             No somos solo una tienda — somos coleccionistas como tú.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
           {/* Historia */}
-          <div className="bg-[#111] border border-[#2a2a2a] rounded-xl p-5">
+          <div className="bg-surface border border-line rounded-xl p-5">
             <span className="text-orange-500 text-2xl mb-3 block">🏪</span>
-            <p className="text-white font-black text-sm uppercase mb-2">Nuestra historia</p>
-            <p className="text-gray-500 text-xs leading-relaxed">
-              Hecatombe nació en Querétaro cuando un grupo de amigos se cansó de pagar de más en tiendas de intermediarios. 
+            <p className="text-ink font-black text-sm uppercase mb-2">Nuestra historia</p>
+            <p className="text-ink-muted text-xs leading-relaxed">
+              Hecatombe nació en Querétaro cuando un grupo de amigos se cansó de pagar de más en tiendas de intermediarios.
               Decidimos importar directo, construir comunidad y compartir el acceso a coleccionables que antes eran casi imposibles de conseguir en México.
             </p>
           </div>
 
           {/* Misión */}
-          <div className="bg-[#111] border border-[#2a2a2a] rounded-xl p-5">
+          <div className="bg-surface border border-line rounded-xl p-5">
             <span className="text-orange-500 text-2xl mb-3 block">🎯</span>
-            <p className="text-white font-black text-sm uppercase mb-2">Nuestra misión</p>
-            <p className="text-gray-500 text-xs leading-relaxed">
-              Hacer accesible la cultura pop de calidad. Precios justos, producto 100% original, atención humana y 
+            <p className="text-ink font-black text-sm uppercase mb-2">Nuestra misión</p>
+            <p className="text-ink-muted text-xs leading-relaxed">
+              Hacer accesible la cultura pop de calidad. Precios justos, producto 100% original, atención humana y
               una comunidad donde el coleccionismo es un deporte de equipo.
             </p>
           </div>
@@ -444,11 +444,11 @@ export default async function Home() {
             { icon: '📦', titulo: 'Envío a todo México', desc: 'Empaque seguro para que tu coleccionable llegue perfecto.' },
             { icon: '🤝', titulo: 'Trato directo', desc: 'Nos escribes tú, te responde una persona real. Sin bots.' },
           ].map(({ icon, titulo, desc }) => (
-            <div key={titulo} className="flex gap-3 bg-[#111] border border-[#2a2a2a] rounded-xl p-4">
+            <div key={titulo} className="flex gap-3 bg-surface border border-line rounded-xl p-4">
               <span className="text-2xl flex-shrink-0">{icon}</span>
               <div>
-                <p className="text-white font-black text-xs uppercase mb-1">{titulo}</p>
-                <p className="text-gray-500 text-xs leading-relaxed">{desc}</p>
+                <p className="text-ink font-black text-xs uppercase mb-1">{titulo}</p>
+                <p className="text-ink-muted text-xs leading-relaxed">{desc}</p>
               </div>
             </div>
           ))}
@@ -458,37 +458,37 @@ export default async function Home() {
       {/* ════════════════════════════════════════════
           SECCIÓN 4 — FAQ
       ════════════════════════════════════════════ */}
-      <section id="faq" className="bg-[#111] px-6 py-10 border-t-2 border-[#222]">
+      <section id="faq" className="bg-surface px-6 py-10 border-t-2 border-line">
         <div className="mb-6">
-          <h2 className="text-white text-lg font-black uppercase tracking-wide mb-1">
+          <h2 className="text-ink text-lg font-black uppercase tracking-wide mb-1">
             ❓ Preguntas <span className="text-orange-500">frecuentes</span>
           </h2>
-          <p className="text-gray-500 text-xs">Si no encuentras tu respuesta aquí, escríbenos por WhatsApp.</p>
+          <p className="text-ink-muted text-xs">Si no encuentras tu respuesta aquí, escríbenos por WhatsApp.</p>
         </div>
 
         <div className="space-y-3">
           {faqs.map(({ q, a }, i) => (
             <details
               key={i}
-              className="group bg-black border border-[#2a2a2a] hover:border-orange-500 rounded-xl overflow-hidden transition"
+              className="group bg-page border border-line hover:border-orange-500 rounded-xl overflow-hidden transition"
             >
               <summary className="flex items-center justify-between px-5 py-4 cursor-pointer list-none">
-                <span className="text-white font-bold text-sm pr-4">{q}</span>
+                <span className="text-ink font-bold text-sm pr-4">{q}</span>
                 <span className="text-orange-500 font-black text-lg flex-shrink-0 transition-transform group-open:rotate-45">
                   +
                 </span>
               </summary>
               <div className="px-5 pb-5">
-                <p className="text-gray-400 text-xs leading-relaxed border-t border-[#1f1f1f] pt-4">{a}</p>
+                <p className="text-ink-muted text-xs leading-relaxed border-t border-line pt-4">{a}</p>
               </div>
             </details>
           ))}
         </div>
 
         {/* CTA final */}
-        <div className="mt-8 bg-black border-2 border-orange-500 rounded-xl px-6 py-5 text-center">
-          <p className="text-white font-black text-sm uppercase mb-1">¿Sigues con dudas?</p>
-          <p className="text-gray-500 text-xs mb-4">Nuestro equipo está en línea de lunes a sábado de 10am a 8pm</p>
+        <div className="mt-8 bg-page border-2 border-orange-500 rounded-xl px-6 py-5 text-center">
+          <p className="text-ink font-black text-sm uppercase mb-1">¿Sigues con dudas?</p>
+          <p className="text-ink-muted text-xs mb-4">Nuestro equipo está en línea de lunes a sábado de 10am a 8pm</p>
           <a
             href="https://wa.me/524427183787?text=Hola%2C%20tengo%20una%20pregunta%20sobre%20Hecatombe"
             className="inline-block bg-orange-500 text-black font-black text-xs uppercase tracking-widest px-8 py-3 rounded-lg"
@@ -516,7 +516,7 @@ export default async function Home() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="bg-black border-t-2 border-orange-500 px-6 py-4">
+      <footer className="bg-page border-t-2 border-orange-500 px-6 py-4">
         <nav className="flex justify-center gap-6 mb-3 flex-wrap">
           {[
             ['Catálogo', '/catalogo'],
@@ -529,13 +529,13 @@ export default async function Home() {
             <a
               key={label}
               href={href}
-              className="text-gray-600 hover:text-orange-500 text-xs font-bold uppercase tracking-widest transition"
+              className="text-ink-muted hover:text-orange-500 text-xs font-bold uppercase tracking-widest transition"
             >
               {label}
             </a>
           ))}
         </nav>
-        <p className="text-gray-700 text-xs text-center uppercase tracking-widest">
+        <p className="text-ink-muted text-xs text-center uppercase tracking-widest">
           © 2026 Hecatombe · Cultura Pop · México
         </p>
       </footer>
