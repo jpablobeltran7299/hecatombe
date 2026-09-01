@@ -177,23 +177,23 @@ export default function EditarProducto({ params }) {
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-white/50">Cargando producto...</p>
+    <main className="min-h-screen bg-page flex items-center justify-center">
+      <p className="text-ink-muted">Cargando producto...</p>
     </main>
   )
 
-  const inputClass = "w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-orange-500 transition text-sm"
-  const labelClass = "text-white/50 text-xs font-black uppercase tracking-widest mb-2 block"
-  const selectClass = "w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition text-sm"
+  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 transition text-sm"
+  const labelClass = "text-ink-muted text-xs font-black uppercase tracking-widest mb-2 block"
+  const selectClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink focus:outline-none focus:border-orange-500 transition text-sm"
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-page px-4 py-8">
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <a href="/admin/productos" className="text-white/40 hover:text-orange-500 transition text-sm">← Productos</a>
-            <h1 className="text-2xl font-black uppercase text-white">Editar producto</h1>
+            <a href="/admin/productos" className="text-ink-muted hover:text-orange-500 transition text-sm">← Productos</a>
+            <h1 className="text-2xl font-black uppercase text-ink">Editar producto</h1>
           </div>
           <button onClick={handleEliminar} disabled={eliminando}
             className="text-red-400 hover:text-red-300 text-xs font-black uppercase border border-red-400/30 hover:border-red-400 px-4 py-2 rounded-lg transition disabled:opacity-50">
@@ -207,7 +207,7 @@ export default function EditarProducto({ params }) {
         <div className="flex flex-col gap-6">
 
           {/* Info básica */}
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+          <div className="bg-surface border border-line rounded-2xl p-6">
             <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Información básica</h2>
             <div className="flex flex-col gap-4">
               <div>
@@ -232,7 +232,7 @@ export default function EditarProducto({ params }) {
           </div>
 
           {/* Clasificación */}
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+          <div className="bg-surface border border-line rounded-2xl p-6">
             <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Clasificación</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -274,13 +274,13 @@ export default function EditarProducto({ params }) {
           </div>
 
           {/* Tipo */}
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+          <div className="bg-surface border border-line rounded-2xl p-6">
             <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Tipo de producto</h2>
             <div className="flex gap-3 mb-4">
               {['normal', 'preventa'].map(tipo => (
                 <button key={tipo} onClick={() => setForm({ ...form, tipo })}
                   className={`flex-1 py-3 rounded-xl font-black uppercase text-sm transition border-2 ${
-                    form.tipo === tipo ? 'border-orange-500 bg-orange-500/10 text-orange-500' : 'border-white/10 text-white/40 hover:border-white/30'
+                    form.tipo === tipo ? 'border-orange-500 bg-orange-500/10 text-orange-500' : 'border-line text-ink-muted hover:border-white/30'
                   }`}>
                   {tipo}
                 </button>
@@ -305,7 +305,7 @@ export default function EditarProducto({ params }) {
           </div>
 
           {/* Opciones */}
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+          <div className="bg-surface border border-line rounded-2xl p-6">
             <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Opciones</h2>
             <div className="flex flex-col gap-3">
               {[
@@ -316,11 +316,11 @@ export default function EditarProducto({ params }) {
               ].map(({ key, label, desc }) => (
                 <div key={key} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
                   <div>
-                    <p className="text-white text-sm font-black">{label}</p>
+                    <p className="text-ink text-sm font-black">{label}</p>
                     <p className="text-white/30 text-xs">{desc}</p>
                   </div>
                   <button onClick={() => setForm({ ...form, [key]: !form[key] })}
-                    className={`w-12 h-6 rounded-full transition-colors ${form[key] ? 'bg-orange-500' : 'bg-[#333]'}`}>
+                    className={`w-12 h-6 rounded-full transition-colors ${form[key] ? 'bg-orange-500' : 'bg-surface-alt'}`}>
                     <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${form[key] ? 'translate-x-6' : 'translate-x-0'}`} />
                   </button>
                 </div>
@@ -343,7 +343,7 @@ export default function EditarProducto({ params }) {
           </div>
 
           {/* Imágenes */}
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+          <div className="bg-surface border border-line rounded-2xl p-6">
             <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Imágenes</h2>
             {imagenes.length > 0 && (
               <div className="mb-4">
@@ -356,7 +356,7 @@ export default function EditarProducto({ params }) {
               multiple
               accept="image/*"
               onChange={handleImagenes}
-              className="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer"
+              className="w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer"
             />
             {subiendo && <p className="text-orange-500 text-xs mt-2">Subiendo imagen...</p>}
           </div>

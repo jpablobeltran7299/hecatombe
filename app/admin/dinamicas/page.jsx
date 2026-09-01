@@ -138,21 +138,21 @@ export default function AdminDinamicas() {
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-white/50">Cargando dinámicas...</p>
+    <main className="min-h-screen bg-page flex items-center justify-center">
+      <p className="text-ink-muted">Cargando dinámicas...</p>
     </main>
   )
 
-  const inputClass = "w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-orange-500 transition text-sm"
-  const labelClass = "text-white/50 text-xs font-black uppercase tracking-widest mb-2 block"
+  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 transition text-sm"
+  const labelClass = "text-ink-muted text-xs font-black uppercase tracking-widest mb-2 block"
 
   if (modoEditar) return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-page px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <button onClick={() => setModoEditar(null)} className="text-white/40 hover:text-orange-500 transition text-sm">← Dinámicas</button>
-            <h1 className="text-2xl font-black uppercase text-white">{modoEditar === 'nuevo' ? 'Nueva dinámica' : 'Editar dinámica'}</h1>
+            <button onClick={() => setModoEditar(null)} className="text-ink-muted hover:text-orange-500 transition text-sm">← Dinámicas</button>
+            <h1 className="text-2xl font-black uppercase text-ink">{modoEditar === 'nuevo' ? 'Nueva dinámica' : 'Editar dinámica'}</h1>
           </div>
           {modoEditar !== 'nuevo' && (
             <button onClick={() => handleEliminar(modoEditar)} disabled={guardando}
@@ -168,7 +168,7 @@ export default function AdminDinamicas() {
         <div className="flex flex-col gap-6">
 
           {/* Info básica */}
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+          <div className="bg-surface border border-line rounded-2xl p-6">
             <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Información</h2>
             <div className="flex flex-col gap-4">
               <div>
@@ -185,7 +185,7 @@ export default function AdminDinamicas() {
                   {TIPOS.map(t => (
                     <button key={t.value} onClick={() => setForm({ ...form, tipo: t.value })}
                       className={`py-2 rounded-lg font-black uppercase text-xs transition border-2 ${
-                        form.tipo === t.value ? 'border-orange-500 bg-orange-500/10 text-orange-500' : 'border-white/10 text-white/40 hover:border-white/30'
+                        form.tipo === t.value ? 'border-orange-500 bg-orange-500/10 text-orange-500' : 'border-line text-ink-muted hover:border-white/30'
                       }`}>
                       {t.label}
                     </button>
@@ -211,7 +211,7 @@ export default function AdminDinamicas() {
 
           {/* Solo rifas */}
           {form.tipo === 'rifa' && (
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+            <div className="bg-surface border border-line rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Configuración de rifa</h2>
               <div>
                 <label className={labelClass}>Total de números</label>
@@ -221,37 +221,37 @@ export default function AdminDinamicas() {
           )}
 
           {/* Opciones */}
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
+          <div className="bg-surface border border-line rounded-2xl p-6 flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-white text-sm font-black">Activa</p>
-                <p className="text-white/30 text-xs">La dinámica aparece en la página</p>
+                <p className="text-ink text-sm font-black">Activa</p>
+                <p className="text-ink-muted text-xs">La dinámica aparece en la página</p>
               </div>
               <button onClick={() => setForm({ ...form, activa: !form.activa })}
-                className={`w-12 h-6 rounded-full transition-colors ${form.activa ? 'bg-orange-500' : 'bg-[#333]'}`}>
+                className={`w-12 h-6 rounded-full transition-colors ${form.activa ? 'bg-orange-500' : 'bg-surface-alt'}`}>
                 <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${form.activa ? 'translate-x-6' : 'translate-x-0'}`} />
               </button>
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-white text-sm font-black">Destacada</p>
-                <p className="text-white/30 text-xs">Se muestra en el popup del home (requiere estar activa)</p>
+                <p className="text-ink text-sm font-black">Destacada</p>
+                <p className="text-ink-muted text-xs">Se muestra en el popup del home (requiere estar activa)</p>
               </div>
               <button onClick={() => setForm({ ...form, destacada: !form.destacada })}
-                className={`w-12 h-6 rounded-full transition-colors ${form.destacada ? 'bg-orange-500' : 'bg-[#333]'}`}>
+                className={`w-12 h-6 rounded-full transition-colors ${form.destacada ? 'bg-orange-500' : 'bg-surface-alt'}`}>
                 <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${form.destacada ? 'translate-x-6' : 'translate-x-0'}`} />
               </button>
             </div>
           </div>
 
           {/* Imagen */}
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+          <div className="bg-surface border border-line rounded-2xl p-6">
             <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Imagen</h2>
             {imagenPreview && (
               <img src={imagenPreview} alt="Preview" className="w-full rounded-xl mb-4 object-cover" style={{ maxHeight: 200 }} />
             )}
             <input type="file" accept="image/*" onChange={handleImagen}
-              className="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer" />
+              className="w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer" />
             {subiendo && <p className="text-orange-500 text-xs mt-2">Subiendo imagen...</p>}
           </div>
 
@@ -265,13 +265,13 @@ export default function AdminDinamicas() {
   )
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-page px-4 py-8">
       <div className="max-w-4xl mx-auto">
 
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <a href="/admin" className="text-white/40 hover:text-orange-500 transition text-sm">← Admin</a>
-            <h1 className="text-2xl font-black uppercase text-white">Dinámicas</h1>
+            <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+            <h1 className="text-2xl font-black uppercase text-ink">Dinámicas</h1>
           </div>
           <button onClick={abrirNuevo}
             className="bg-orange-500 hover:bg-orange-600 text-black font-black uppercase text-sm px-5 py-2 rounded-xl transition">
@@ -281,16 +281,16 @@ export default function AdminDinamicas() {
 
         <div className="flex flex-col gap-4">
           {dinamicas.map(dinamica => (
-            <div key={dinamica._id} className="bg-[#111] border border-white/10 rounded-2xl p-4 flex items-center gap-4">
+            <div key={dinamica._id} className="bg-surface border border-line rounded-2xl p-4 flex items-center gap-4">
               {dinamica.imagen ? (
                 <img src={urlFor(dinamica.imagen).width(80).height(80).url()} alt={dinamica.titulo}
                   className="w-16 h-16 object-cover rounded-xl flex-shrink-0" />
               ) : (
-                <div className="w-16 h-16 bg-[#1a1a1a] rounded-xl flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
+                <div className="w-16 h-16 bg-surface-alt rounded-xl flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-white font-black text-sm truncate">{dinamica.titulo}</p>
-                <div className="flex gap-3 text-xs text-white/30 mt-1">
+                <p className="text-ink font-black text-sm truncate">{dinamica.titulo}</p>
+                <div className="flex gap-3 text-xs text-ink-muted mt-1">
                   <span className="capitalize">{dinamica.tipo}</span>
                   <span className={dinamica.activa ? 'text-green-400' : 'text-red-400'}>{dinamica.activa ? 'Activa' : 'Inactiva'}</span>
                   {dinamica.precio && <span>${dinamica.precio} MXN</span>}
@@ -306,7 +306,7 @@ export default function AdminDinamicas() {
 
           {dinamicas.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-white/30">No hay dinámicas creadas</p>
+              <p className="text-ink-muted">No hay dinámicas creadas</p>
             </div>
           )}
         </div>

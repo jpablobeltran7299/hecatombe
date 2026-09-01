@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen bg-black flex items-center justify-center px-4">
+    <main className="min-h-screen bg-page flex items-center justify-center px-4">
       <div className="text-center max-w-md">
 
         {/* Número 404 */}
@@ -15,10 +15,10 @@ export default function NotFound() {
         </p>
 
         {/* Texto */}
-        <h1 className="text-white font-black uppercase text-2xl mb-3">
+        <h1 className="text-ink font-black uppercase text-2xl mb-3">
           Página no encontrada
         </h1>
-        <p className="text-gray-500 text-sm mb-8 leading-relaxed">
+        <p className="text-ink-muted text-sm mb-8 leading-relaxed">
           Esta página se perdió en el multiverso. Puede que haya sido descontinuada o que el enlace sea incorrecto.
         </p>
 

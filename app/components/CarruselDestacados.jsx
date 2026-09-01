@@ -7,8 +7,8 @@ import { urlFor } from '@/lib/sanity'
 function ProductoCard({ producto }) {
   return (
     <Link href={`/producto/${producto._id}`} className="block group h-full">
-      <div className="bg-[#111111] rounded-2xl overflow-hidden border border-gray-800 group-hover:border-orange-500 transition-colors flex flex-col h-full">
-        <div className="aspect-square bg-[#1a1a1a] overflow-hidden relative flex-shrink-0">
+      <div className="bg-surface rounded-2xl overflow-hidden border border-gray-800 group-hover:border-orange-500 transition-colors flex flex-col h-full">
+        <div className="aspect-square bg-surface-alt overflow-hidden relative flex-shrink-0">
           <BadgesProducto producto={producto} />
           {producto.imagenes?.[0] ? (
             <img
@@ -21,7 +21,7 @@ function ProductoCard({ producto }) {
           )}
         </div>
         <div className="p-4 flex flex-col flex-1">
-          <p className="text-white font-black uppercase text-sm leading-tight truncate mb-1">
+          <p className="text-ink font-black uppercase text-sm leading-tight truncate mb-1">
             {producto.nombre}
           </p>
           <p className="text-orange-500 font-black text-lg">
@@ -71,12 +71,12 @@ export default function CarruselDestacados({ productos = [] }) {
     <div className="relative">
       {/* Controles */}
       <div className="flex items-center justify-between mb-6">
-        <p className="text-gray-500 text-sm">{total} producto{total !== 1 ? 's' : ''}</p>
+        <p className="text-ink-muted text-sm">{total} producto{total !== 1 ? 's' : ''}</p>
         <div className="flex gap-2">
           <button
             onClick={prev}
             disabled={idx === 0}
-            className="w-10 h-10 rounded-full border border-gray-700 hover:border-orange-500 disabled:opacity-30 disabled:cursor-not-allowed text-white text-2xl flex items-center justify-center transition-colors leading-none"
+            className="w-10 h-10 rounded-full border border-gray-700 hover:border-orange-500 disabled:opacity-30 disabled:cursor-not-allowed text-ink text-2xl flex items-center justify-center transition-colors leading-none"
             aria-label="Anterior"
           >
             ‹
@@ -84,7 +84,7 @@ export default function CarruselDestacados({ productos = [] }) {
           <button
             onClick={next}
             disabled={idx >= maxIdx}
-            className="w-10 h-10 rounded-full border border-gray-700 hover:border-orange-500 disabled:opacity-30 disabled:cursor-not-allowed text-white text-2xl flex items-center justify-center transition-colors leading-none"
+            className="w-10 h-10 rounded-full border border-gray-700 hover:border-orange-500 disabled:opacity-30 disabled:cursor-not-allowed text-ink text-2xl flex items-center justify-center transition-colors leading-none"
             aria-label="Siguiente"
           >
             ›

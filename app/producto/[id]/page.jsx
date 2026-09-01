@@ -40,19 +40,19 @@ export default async function Producto({ params }) {
   const precioLiquidacion = producto.precioLiquidacion || (producto.precio && anticipo ? producto.precio - anticipo : null)
 
   return (
-    <main className="min-h-screen bg-[#0d0d0d]">
+    <main className="min-h-screen bg-page">
 
       {/* Breadcrumb */}
-      <div className="bg-black border-b border-[#1f1f1f] px-6 py-3 flex items-center gap-2 text-xs">
-        <Link href="/" className="text-gray-600 hover:text-orange-500 font-bold uppercase tracking-wide transition">
+      <div className="bg-page border-b border-[#1f1f1f] px-6 py-3 flex items-center gap-2 text-xs">
+        <Link href="/" className="text-ink-muted hover:text-orange-500 font-bold uppercase tracking-wide transition">
           Inicio
         </Link>
-        <span className="text-gray-700">›</span>
-        <Link href="/catalogo" className="text-gray-600 hover:text-orange-500 font-bold uppercase tracking-wide transition">
+        <span className="text-ink-muted">›</span>
+        <Link href="/catalogo" className="text-ink-muted hover:text-orange-500 font-bold uppercase tracking-wide transition">
           Catálogo
         </Link>
-        <span className="text-gray-700">›</span>
-        <span className="text-gray-400 font-bold uppercase tracking-wide truncate max-w-xs">{producto.nombre}</span>
+        <span className="text-ink-muted">›</span>
+        <span className="text-ink-muted font-bold uppercase tracking-wide truncate max-w-xs">{producto.nombre}</span>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-2 gap-8">
@@ -62,11 +62,11 @@ export default async function Producto({ params }) {
         <div className="flex flex-col">
 
           <div className="flex items-center gap-2 mb-2">
-            <span className="bg-[#1a1a1a] border border-[#2a2a2a] text-gray-400 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full">
+            <span className="bg-surface-alt border border-line text-ink-muted text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full">
               {producto.marca}
             </span>
             {producto.categoria && (
-              <span className="bg-[#1a1a1a] border border-[#2a2a2a] text-gray-500 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+              <span className="bg-surface-alt border border-line text-ink-muted text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">
                 {producto.categoria}
               </span>
             )}
@@ -77,7 +77,7 @@ export default async function Producto({ params }) {
             )}
           </div>
 
-          <h1 className="text-white text-2xl font-black uppercase leading-tight mb-4">
+          <h1 className="text-ink text-2xl font-black uppercase leading-tight mb-4">
             {producto.nombre}
           </h1>
 
@@ -86,15 +86,15 @@ export default async function Producto({ params }) {
             <div className="mb-5 bg-orange-500/10 border border-orange-500/30 rounded-xl p-4">
               <p className="text-orange-500 text-xs font-black uppercase tracking-widest mb-2">Preventa</p>
               <div className="flex items-baseline gap-3 mb-1">
-                <span className="text-white/50 text-sm">${producto.precio?.toLocaleString('es-MX')} MXN</span>
-                <span className="text-white/50 text-xs">precio total</span>
+                <span className="text-ink-muted text-sm">${producto.precio?.toLocaleString('es-MX')} MXN</span>
+                <span className="text-ink-muted text-xs">precio total</span>
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-orange-500 font-black text-4xl">${anticipo.toLocaleString('es-MX')}</span>
-                <span className="text-gray-400 text-sm">MXN anticipo</span>
+                <span className="text-ink-muted text-sm">MXN anticipo</span>
               </div>
               {precioLiquidacion && (
-                <p className="text-gray-400 text-xs mt-2">
+                <p className="text-ink-muted text-xs mt-2">
                   + ${precioLiquidacion.toLocaleString('es-MX')} MXN al recibir el producto
                 </p>
               )}
@@ -109,24 +109,24 @@ export default async function Producto({ params }) {
               <span className="text-orange-500 font-black text-4xl">
                 ${producto.precio.toLocaleString('es-MX')}
               </span>
-              <span className="text-gray-600 text-sm ml-2">MXN</span>
+              <span className="text-ink-muted text-sm ml-2">MXN</span>
             </div>
           ) : (
-            <p className="text-gray-500 text-sm font-bold uppercase mb-5">Precio a consultar</p>
+            <p className="text-ink-muted text-sm font-bold uppercase mb-5">Precio a consultar</p>
           )}
 
           <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wide mb-6 w-fit ${
             producto.disponible
               ? 'bg-green-500/10 border border-green-500/30 text-green-400'
-              : 'bg-[#1a1a1a] border border-[#333] text-gray-500'
+              : 'bg-surface-alt border border-line-strong text-ink-muted'
           }`}>
             <span className={`w-2 h-2 rounded-full ${producto.disponible ? 'bg-green-400' : 'bg-gray-600'}`} />
             {producto.disponible ? (esPreventa ? 'Preventa abierta' : 'En existencia') : 'Agotado'}
           </div>
 
           {producto.descripcion && (
-            <div className="mb-6 bg-[#111] border border-[#1f1f1f] rounded-xl p-4">
-              <p className="text-gray-500 text-xs font-black uppercase tracking-widest mb-2">Descripción</p>
+            <div className="mb-6 bg-surface border border-[#1f1f1f] rounded-xl p-4">
+              <p className="text-ink-muted text-xs font-black uppercase tracking-widest mb-2">Descripción</p>
               <p className="text-gray-300 text-sm leading-relaxed">{producto.descripcion}</p>
             </div>
           )}
@@ -138,9 +138,9 @@ export default async function Producto({ params }) {
               { icon: '🤝', text: 'Atención directa' },
               { icon: '🔒', text: 'Compra segura' },
             ].map(({ icon, text }) => (
-              <div key={text} className="flex items-center gap-2 bg-[#111] border border-[#1f1f1f] rounded-lg px-3 py-2">
+              <div key={text} className="flex items-center gap-2 bg-surface border border-[#1f1f1f] rounded-lg px-3 py-2">
                 <span className="text-sm">{icon}</span>
-                <span className="text-gray-400 text-xs font-bold">{text}</span>
+                <span className="text-ink-muted text-xs font-bold">{text}</span>
               </div>
             ))}
           </div>
@@ -177,12 +177,12 @@ export default async function Producto({ params }) {
               Preguntar por WhatsApp
             </a>
           ) : (
-            <div className="w-full bg-[#1a1a1a] border border-[#333] text-gray-600 font-black text-sm uppercase tracking-widest py-4 rounded-xl text-center mt-3">
+            <div className="w-full bg-surface-alt border border-line-strong text-ink-muted font-black text-sm uppercase tracking-widest py-4 rounded-xl text-center mt-3">
               Producto agotado
             </div>
           )}
 
-          <p className="text-gray-700 text-xs text-center mt-3">
+          <p className="text-ink-muted text-xs text-center mt-3">
             ¿No está disponible? Pregúntanos por preventa →{' '}
             <a href={whatsappUrl} className="text-orange-500 hover:underline">WhatsApp</a>
           </p>

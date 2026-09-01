@@ -143,19 +143,19 @@ export default function CheckoutPage() {
   const totalFinal = totalBruto - descuentoHC
   const envioGratis = totalBruto >= 1200
 
-  const inputClass = "w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-orange-500 transition"
-  const labelClass = "text-white/50 text-xs font-black uppercase tracking-widest mb-2 block"
+  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 transition"
+  const labelClass = "text-ink-muted text-xs font-black uppercase tracking-widest mb-2 block"
 
   if (loading) return (
-    <main className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-white/50">Cargando...</p>
+    <main className="min-h-screen bg-page flex items-center justify-center">
+      <p className="text-ink-muted">Cargando...</p>
     </main>
   )
 
   return (
-    <main className="min-h-screen bg-black px-4 py-12">
+    <main className="min-h-screen bg-page px-4 py-12">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-black uppercase text-white mb-2">
+        <h1 className="text-3xl font-black uppercase text-ink mb-2">
           {modoApartar ? 'Apartar producto' : 'Confirmar pedido'}
         </h1>
         {modoApartar && (
@@ -172,25 +172,25 @@ export default function CheckoutPage() {
 
             {/* Opción de envío */}
             {!modoApartar && (
-              <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+              <div className="bg-surface border border-line rounded-2xl p-6">
                 <h2 className="text-lg font-black uppercase text-orange-500 mb-4">¿Cómo quieres recibir tu pedido?</h2>
                 <div className="flex flex-col gap-3">
                   <button onClick={() => setModoEnvio('inmediato')}
-                    className={`flex items-start gap-4 p-4 rounded-xl border-2 transition text-left ${modoEnvio === 'inmediato' ? 'border-orange-500 bg-orange-500/10' : 'border-white/10 hover:border-white/30'}`}>
+                    className={`flex items-start gap-4 p-4 rounded-xl border-2 transition text-left ${modoEnvio === 'inmediato' ? 'border-orange-500 bg-orange-500/10' : 'border-line hover:border-white/30'}`}>
                     <span className="text-2xl mt-0.5">🚚</span>
                     <div>
-                      <p className="text-white font-black uppercase text-sm">Envío inmediato</p>
-                      <p className="text-white/40 text-xs mt-1">
+                      <p className="text-ink font-black uppercase text-sm">Envío inmediato</p>
+                      <p className="text-ink-muted text-xs mt-1">
                         {envioGratis ? '✅ ¡Envío gratis! Tu pedido supera $1,200 MXN' : 'Se coordina el envío al confirmar tu pago'}
                       </p>
                     </div>
                   </button>
                   <button onClick={() => setModoEnvio('bodega')}
-                    className={`flex items-start gap-4 p-4 rounded-xl border-2 transition text-left ${modoEnvio === 'bodega' ? 'border-orange-500 bg-orange-500/10' : 'border-white/10 hover:border-white/30'}`}>
+                    className={`flex items-start gap-4 p-4 rounded-xl border-2 transition text-left ${modoEnvio === 'bodega' ? 'border-orange-500 bg-orange-500/10' : 'border-line hover:border-white/30'}`}>
                     <span className="text-2xl mt-0.5">📦</span>
                     <div>
-                      <p className="text-white font-black uppercase text-sm">Guardar en Bodega</p>
-                      <p className="text-white/40 text-xs mt-1">Acumula compras hasta $1,200 MXN y obtén envío gratis.</p>
+                      <p className="text-ink font-black uppercase text-sm">Guardar en Bodega</p>
+                      <p className="text-ink-muted text-xs mt-1">Acumula compras hasta $1,200 MXN y obtén envío gratis.</p>
                       {!envioGratis && (
                         <p className="text-orange-500 text-xs mt-1 font-bold">
                           Te faltan ${(1200 - totalBruto).toLocaleString('es-MX')} MXN para envío gratis
@@ -204,17 +204,17 @@ export default function CheckoutPage() {
 
             {/* Hecacoins */}
             {hecacoins > 0 && !modoApartar && (
-              <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+              <div className="bg-surface border border-line rounded-2xl p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-black uppercase text-orange-500">Hecacoins</h2>
-                    <p className="text-white/50 text-sm mt-1">
+                    <p className="text-ink-muted text-sm mt-1">
                       Tienes <span className="text-orange-500 font-black">{hecacoins.toLocaleString('es-MX')} HC</span> disponibles (= ${hecacoins.toLocaleString('es-MX')} MXN)
                     </p>
                   </div>
                   <button
                     onClick={() => setUsarHecacoins(!usarHecacoins)}
-                    className={`w-12 h-6 rounded-full transition-colors ${usarHecacoins ? 'bg-orange-500' : 'bg-[#333]'}`}>
+                    className={`w-12 h-6 rounded-full transition-colors ${usarHecacoins ? 'bg-orange-500' : 'bg-surface-alt'}`}>
                     <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${usarHecacoins ? 'translate-x-6' : 'translate-x-0'}`} />
                   </button>
                 </div>
@@ -227,7 +227,7 @@ export default function CheckoutPage() {
             )}
 
             {/* Datos personales */}
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+            <div className="bg-surface border border-line rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Datos personales</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -247,7 +247,7 @@ export default function CheckoutPage() {
 
             {/* Dirección */}
             {(modoEnvio === 'inmediato' || modoApartar) && (
-              <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+              <div className="bg-surface border border-line rounded-2xl p-6">
                 <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Dirección de envío</h2>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
@@ -281,7 +281,7 @@ export default function CheckoutPage() {
 
           {/* Resumen */}
           <div className="flex flex-col gap-4">
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-6 sticky top-24">
+            <div className="bg-surface border border-line rounded-2xl p-6 sticky top-24">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Resumen</h2>
 
               {modoApartar && itemApartar ? (
@@ -290,25 +290,25 @@ export default function CheckoutPage() {
                     {itemApartar.imagen ? (
                       <img src={itemApartar.imagen} alt={itemApartar.nombre} className="w-12 h-12 object-contain rounded-lg bg-white flex-shrink-0" />
                     ) : (
-                      <div className="w-12 h-12 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-xl flex-shrink-0">📦</div>
+                      <div className="w-12 h-12 bg-surface-alt rounded-lg flex items-center justify-center text-xl flex-shrink-0">📦</div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-xs font-black uppercase truncate">{itemApartar.nombre}</p>
+                      <p className="text-ink text-xs font-black uppercase truncate">{itemApartar.nombre}</p>
                       <span className="bg-orange-500 text-black text-xs font-black px-2 py-0.5 rounded-full">Preventa</span>
                     </div>
                   </div>
                   <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 mt-2">
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-white/50">Precio total</span>
-                      <span className="text-white/50 line-through">${itemApartar.precioTotal?.toLocaleString('es-MX')} MXN</span>
+                      <span className="text-ink-muted">Precio total</span>
+                      <span className="text-ink-muted line-through">${itemApartar.precioTotal?.toLocaleString('es-MX')} MXN</span>
                     </div>
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-white/50">Pagas ahora (anticipo)</span>
+                      <span className="text-ink-muted">Pagas ahora (anticipo)</span>
                       <span className="text-orange-500 font-black">${itemApartar.anticipo?.toLocaleString('es-MX')} MXN</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-white/50">Al recibir el producto</span>
-                      <span className="text-white/50">${itemApartar.precioLiquidacion?.toLocaleString('es-MX')} MXN</span>
+                      <span className="text-ink-muted">Al recibir el producto</span>
+                      <span className="text-ink-muted">${itemApartar.precioLiquidacion?.toLocaleString('es-MX')} MXN</span>
                     </div>
                   </div>
                 </div>
@@ -319,11 +319,11 @@ export default function CheckoutPage() {
                       {item.imagen ? (
                         <img src={item.imagen} alt={item.nombre} className="w-12 h-12 object-contain rounded-lg bg-white flex-shrink-0" />
                       ) : (
-                        <div className="w-12 h-12 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-xl flex-shrink-0">📦</div>
+                        <div className="w-12 h-12 bg-surface-alt rounded-lg flex items-center justify-center text-xl flex-shrink-0">📦</div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs font-black uppercase truncate">{item.nombre}</p>
-                        <p className="text-white/40 text-xs">x{item.cantidad}</p>
+                        <p className="text-ink text-xs font-black uppercase truncate">{item.nombre}</p>
+                        <p className="text-ink-muted text-xs">x{item.cantidad}</p>
                       </div>
                       <p className="text-orange-500 font-black text-sm">${(item.precio * item.cantidad).toLocaleString('es-MX')}</p>
                     </div>
@@ -331,11 +331,11 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              <div className="border-t border-white/10 pt-4 mb-6">
+              <div className="border-t border-line pt-4 mb-6">
                 {descuentoHC > 0 && (
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-white/40 text-sm">Subtotal</span>
-                    <span className="text-white/40 text-sm">${totalBruto.toLocaleString('es-MX')} MXN</span>
+                    <span className="text-ink-muted text-sm">Subtotal</span>
+                    <span className="text-ink-muted text-sm">${totalBruto.toLocaleString('es-MX')} MXN</span>
                   </div>
                 )}
                 {descuentoHC > 0 && (
@@ -345,13 +345,13 @@ export default function CheckoutPage() {
                   </div>
                 )}
                 <div className="flex justify-between items-center">
-                  <span className="text-white/60 font-black uppercase text-sm">{modoApartar ? 'Anticipo' : 'Total'}</span>
+                  <span className="text-ink-muted font-black uppercase text-sm">{modoApartar ? 'Anticipo' : 'Total'}</span>
                   <span className="text-orange-500 font-black text-2xl">${totalFinal.toLocaleString('es-MX')} MXN</span>
                 </div>
                 {modoEnvio === 'bodega' && !modoApartar && (
                   <div className="mt-3 bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
                     <p className="text-blue-400 text-xs font-black uppercase">📦 Bodegatombe</p>
-                    <p className="text-white/40 text-xs mt-1">Tu pedido se guardará en bodega.</p>
+                    <p className="text-ink-muted text-xs mt-1">Tu pedido se guardará en bodega.</p>
                   </div>
                 )}
               </div>

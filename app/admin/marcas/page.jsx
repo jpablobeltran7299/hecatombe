@@ -117,21 +117,21 @@ export default function AdminMarcas() {
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-white/50">Cargando marcas...</p>
+    <main className="min-h-screen bg-page flex items-center justify-center">
+      <p className="text-ink-muted">Cargando marcas...</p>
     </main>
   )
 
-  const inputClass = "w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-orange-500 transition text-sm"
-  const labelClass = "text-white/50 text-xs font-black uppercase tracking-widest mb-2 block"
+  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 transition text-sm"
+  const labelClass = "text-ink-muted text-xs font-black uppercase tracking-widest mb-2 block"
 
   if (modoEditar) return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-page px-4 py-8">
       <div className="max-w-xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <button onClick={() => setModoEditar(null)} className="text-white/40 hover:text-orange-500 transition text-sm">← Marcas</button>
-            <h1 className="text-2xl font-black uppercase text-white">{modoEditar === 'nuevo' ? 'Nueva marca' : 'Editar marca'}</h1>
+            <button onClick={() => setModoEditar(null)} className="text-ink-muted hover:text-orange-500 transition text-sm">← Marcas</button>
+            <h1 className="text-2xl font-black uppercase text-ink">{modoEditar === 'nuevo' ? 'Nueva marca' : 'Editar marca'}</h1>
           </div>
           {modoEditar !== 'nuevo' && (
             <button onClick={() => handleEliminar(modoEditar)} disabled={guardando}
@@ -145,7 +145,7 @@ export default function AdminMarcas() {
         {mensaje && <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-6"><p className="text-green-400 text-sm">{mensaje}</p></div>}
 
         <div className="flex flex-col gap-6">
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+          <div className="bg-surface border border-line rounded-2xl p-6">
             <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Información</h2>
             <div className="flex flex-col gap-4">
               <div>
@@ -159,13 +159,13 @@ export default function AdminMarcas() {
             </div>
           </div>
 
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+          <div className="bg-surface border border-line rounded-2xl p-6">
             <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Logo</h2>
             {logoPreview && (
               <img src={logoPreview} alt="Preview" className="w-24 h-24 object-contain rounded-xl bg-white p-2 mb-4" />
             )}
             <input type="file" accept="image/*" onChange={handleLogo}
-              className="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer" />
+              className="w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer" />
             {subiendo && <p className="text-orange-500 text-xs mt-2">Subiendo logo...</p>}
           </div>
 
@@ -179,13 +179,13 @@ export default function AdminMarcas() {
   )
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-page px-4 py-8">
       <div className="max-w-4xl mx-auto">
 
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <a href="/admin" className="text-white/40 hover:text-orange-500 transition text-sm">← Admin</a>
-            <h1 className="text-2xl font-black uppercase text-white">Marcas</h1>
+            <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+            <h1 className="text-2xl font-black uppercase text-ink">Marcas</h1>
             <span className="text-white/30 text-sm">{marcas.length} total</span>
           </div>
           <button onClick={abrirNuevo}
@@ -196,15 +196,15 @@ export default function AdminMarcas() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {marcas.map(marca => (
-            <div key={marca._id} className="bg-[#111] border border-white/10 rounded-2xl p-4 flex items-center gap-4">
+            <div key={marca._id} className="bg-surface border border-line rounded-2xl p-4 flex items-center gap-4">
               {marca.logo ? (
                 <img src={urlFor(marca.logo).width(60).height(60).url()} alt={marca.nombre}
                   className="w-12 h-12 object-contain rounded-lg bg-white p-1 flex-shrink-0" />
               ) : (
-                <div className="w-12 h-12 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-xl flex-shrink-0">🏷️</div>
+                <div className="w-12 h-12 bg-surface-alt rounded-lg flex items-center justify-center text-xl flex-shrink-0">🏷️</div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-white font-black text-sm truncate">{marca.nombre}</p>
+                <p className="text-ink font-black text-sm truncate">{marca.nombre}</p>
                 {marca.descripcion && <p className="text-white/30 text-xs truncate mt-1">{marca.descripcion}</p>}
               </div>
               <button onClick={() => abrirEditar(marca)}

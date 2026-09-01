@@ -33,7 +33,7 @@ function FilaStock({ producto, onGuardar }) {
         value={valor}
         placeholder="—"
         onChange={e => setValor(e.target.value)}
-        className="w-20 bg-black border border-white/20 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-orange-500 text-center"
+        className="w-20 bg-page border border-line-strong rounded-lg px-2 py-1 text-ink text-sm focus:outline-none focus:border-orange-500 text-center"
       />
       <button
         onClick={handleGuardar}
@@ -138,18 +138,18 @@ export default function AdminInventario() {
   })
 
   if (loading) return (
-    <main className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-white/50">Cargando inventario...</p>
+    <main className="min-h-screen bg-page flex items-center justify-center">
+      <p className="text-ink-muted">Cargando inventario...</p>
     </main>
   )
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-page px-4 py-8">
       <div className="max-w-7xl mx-auto">
 
         <div className="flex items-center gap-4 mb-8">
-          <a href="/admin" className="text-white/40 hover:text-orange-500 transition text-sm">← Admin</a>
-          <h1 className="text-2xl font-black uppercase text-white">Inventario</h1>
+          <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+          <h1 className="text-2xl font-black uppercase text-ink">Inventario</h1>
           <span className="text-white/30 text-sm">{productos.length} productos</span>
         </div>
 
@@ -161,7 +161,7 @@ export default function AdminInventario() {
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar producto..."
-            className="flex-1 min-w-[200px] bg-[#111] border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm"
+            className="flex-1 min-w-[200px] bg-surface border border-line-strong rounded-lg px-4 py-2 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm"
           />
           {[
             { key: 'todos', label: 'Todos' },
@@ -171,15 +171,15 @@ export default function AdminInventario() {
           ].map(({ key, label }) => (
             <button key={key} onClick={() => setFiltro(key)}
               className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition ${
-                filtro === key ? 'bg-orange-500 text-black' : 'bg-[#111] text-white/40 hover:text-white border border-white/10'
+                filtro === key ? 'bg-orange-500 text-black' : 'bg-surface text-ink-muted hover:text-ink border border-line'
               }`}>
               {label}
             </button>
           ))}
         </div>
 
-        <div className="bg-[#111] border border-white/10 rounded-2xl overflow-hidden">
-          <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-white/10 text-xs font-black uppercase text-white/30">
+        <div className="bg-surface border border-line rounded-2xl overflow-hidden">
+          <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-line text-xs font-black uppercase text-white/30">
             <div className="col-span-1">Img</div>
             <div className="col-span-4">Nombre</div>
             <div className="col-span-2">Precio</div>
@@ -198,12 +198,12 @@ export default function AdminInventario() {
                     alt={producto.nombre}
                     className="w-10 h-10 object-contain rounded-lg bg-white" />
                 ) : (
-                  <div className="w-10 h-10 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-lg">🎁</div>
+                  <div className="w-10 h-10 bg-surface-alt rounded-lg flex items-center justify-center text-lg">🎁</div>
                 )}
               </div>
 
               <div className="col-span-4">
-                <p className="text-white text-sm font-bold truncate">{producto.nombre}</p>
+                <p className="text-ink text-sm font-bold truncate">{producto.nombre}</p>
                 <p className="text-white/30 text-xs">{producto.marca}</p>
               </div>
 

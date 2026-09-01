@@ -34,7 +34,7 @@ function RifaProgress({ total, vendidos = [] }) {
   const pct = Math.round((vendidos.length / total) * 100)
   return (
     <div className="mt-3">
-      <div className="flex justify-between text-xs text-gray-400 mb-1">
+      <div className="flex justify-between text-xs text-ink-muted mb-1">
         <span>{vendidos.length} / {total} números</span>
         <span>{pct}%</span>
       </div>
@@ -53,9 +53,9 @@ function DinamicaCard({ d }) {
   const destino = d.enlace || `https://wa.me/524427183787?text=Hola, me interesa la dinámica: ${encodeURIComponent(d.titulo)}`
 
   return (
-    <div className="bg-[#111111] rounded-2xl overflow-hidden border border-gray-800 hover:border-orange-500 transition-colors flex flex-col">
+    <div className="bg-surface rounded-2xl overflow-hidden border border-gray-800 hover:border-orange-500 transition-colors flex flex-col">
       {/* Imagen */}
-      <div className="relative aspect-video bg-[#1a1a1a]">
+      <div className="relative aspect-video bg-surface-alt">
         {d.imagen ? (
           <img
             src={urlFor(d.imagen).width(600).url()}
@@ -75,12 +75,12 @@ function DinamicaCard({ d }) {
       {/* Info */}
       <div className="p-5 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h2 className="text-white font-black uppercase text-lg leading-tight">{d.titulo}</h2>
+          <h2 className="text-ink font-black uppercase text-lg leading-tight">{d.titulo}</h2>
           <CountdownBadge fechaFin={d.fechaFin} />
         </div>
 
         {d.descripcion && (
-          <p className="text-gray-400 text-sm leading-relaxed mb-3">{d.descripcion}</p>
+          <p className="text-ink-muted text-sm leading-relaxed mb-3">{d.descripcion}</p>
         )}
 
         {d.tipo === 'rifa' && (
@@ -107,16 +107,16 @@ export default async function DinamicasPage() {
   const cerradas = dinamicas.filter(d => !d.activa)
 
   return (
-    <main className="min-h-screen bg-black pt-24 pb-16 px-4">
+    <main className="min-h-screen bg-page pt-24 pb-16 px-4">
       <div className="max-w-6xl mx-auto">
 
         {/* Header */}
         <div className="mb-10">
           <p className="text-orange-500 font-black uppercase text-sm tracking-widest mb-2">Hecatombe</p>
-          <h1 className="text-white font-black uppercase text-4xl md:text-5xl leading-none mb-4">
+          <h1 className="text-ink font-black uppercase text-4xl md:text-5xl leading-none mb-4">
             DINÁMICAS
           </h1>
-          <p className="text-gray-400 max-w-xl">
+          <p className="text-ink-muted max-w-xl">
             Rifas, concursos, flash sales y trivias exclusivas para la comunidad.
           </p>
         </div>
@@ -138,15 +138,15 @@ export default async function DinamicasPage() {
         ) : (
           <div className="text-center py-20 border border-gray-800 rounded-2xl mb-12">
             <p className="text-5xl mb-4">🎯</p>
-            <p className="text-white font-black uppercase text-xl mb-2">Próximamente</p>
-            <p className="text-gray-500 text-sm">Nuevas dinámicas en camino. Síguenos en redes.</p>
+            <p className="text-ink font-black uppercase text-xl mb-2">Próximamente</p>
+            <p className="text-ink-muted text-sm">Nuevas dinámicas en camino. Síguenos en redes.</p>
           </div>
         )}
 
         {/* Cerradas / historial */}
         {cerradas.length > 0 && (
           <>
-            <h2 className="text-gray-600 font-black uppercase text-sm tracking-widest mb-4">Historial</h2>
+            <h2 className="text-ink-muted font-black uppercase text-sm tracking-widest mb-4">Historial</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 opacity-50">
               {cerradas.map(d => <DinamicaCard key={d._id} d={d} />)}
             </div>

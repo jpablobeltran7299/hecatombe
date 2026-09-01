@@ -34,7 +34,7 @@ export default function BannerCarousel() {
   const banner = banners[current]
 
   return (
-    <div className="relative w-full overflow-hidden bg-black" style={{ aspectRatio: '16/6' }}>
+    <div className="relative w-full overflow-hidden bg-page" style={{ aspectRatio: '16/6' }}>
 
       {/* Imagen de fondo */}
       {banners.map((b, i) => {
@@ -77,7 +77,7 @@ export default function BannerCarousel() {
               </span>
             )}
             {banner.titulo && (
-              <h2 className="text-white text-3xl sm:text-4xl font-black uppercase leading-tight mb-2">
+              <h2 className="text-ink text-3xl sm:text-4xl font-black uppercase leading-tight mb-2">
                 {banner.titulo}
               </h2>
             )}

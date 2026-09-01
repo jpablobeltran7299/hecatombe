@@ -35,13 +35,13 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black flex items-center justify-center px-4">
-      <div className="bg-[#111] border border-white/10 rounded-2xl p-8 w-full max-w-md">
+    <main className="min-h-screen bg-page flex items-center justify-center px-4">
+      <div className="bg-surface border border-line rounded-2xl p-8 w-full max-w-md">
 
         {modoRecuperar ? (
           <>
-            <h1 className="text-2xl font-black uppercase text-white mb-1">Recuperar contraseña</h1>
-            <p className="text-white/50 text-sm mb-6">
+            <h1 className="text-2xl font-black uppercase text-ink mb-1">Recuperar contraseña</h1>
+            <p className="text-ink-muted text-sm mb-6">
               Te enviaremos un link a tu correo para crear una nueva contraseña.
             </p>
 
@@ -57,7 +57,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
-                  className="bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-orange-500"
+                  className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/30 focus:outline-none focus:border-orange-500"
                 />
                 {error && <p className="text-red-400 text-sm">{error}</p>}
                 <button
@@ -72,15 +72,15 @@ export default function LoginPage() {
 
             <button
               onClick={() => { setModoRecuperar(false); setMensajeRecuperar(''); setError('') }}
-              className="mt-4 text-white/40 hover:text-white text-sm transition w-full text-center"
+              className="mt-4 text-ink-muted hover:text-ink text-sm transition w-full text-center"
             >
               ← Volver al inicio de sesión
             </button>
           </>
         ) : (
           <>
-            <h1 className="text-2xl font-black uppercase text-white mb-1">Inicia sesión</h1>
-            <p className="text-white/50 text-sm mb-6">
+            <h1 className="text-2xl font-black uppercase text-ink mb-1">Inicia sesión</h1>
+            <p className="text-ink-muted text-sm mb-6">
               ¿No tienes cuenta?{' '}
               <Link href="/registro" className="text-orange-500 hover:underline">Regístrate</Link>
             </p>
@@ -92,7 +92,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                className="bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-orange-500"
+                className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/30 focus:outline-none focus:border-orange-500"
               />
               <div className="flex flex-col gap-1">
                 <input
@@ -101,7 +101,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
-                  className="bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-orange-500"
+                  className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/30 focus:outline-none focus:border-orange-500"
                 />
                 <button
                   type="button"

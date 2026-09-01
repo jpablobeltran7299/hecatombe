@@ -24,7 +24,7 @@ function SeccionClasificacion({ titulo, tipo, items, onCrear, onEliminar, guarda
   }
 
   return (
-    <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+    <div className="bg-surface border border-line rounded-2xl p-6">
       <h2 className="text-lg font-black uppercase text-orange-500 mb-6">{titulo}</h2>
 
       <div className="flex gap-2 mb-4">
@@ -34,7 +34,7 @@ function SeccionClasificacion({ titulo, tipo, items, onCrear, onEliminar, guarda
           onChange={e => setNuevo(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleCrear()}
           placeholder={`Nuevo ${titulo.toLowerCase()}...`}
-          className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm min-w-0"
+          className="flex-1 bg-page border border-line-strong rounded-lg px-3 py-2 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm min-w-0"
         />
         <button
           onClick={handleCrear}
@@ -46,8 +46,8 @@ function SeccionClasificacion({ titulo, tipo, items, onCrear, onEliminar, guarda
 
       <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
         {items.map(item => (
-          <div key={item._id} className="flex items-center justify-between bg-black rounded-lg px-3 py-2 gap-2">
-            <span className="text-white text-sm truncate">{item.nombre}</span>
+          <div key={item._id} className="flex items-center justify-between bg-surface-alt rounded-lg px-3 py-2 gap-2">
+            <span className="text-ink text-sm truncate">{item.nombre}</span>
             <button
               onClick={() => onEliminar(item._id, item.nombre, tipo)}
               disabled={guardando}
@@ -147,18 +147,18 @@ export default function AdminClasificacion() {
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-white/50">Cargando...</p>
+    <main className="min-h-screen bg-page flex items-center justify-center">
+      <p className="text-ink-muted">Cargando...</p>
     </main>
   )
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-page px-4 py-8">
       <div className="max-w-5xl mx-auto">
 
         <div className="flex items-center gap-4 mb-8">
-          <a href="/admin" className="text-white/40 hover:text-orange-500 transition text-sm">← Admin</a>
-          <h1 className="text-2xl font-black uppercase text-white">Clasificación</h1>
+          <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+          <h1 className="text-2xl font-black uppercase text-ink">Clasificación</h1>
         </div>
 
         {mensaje && <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-6"><p className="text-green-400 text-sm">{mensaje}</p></div>}

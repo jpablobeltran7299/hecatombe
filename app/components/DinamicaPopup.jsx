@@ -26,7 +26,7 @@ export default function DinamicaPopup({ dinamica }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4" onClick={cerrar}>
       <div
-        className="relative bg-[#111111] border border-orange-500/40 rounded-2xl overflow-hidden max-w-sm w-full"
+        className="relative bg-surface border border-orange-500/40 rounded-2xl overflow-hidden max-w-sm w-full"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -37,7 +37,7 @@ export default function DinamicaPopup({ dinamica }) {
           ×
         </button>
 
-        <div className="relative aspect-video bg-[#1a1a1a]">
+        <div className="relative aspect-video bg-surface-alt">
           {dinamica.imagen ? (
             <img
               src={urlFor(dinamica.imagen).width(600).url()}
@@ -53,9 +53,9 @@ export default function DinamicaPopup({ dinamica }) {
           <span className="bg-orange-500 text-black text-xs font-black px-2 py-0.5 rounded uppercase tracking-wide mb-3 inline-block">
             Dinámica activa
           </span>
-          <h3 className="text-white font-black uppercase text-lg leading-tight mb-2">{dinamica.titulo}</h3>
+          <h3 className="text-ink font-black uppercase text-lg leading-tight mb-2">{dinamica.titulo}</h3>
           {dinamica.descripcion && (
-            <p className="text-gray-400 text-sm leading-relaxed mb-4 line-clamp-3">{dinamica.descripcion}</p>
+            <p className="text-ink-muted text-sm leading-relaxed mb-4 line-clamp-3">{dinamica.descripcion}</p>
           )}
           <a
             href={destino}

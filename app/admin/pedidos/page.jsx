@@ -64,18 +64,18 @@ export default function AdminPedidos() {
     .reduce((acc, p) => acc + (p.total || 0), 0)
 
   if (loading) return (
-    <main className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-white/50">Cargando pedidos...</p>
+    <main className="min-h-screen bg-page flex items-center justify-center">
+      <p className="text-ink-muted">Cargando pedidos...</p>
     </main>
   )
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-page px-4 py-8">
       <div className="max-w-7xl mx-auto">
 
         <div className="flex items-center gap-4 mb-8">
-          <a href="/admin" className="text-white/40 hover:text-orange-500 transition text-sm">← Admin</a>
-          <h1 className="text-2xl font-black uppercase text-white">Pedidos</h1>
+          <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+          <h1 className="text-2xl font-black uppercase text-ink">Pedidos</h1>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
@@ -92,19 +92,19 @@ export default function AdminPedidos() {
               </>
             )
             return href ? (
-              <Link key={label} href={href} className="bg-[#111] border border-white/10 hover:border-orange-500 rounded-2xl p-4 text-center transition">
+              <Link key={label} href={href} className="bg-surface border border-line hover:border-orange-500 rounded-2xl p-4 text-center transition">
                 {contenido}
               </Link>
             ) : (
-              <div key={label} className="bg-[#111] border border-white/10 rounded-2xl p-4 text-center">
+              <div key={label} className="bg-surface border border-line rounded-2xl p-4 text-center">
                 {contenido}
               </div>
             )
           })}
         </div>
 
-        <div className="bg-[#111] border border-white/10 rounded-xl px-6 py-4 mb-6 flex items-center justify-between">
-          <p className="text-white/50 text-sm font-black uppercase">Total en ventas confirmadas</p>
+        <div className="bg-surface border border-line rounded-xl px-6 py-4 mb-6 flex items-center justify-between">
+          <p className="text-ink-muted text-sm font-black uppercase">Total en ventas confirmadas</p>
           <p className="text-orange-500 font-black text-2xl">${totalVentas.toLocaleString('es-MX')} MXN</p>
         </div>
 
@@ -114,12 +114,12 @@ export default function AdminPedidos() {
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar por # pedido o ID MP..."
-            className="flex-1 min-w-[200px] bg-[#111] border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm"
+            className="flex-1 min-w-[200px] bg-surface border border-line-strong rounded-lg px-4 py-2 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm"
           />
           {['todos', 'pagado', 'apartado', 'enviado', 'entregado', 'cancelado'].map(estado => (
             <button key={estado} onClick={() => setFiltroEstado(estado)}
               className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition ${
-                filtroEstado === estado ? 'bg-orange-500 text-black' : 'bg-[#111] text-white/40 hover:text-white border border-white/10'
+                filtroEstado === estado ? 'bg-orange-500 text-black' : 'bg-surface text-ink-muted hover:text-ink border border-line'
               }`}>
               {estado}
             </button>
@@ -128,10 +128,10 @@ export default function AdminPedidos() {
 
         <div className="flex flex-col gap-3">
           {pedidosFiltrados.map(pedido => (
-            <div key={pedido.id} className="bg-[#111] border border-white/10 rounded-2xl p-5 flex flex-wrap items-center gap-4">
+            <div key={pedido.id} className="bg-surface border border-line rounded-2xl p-5 flex flex-wrap items-center gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-1">
-                  <p className="text-white font-black text-sm">Pedido #{pedido.id}</p>
+                  <p className="text-ink font-black text-sm">Pedido #{pedido.id}</p>
                   <span className={`text-xs font-black uppercase px-2 py-0.5 rounded-full ${getBadge(pedido.estado)}`}>
                     {pedido.estado}
                   </span>
@@ -156,7 +156,7 @@ export default function AdminPedidos() {
                 value={pedido.estado}
                 onChange={e => cambiarEstado(pedido.id, e.target.value)}
                 disabled={actualizando === pedido.id}
-                className="bg-black border border-white/20 text-white text-xs px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500 disabled:opacity-50">
+                className="bg-page border border-line-strong text-ink text-xs px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500 disabled:opacity-50">
                 <option value="pagado">Pagado</option>
                 <option value="apartado">Apartado</option>
                 <option value="enviado">Enviado</option>

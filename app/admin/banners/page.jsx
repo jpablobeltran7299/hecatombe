@@ -122,20 +122,20 @@ export default function AdminBanners() {
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-white/50">Cargando banners...</p>
+    <main className="min-h-screen bg-page flex items-center justify-center">
+      <p className="text-ink-muted">Cargando banners...</p>
     </main>
   )
 
-  const inputClass = "w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-orange-500 transition text-sm"
-  const labelClass = "text-white/50 text-xs font-black uppercase tracking-widest mb-2 block"
+  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 transition text-sm"
+  const labelClass = "text-ink-muted text-xs font-black uppercase tracking-widest mb-2 block"
 
   if (modoEditar) return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-page px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
-          <button onClick={() => setModoEditar(null)} className="text-white/40 hover:text-orange-500 transition text-sm">← Banners</button>
-          <h1 className="text-2xl font-black uppercase text-white">{modoEditar === 'nuevo' ? 'Nuevo banner' : 'Editar banner'}</h1>
+          <button onClick={() => setModoEditar(null)} className="text-ink-muted hover:text-orange-500 transition text-sm">← Banners</button>
+          <h1 className="text-2xl font-black uppercase text-ink">{modoEditar === 'nuevo' ? 'Nuevo banner' : 'Editar banner'}</h1>
         </div>
 
         {error && <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6"><p className="text-red-400 text-sm">{error}</p></div>}
@@ -144,18 +144,18 @@ export default function AdminBanners() {
         <div className="flex flex-col gap-6">
 
           {/* Imagen */}
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+          <div className="bg-surface border border-line rounded-2xl p-6">
             <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Imagen *</h2>
             {imagenPreview && (
               <img src={imagenPreview} alt="Preview" className="w-full rounded-xl mb-4 object-cover" style={{ maxHeight: 200 }} />
             )}
             <input type="file" accept="image/*" onChange={handleImagen}
-              className="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer" />
+              className="w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer" />
             {subiendo && <p className="text-orange-500 text-xs mt-2">Subiendo imagen...</p>}
           </div>
 
           {/* Config */}
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+          <div className="bg-surface border border-line rounded-2xl p-6">
             <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Configuración</h2>
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-4">
@@ -179,11 +179,11 @@ export default function AdminBanners() {
               ].map(({ key, label, desc }) => (
                 <div key={key} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
                   <div>
-                    <p className="text-white text-sm font-black">{label}</p>
+                    <p className="text-ink text-sm font-black">{label}</p>
                     <p className="text-white/30 text-xs">{desc}</p>
                   </div>
                   <button onClick={() => setForm({ ...form, [key]: !form[key] })}
-                    className={`w-12 h-6 rounded-full transition-colors ${form[key] ? 'bg-orange-500' : 'bg-[#333]'}`}>
+                    className={`w-12 h-6 rounded-full transition-colors ${form[key] ? 'bg-orange-500' : 'bg-surface-alt'}`}>
                     <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${form[key] ? 'translate-x-6' : 'translate-x-0'}`} />
                   </button>
                 </div>
@@ -193,7 +193,7 @@ export default function AdminBanners() {
 
           {/* Texto — solo si mostrarTexto */}
           {form.mostrarTexto && (
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+            <div className="bg-surface border border-line rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Texto del banner</h2>
               <div className="flex flex-col gap-4">
                 <div>
@@ -234,13 +234,13 @@ export default function AdminBanners() {
   )
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-page px-4 py-8">
       <div className="max-w-4xl mx-auto">
 
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <a href="/admin" className="text-white/40 hover:text-orange-500 transition text-sm">← Admin</a>
-            <h1 className="text-2xl font-black uppercase text-white">Banners</h1>
+            <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+            <h1 className="text-2xl font-black uppercase text-ink">Banners</h1>
           </div>
           <button onClick={abrirNuevo}
             className="bg-orange-500 hover:bg-orange-600 text-black font-black uppercase text-sm px-5 py-2 rounded-xl transition">
@@ -250,14 +250,14 @@ export default function AdminBanners() {
 
         <div className="flex flex-col gap-4">
           {banners.map(banner => (
-            <div key={banner._id} className="bg-[#111] border border-white/10 rounded-2xl overflow-hidden flex items-center gap-4 p-4">
+            <div key={banner._id} className="bg-surface border border-line rounded-2xl overflow-hidden flex items-center gap-4 p-4">
               {banner.imagen && (
                 <img src={urlFor(banner.imagen).width(120).height(60).url()}
                   alt={banner.titulo}
                   className="w-24 h-14 object-cover rounded-lg flex-shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-white font-black text-sm truncate">{banner.titulo || 'Sin título'}</p>
+                <p className="text-ink font-black text-sm truncate">{banner.titulo || 'Sin título'}</p>
                 <div className="flex gap-3 text-xs text-white/30 mt-1">
                   <span>Orden: {banner.orden}</span>
                   <span className={banner.activo ? 'text-green-400' : 'text-red-400'}>{banner.activo ? 'Activo' : 'Inactivo'}</span>

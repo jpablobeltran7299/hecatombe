@@ -59,15 +59,15 @@ export default function CarritoPage() {
   const total = items.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
 
   if (loading) return (
-    <main className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-white/50">Cargando...</p>
+    <main className="min-h-screen bg-page flex items-center justify-center">
+      <p className="text-ink-muted">Cargando...</p>
     </main>
   )
 
   return (
-    <main className="min-h-screen bg-black px-4 py-12">
+    <main className="min-h-screen bg-page px-4 py-12">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-black uppercase text-white mb-8">Mi carrito</h1>
+        <h1 className="text-3xl font-black uppercase text-ink mb-8">Mi carrito</h1>
 
         {/* Mensajes de estado */}
         {estado === 'exitoso' && (
@@ -87,8 +87,8 @@ export default function CarritoPage() {
         )}
 
         {items.length === 0 ? (
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-12 text-center">
-            <p className="text-white/40 text-lg mb-6">Tu carrito está vacío</p>
+          <div className="bg-surface border border-line rounded-2xl p-12 text-center">
+            <p className="text-ink-muted text-lg mb-6">Tu carrito está vacío</p>
             <Link href="/catalogo"
               className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase px-6 py-3 rounded-xl transition">
               Ver catálogo
@@ -99,21 +99,21 @@ export default function CarritoPage() {
             <div className="flex flex-col gap-4 mb-8">
               {items.map(item => (
                 <div key={item.productoId}
-                  className="bg-[#111] border border-white/10 rounded-2xl p-4 flex items-center gap-4">
+                  className="bg-surface border border-line rounded-2xl p-4 flex items-center gap-4">
                   {item.imagen ? (
                     <img src={item.imagen} alt={item.nombre}
                       className="w-16 h-16 object-contain rounded-lg bg-white flex-shrink-0" />
                   ) : (
-                    <div className="w-16 h-16 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-2xl flex-shrink-0">📦</div>
+                    <div className="w-16 h-16 bg-surface-alt rounded-lg flex items-center justify-center text-2xl flex-shrink-0">📦</div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-black uppercase text-sm truncate">{item.nombre}</p>
+                    <p className="text-ink font-black uppercase text-sm truncate">{item.nombre}</p>
                     <p className="text-orange-500 font-black">${item.precio?.toLocaleString('es-MX')} MXN</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => cambiarCantidad(item.productoId, -1)}
                       className="w-8 h-8 bg-[#222] hover:bg-orange-500 text-white rounded-lg font-black transition">−</button>
-                    <span className="text-white font-black w-6 text-center">{item.cantidad}</span>
+                    <span className="text-ink font-black w-6 text-center">{item.cantidad}</span>
                     <button onClick={() => cambiarCantidad(item.productoId, 1)}
                       className="w-8 h-8 bg-[#222] hover:bg-orange-500 text-white rounded-lg font-black transition">+</button>
                   </div>
@@ -127,13 +127,13 @@ export default function CarritoPage() {
               ))}
             </div>
 
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
+            <div className="bg-surface border border-line rounded-2xl p-6">
               <div className="flex justify-between items-center mb-6">
-                <span className="text-white/60 uppercase font-black text-sm">Total</span>
+                <span className="text-ink-muted uppercase font-black text-sm">Total</span>
                 <span className="text-orange-500 font-black text-2xl">${total.toLocaleString('es-MX')} MXN</span>
               </div>
               {!user && (
-                <p className="text-white/40 text-xs text-center mb-3">
+                <p className="text-ink-muted text-xs text-center mb-3">
                   Necesitas <Link href="/login" className="text-orange-500 hover:underline">iniciar sesión</Link> para proceder al pago
                 </p>
               )}

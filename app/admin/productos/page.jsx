@@ -57,19 +57,19 @@ export default function AdminProductos() {
   })
 
   if (loading) return (
-    <main className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-white/50">Cargando productos...</p>
+    <main className="min-h-screen bg-page flex items-center justify-center">
+      <p className="text-ink-muted">Cargando productos...</p>
     </main>
   )
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-page px-4 py-8">
       <div className="max-w-7xl mx-auto">
 
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <a href="/admin" className="text-white/40 hover:text-orange-500 transition text-sm">← Admin</a>
-            <h1 className="text-2xl font-black uppercase text-white">Productos</h1>
+            <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+            <h1 className="text-2xl font-black uppercase text-ink">Productos</h1>
             <span className="text-white/30 text-sm">{productos.length} total</span>
           </div>
           <Link href="/admin/productos/nuevo"
@@ -86,7 +86,7 @@ export default function AdminProductos() {
             { label: 'Preventas', value: productos.filter(p => p.tipo === 'preventa').length },
             { label: 'Sin imagen', value: productos.filter(p => !p.imagenes?.length).length },
           ].map(({ label, value }) => (
-            <div key={label} className="bg-[#111] border border-white/10 rounded-2xl p-4 text-center">
+            <div key={label} className="bg-surface border border-line rounded-2xl p-4 text-center">
               <p className="text-orange-500 font-black text-2xl">{value}</p>
               <p className="text-white/30 text-xs uppercase font-black mt-1">{label}</p>
             </div>
@@ -100,7 +100,7 @@ export default function AdminProductos() {
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar producto o marca..."
-            className="flex-1 min-w-[200px] bg-[#111] border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm"
+            className="flex-1 min-w-[200px] bg-surface border border-line-strong rounded-lg px-4 py-2 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm"
           />
           {[
             { key: 'todos', label: 'Todos' },
@@ -110,7 +110,7 @@ export default function AdminProductos() {
           ].map(({ key, label }) => (
             <button key={key} onClick={() => setFiltro(key)}
               className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition ${
-                filtro === key ? 'bg-orange-500 text-black' : 'bg-[#111] text-white/40 hover:text-white border border-white/10'
+                filtro === key ? 'bg-orange-500 text-black' : 'bg-surface text-ink-muted hover:text-ink border border-line'
               }`}>
               {label}
             </button>
@@ -121,7 +121,7 @@ export default function AdminProductos() {
         <div className="flex flex-col gap-3">
           {productosFiltrados.map(producto => (
             <div key={producto._id}
-              className="bg-[#111] border border-white/10 rounded-2xl p-4 flex items-center gap-4">
+              className="bg-surface border border-line rounded-2xl p-4 flex items-center gap-4">
 
               {/* Imagen */}
               {producto.imagenes?.[0] ? (
@@ -129,13 +129,13 @@ export default function AdminProductos() {
                   alt={producto.nombre}
                   className="w-14 h-14 object-contain rounded-xl bg-white flex-shrink-0" />
               ) : (
-                <div className="w-14 h-14 bg-[#1a1a1a] rounded-xl flex items-center justify-center text-xl flex-shrink-0">🎁</div>
+                <div className="w-14 h-14 bg-surface-alt rounded-xl flex items-center justify-center text-xl flex-shrink-0">🎁</div>
               )}
 
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <p className="text-white font-black text-sm truncate">{producto.nombre}</p>
+                  <p className="text-ink font-black text-sm truncate">{producto.nombre}</p>
                   {producto.tipo === 'preventa' && (
                     <span className="bg-orange-500 text-black text-xs font-black px-2 py-0.5 rounded-full flex-shrink-0">PREVENTA</span>
                   )}
@@ -165,7 +165,7 @@ export default function AdminProductos() {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={() => toggleActivo(producto)}
-                  className="text-white/30 hover:text-orange-500 transition text-xs px-2 py-1 border border-white/10 hover:border-orange-500 rounded-lg">
+                  className="text-ink-muted hover:text-orange-500 transition text-xs px-2 py-1 border border-line hover:border-orange-500 rounded-lg">
                   {producto.disponible ? 'Desactivar' : 'Activar'}
                 </button>
                 <Link href={`/admin/productos/${producto._id}`}

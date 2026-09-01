@@ -7,7 +7,7 @@ export default function GaleriaProducto({ imagenes, nombre }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="bg-white border border-[#222] rounded-2xl aspect-square flex items-center justify-center overflow-hidden">
+      <div className="bg-white border border-line rounded-2xl aspect-square flex items-center justify-center overflow-hidden">
         {imagenes?.[activa] ? (
           <img
             src={urlFor(imagenes[activa]).width(600).url()}
@@ -26,7 +26,7 @@ export default function GaleriaProducto({ imagenes, nombre }) {
               key={i}
               onClick={() => setActiva(i)}
               className={`w-16 h-16 bg-white rounded-lg overflow-hidden flex items-center justify-center border-2 transition-colors ${
-                i === activa ? 'border-orange-500' : 'border-[#222] hover:border-[#444]'
+                i === activa ? 'border-orange-500' : 'border-line hover:border-[#444]'
               }`}
             >
               <img

@@ -15,10 +15,10 @@ function Checkbox({ label, checked, onChange, count }) {
       }`}>
         {checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="black" strokeWidth="2" strokeLinecap="round"/></svg>}
       </span>
-      <span className={`text-xs font-bold uppercase tracking-wide flex-1 ${checked ? 'text-orange-500' : 'text-gray-400 group-hover:text-white'}`}>
+      <span className={`text-xs font-bold uppercase tracking-wide flex-1 ${checked ? 'text-orange-500' : 'text-ink-muted group-hover:text-ink'}`}>
         {label}
       </span>
-      {count !== undefined && <span className="text-gray-600 text-xs">({count})</span>}
+      {count !== undefined && <span className="text-ink-muted text-xs">({count})</span>}
     </label>
   )
 }
@@ -29,7 +29,7 @@ function SeccionFiltro({ titulo, children, defaultOpen = true }) {
     <div className="border-b border-[#1a1a1a] py-4">
       <button onClick={() => setOpen(!open)} className="flex items-center justify-between w-full mb-2">
         <span className="text-orange-500 text-xs font-black uppercase tracking-widest">{titulo}</span>
-        <span className="text-gray-500 text-xs">{open ? '▲' : '▼'}</span>
+        <span className="text-ink-muted text-xs">{open ? '▲' : '▼'}</span>
       </button>
       {open && <div className="flex flex-col gap-0.5">{children}</div>}
     </div>
@@ -199,14 +199,14 @@ function Catalogo() {
       <SeccionFiltro titulo="Precio" defaultOpen={false}>
         <div className="flex flex-col gap-2 mt-1">
           <div className="flex items-center gap-2">
-            <span className="text-gray-500 text-xs">$</span>
+            <span className="text-ink-muted text-xs">$</span>
             <input type="number" value={rangoMin} onChange={e => setRangoMin(Number(e.target.value))}
-              className="w-full bg-[#111] border border-[#333] text-white text-xs px-2 py-1 rounded" />
+              className="w-full bg-surface border border-line-strong text-ink text-xs px-2 py-1 rounded" />
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-gray-500 text-xs">$</span>
+            <span className="text-ink-muted text-xs">$</span>
             <input type="number" value={rangoMax} onChange={e => setRangoMax(Number(e.target.value))}
-              className="w-full bg-[#111] border border-[#333] text-white text-xs px-2 py-1 rounded" />
+              className="w-full bg-surface border border-line-strong text-ink text-xs px-2 py-1 rounded" />
           </div>
         </div>
       </SeccionFiltro>
@@ -214,27 +214,27 @@ function Catalogo() {
   )
 
   return (
-    <main className="min-h-screen bg-[#0d0d0d]">
-      <section className="bg-black border-b-2 border-orange-500 px-6 py-8">
-        <h1 className="text-white text-2xl font-black uppercase tracking-wide mb-1">
+    <main className="min-h-screen bg-page">
+      <section className="bg-page border-b-2 border-orange-500 px-6 py-8">
+        <h1 className="text-ink text-2xl font-black uppercase tracking-wide mb-1">
           Catálogo <span className="text-orange-500">completo</span>
         </h1>
-        <p className="text-gray-500 text-xs uppercase tracking-widest mb-4">
+        <p className="text-ink-muted text-xs uppercase tracking-widest mb-4">
           {productosFiltrados.length} producto{productosFiltrados.length !== 1 ? 's' : ''} encontrado{productosFiltrados.length !== 1 ? 's' : ''}
         </p>
         <div className="flex gap-2 flex-wrap">
           <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar producto..."
-            className="flex-1 min-w-[200px] max-w-md bg-[#111] border border-[#333] focus:border-orange-500 text-white text-sm px-4 py-2 rounded-lg outline-none placeholder-gray-600 transition-colors" />
+            className="flex-1 min-w-[200px] max-w-md bg-surface border border-line-strong focus:border-orange-500 text-ink text-sm px-4 py-2 rounded-lg outline-none placeholder-gray-600 transition-colors" />
           <select value={ordenar} onChange={e => setOrdenar(e.target.value)}
-            className="bg-[#111] border border-[#333] text-gray-400 text-xs font-bold uppercase px-3 py-2 rounded-lg outline-none">
+            className="bg-surface border border-line-strong text-ink-muted text-xs font-bold uppercase px-3 py-2 rounded-lg outline-none">
             <option value="recientes">Más recientes</option>
             <option value="precio_asc">Precio: menor a mayor</option>
             <option value="precio_desc">Precio: mayor a menor</option>
             <option value="nombre">Nombre A-Z</option>
           </select>
           <button onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="sm:hidden flex items-center gap-2 bg-[#111] border border-[#333] text-gray-400 text-xs font-black uppercase px-4 py-2 rounded-lg">
+            className="sm:hidden flex items-center gap-2 bg-surface border border-line-strong text-ink-muted text-xs font-black uppercase px-4 py-2 rounded-lg">
             Filtros {filtrosActivos > 0 && <span className="bg-orange-500 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center">{filtrosActivos}</span>}
           </button>
         </div>
@@ -243,10 +243,10 @@ function Catalogo() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex sm:hidden">
           <div className="absolute inset-0 bg-black/80" onClick={() => setSidebarOpen(false)} />
-          <div className="relative ml-auto w-72 h-full bg-[#0d0d0d] border-l border-[#222] p-5 overflow-y-auto">
+          <div className="relative ml-auto w-72 h-full bg-page border-l border-line p-5 overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-white font-black uppercase text-sm">Filtros</span>
-              <button onClick={() => setSidebarOpen(false)} className="text-gray-500 hover:text-white text-xl">✕</button>
+              <span className="text-ink font-black uppercase text-sm">Filtros</span>
+              <button onClick={() => setSidebarOpen(false)} className="text-ink-muted hover:text-ink text-xl">✕</button>
             </div>
             {sidebar}
           </div>
@@ -255,7 +255,7 @@ function Catalogo() {
 
       <div className="px-4 py-6 flex gap-6 max-w-7xl mx-auto items-start">
         <aside className="hidden sm:block w-52 shrink-0 sticky top-20 self-start">
-          <div className="bg-black border border-[#222] rounded-xl p-4 max-h-[calc(100vh-6rem)] overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-[#111] [&::-webkit-scrollbar-thumb]:bg-orange-500 [&::-webkit-scrollbar-thumb]:rounded-full">
+          <div className="bg-page border border-line rounded-xl p-4 max-h-[calc(100vh-6rem)] overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-surface [&::-webkit-scrollbar-thumb]:bg-orange-500 [&::-webkit-scrollbar-thumb]:rounded-full">
             {sidebar}
           </div>
         </aside>
@@ -266,16 +266,16 @@ function Catalogo() {
               <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
             </div>
           ) : productosFiltrados.length === 0 ? (
-            <div className="text-center py-20 border-2 border-dashed border-[#222] rounded-xl">
-              <p className="text-gray-500 text-sm font-bold uppercase">No hay productos</p>
-              <p className="text-gray-700 text-xs mt-1">Intenta con otro filtro</p>
+            <div className="text-center py-20 border-2 border-dashed border-line rounded-xl">
+              <p className="text-ink-muted text-sm font-bold uppercase">No hay productos</p>
+              <p className="text-ink-muted text-xs mt-1">Intenta con otro filtro</p>
               <button onClick={limpiarFiltros} className="mt-4 text-orange-500 text-xs font-black uppercase">Limpiar filtros</button>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {productosFiltrados.map((producto) => (
                 <Link key={producto._id} href={`/producto/${producto._id}`}
-                  className="group bg-[#111] border border-[#222] hover:border-orange-500 rounded-xl overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-orange-500/10 flex flex-col">
+                  className="group bg-surface border border-line hover:border-orange-500 rounded-xl overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-orange-500/10 flex flex-col">
                   <div className="relative bg-white aspect-square flex items-center justify-center overflow-hidden">
                     <BadgesProducto producto={producto} />
                     <BotonFavoritoCard productoId={producto._id} />
@@ -287,15 +287,15 @@ function Catalogo() {
                     )}
                   </div>
                   <div className="p-3 flex flex-col flex-1">
-                    <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">{producto.marca}</p>
-                    <p className="text-white font-bold text-sm leading-snug mb-2 flex-1">{producto.nombre}</p>
+                    <p className="text-ink-muted text-xs uppercase tracking-wide mb-1">{producto.marca}</p>
+                    <p className="text-ink font-bold text-sm leading-snug mb-2 flex-1">{producto.nombre}</p>
                     <div className="flex items-center justify-between mt-auto">
                       {producto.tipo === 'preventa' && producto.anticipo ? (
                         <span className="text-orange-500 font-black text-base">Anticipo: ${producto.anticipo.toLocaleString('es-MX')} MXN</span>
                       ) : producto.precio ? (
                         <span className="text-orange-500 font-black text-base">${producto.precio.toLocaleString('es-MX')}</span>
                       ) : (
-                        <span className="text-gray-600 text-xs font-bold uppercase">Consultar</span>
+                        <span className="text-ink-muted text-xs font-bold uppercase">Consultar</span>
                       )}
                       <span className="text-orange-500 text-xs font-black opacity-0 group-hover:opacity-100 transition-opacity">Ver →</span>
                     </div>
@@ -313,7 +313,7 @@ function Catalogo() {
 export default function CatalogoPage() {
   return (
     <Suspense fallback={
-      <main className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+      <main className="min-h-screen bg-page flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
       </main>
     }>

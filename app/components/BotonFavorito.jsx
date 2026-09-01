@@ -60,7 +60,7 @@ export default function BotonFavorito({ productoId }) {
       className={`flex items-center justify-center gap-2 w-full border font-black text-sm uppercase tracking-widest py-4 rounded-xl transition-all duration-200 mb-3 ${
         esFavorito
           ? 'border-red-500 text-red-500 hover:bg-red-500/10'
-          : 'border-white/20 text-white/50 hover:border-red-500 hover:text-red-500'
+          : 'border-line-strong text-ink-muted hover:border-red-500 hover:text-red-500'
       }`}
     >
       <svg width="18" height="18" viewBox="0 0 24 24"

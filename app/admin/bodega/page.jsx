@@ -100,30 +100,30 @@ export default function AdminBodega() {
     .reduce((acc, b) => acc + (b.total_acumulado || 0), 0)
 
   if (loading) return (
-    <main className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-white/50">Cargando bodega...</p>
+    <main className="min-h-screen bg-page flex items-center justify-center">
+      <p className="text-ink-muted">Cargando bodega...</p>
     </main>
   )
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8">
+    <main className="min-h-screen bg-page px-4 py-8">
       <div className="max-w-7xl mx-auto">
 
         <div className="flex items-center gap-4 mb-8">
-          <a href="/admin" className="text-white/40 hover:text-orange-500 transition text-sm">← Admin</a>
-          <h1 className="text-2xl font-black uppercase text-white">Bodegatombe</h1>
+          <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+          <h1 className="text-2xl font-black uppercase text-ink">Bodegatombe</h1>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-4 text-center">
+          <div className="bg-surface border border-line rounded-2xl p-4 text-center">
             <p className="text-orange-500 font-black text-2xl">{bodegas.filter(b => b.estado === 'guardando').length}</p>
             <p className="text-white/30 text-xs uppercase font-black mt-1">Clientes en bodega</p>
           </div>
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-4 text-center">
+          <div className="bg-surface border border-line rounded-2xl p-4 text-center">
             <p className="text-orange-500 font-black text-2xl">${totalEnBodega.toLocaleString('es-MX')}</p>
             <p className="text-white/30 text-xs uppercase font-black mt-1">Total acumulado</p>
           </div>
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-4 text-center">
+          <div className="bg-surface border border-line rounded-2xl p-4 text-center">
             <p className="text-orange-500 font-black text-2xl">{bodegas.filter(b => b.total_acumulado >= 1200).length}</p>
             <p className="text-white/30 text-xs uppercase font-black mt-1">Listos para envío gratis</p>
           </div>
@@ -134,15 +134,15 @@ export default function AdminBodega() {
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
           placeholder="Buscar cliente..."
-          className="w-full max-w-md bg-[#111] border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm mb-6"
+          className="w-full max-w-md bg-surface border border-line-strong rounded-lg px-4 py-2 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm mb-6"
         />
 
         <div className="flex flex-col gap-4">
           {bodegasFiltradas.map((bodega, idx) => (
-            <div key={`${bodega.user_id}-${idx}`} className="bg-[#111] border border-white/10 rounded-2xl p-6">
+            <div key={`${bodega.user_id}-${idx}`} className="bg-surface border border-line rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-white font-black text-sm">
+                  <p className="text-ink font-black text-sm">
                     {bodega.perfil?.nombre || 'Sin nombre'} {bodega.perfil?.apellido || ''}
                   </p>
                   <p className="text-white/30 text-xs mt-1">{bodega.perfil?.telefono || 'Sin teléfono'}</p>
@@ -153,7 +153,7 @@ export default function AdminBodega() {
                 </div>
               </div>
 
-              <div className="w-full bg-[#222] rounded-full h-2 mb-4">
+              <div className="w-full bg-surface-alt rounded-full h-2 mb-4">
                 <div
                   className="bg-orange-500 h-2 rounded-full"
                   style={{ width: `${Math.min(100, (bodega.total_acumulado / 1200) * 100)}%` }}
@@ -165,7 +165,7 @@ export default function AdminBodega() {
                   <p className="text-white/30 text-xs uppercase font-black mb-2">{bodega.pedidos.length} producto(s) guardados</p>
                   <div className="flex flex-col gap-2">
                     {bodega.pedidos.map(p => (
-                      <div key={p.id} className="flex justify-between items-center text-xs bg-black rounded-lg px-3 py-2">
+                      <div key={p.id} className="flex justify-between items-center text-xs bg-page rounded-lg px-3 py-2">
                         <span className="text-white/70">{p.nombreProducto}</span>
                         <span className="text-orange-500 font-black">${p.total?.toLocaleString('es-MX')} MXN</span>
                       </div>
