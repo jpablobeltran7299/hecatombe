@@ -46,9 +46,9 @@ export default {
     },
     {
       name: "href",
-      title: "Link del botón (ej: /catalogo o /#preventas)",
+      title: "Link (ej: /catalogo o /#preventas)",
+      description: "Si 'Mostrar texto' está activo, este link se usa en el botón del banner. Si el banner es solo imagen, el banner completo será clickeable a este link.",
       type: "string",
-      hidden: ({ document }) => !document?.mostrarTexto,
     },
     {
       name: "orden",

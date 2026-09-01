@@ -163,7 +163,14 @@ export default function AdminBanners() {
                   <label className={labelClass}>Orden</label>
                   <input type="number" value={form.orden} onChange={e => setForm({ ...form, orden: parseInt(e.target.value) })} className={inputClass} />
                 </div>
+                <div>
+                  <label className={labelClass}>Link</label>
+                  <input type="text" value={form.href} onChange={e => setForm({ ...form, href: e.target.value })} placeholder="/catalogo" className={inputClass} />
+                </div>
               </div>
+              <p className="text-white/20 text-xs -mt-2">
+                Si el banner es solo imagen, todo el banner será clickeable a este link. Si tiene texto, este link se usa en el botón.
+              </p>
 
               {/* Toggles */}
               {[
@@ -201,15 +208,9 @@ export default function AdminBanners() {
                   <label className={labelClass}>Subtítulo</label>
                   <input type="text" value={form.subtitulo} onChange={e => setForm({ ...form, subtitulo: e.target.value })} placeholder="Subtítulo opcional" className={inputClass} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className={labelClass}>Texto del botón</label>
-                    <input type="text" value={form.cta} onChange={e => setForm({ ...form, cta: e.target.value })} placeholder="Ver catálogo" className={inputClass} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Link del botón</label>
-                    <input type="text" value={form.href} onChange={e => setForm({ ...form, href: e.target.value })} placeholder="/catalogo" className={inputClass} />
-                  </div>
+                <div>
+                  <label className={labelClass}>Texto del botón</label>
+                  <input type="text" value={form.cta} onChange={e => setForm({ ...form, cta: e.target.value })} placeholder="Ver catálogo" className={inputClass} />
                 </div>
               </div>
             </div>

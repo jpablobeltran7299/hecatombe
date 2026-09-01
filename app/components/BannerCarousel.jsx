@@ -37,18 +37,35 @@ export default function BannerCarousel() {
     <div className="relative w-full overflow-hidden bg-black" style={{ aspectRatio: '16/6' }}>
 
       {/* Imagen de fondo */}
-      {banners.map((b, i) => (
-        <div key={b._id}
-          className={`absolute inset-0 transition-opacity duration-700 ${i === current ? 'opacity-100' : 'opacity-0'}`}>
-          {b.imagen && (
-            <img
-              src={urlFor(b.imagen).width(1400).url()}
-              alt={b.titulo || 'Banner'}
-              className="w-full h-full object-contain"
-            />
-          )}
-        </div>
-      ))}
+      {banners.map((b, i) => {
+        const capaClassName = `absolute inset-0 transition-opacity duration-700 ${
+          i === current ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`
+        const imagen = b.imagen && (
+          <img
+            src={urlFor(b.imagen).width(1400).url()}
+            alt={b.titulo || 'Banner'}
+            className="w-full h-full object-contain"
+          />
+        )
+
+        // Banner "solo imagen" (sin mostrarTexto) con href: todo el banner es clickeable.
+        // Si mostrarTexto está activo, el link vive en el botón CTA del overlay de texto,
+        // así que aquí NO se envuelve en <Link> para no anidar <a> dentro de <a>.
+        if (!b.mostrarTexto && b.href) {
+          return (
+            <Link key={b._id} href={b.href} className={capaClassName}>
+              {imagen}
+            </Link>
+          )
+        }
+
+        return (
+          <div key={b._id} className={capaClassName}>
+            {imagen}
+          </div>
+        )
+      })}
 
       {/* Overlay y texto — solo si mostrarTexto está activo */}
       {banner.mostrarTexto && (
