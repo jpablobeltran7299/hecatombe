@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { getDinamicas, urlFor } from '@/lib/sanity'
+import { useAuth } from '@/app/components/AuthProvider'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
@@ -18,6 +18,7 @@ const TIPOS = [
 ]
 
 export default function AdminDinamicas() {
+  const { user, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [dinamicas, setDinamicas] = useState([])
   const [guardando, setGuardando] = useState(false)
@@ -35,14 +36,13 @@ export default function AdminDinamicas() {
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session || !ADMINS.includes(session.user.email)) {
-        router.push('/')
-        return
-      }
-      cargarDinamicas()
-    })
-  }, [])
+    if (authLoading) return
+    if (!user || !ADMINS.includes(user.email)) {
+      router.push('/')
+      return
+    }
+    cargarDinamicas()
+  }, [authLoading, user])
 
   async function cargarDinamicas() {
     const data = await getDinamicas()

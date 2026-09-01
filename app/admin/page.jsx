@@ -1,32 +1,28 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/app/components/AuthProvider'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
 export default function AdminPage() {
-  const [loading, setLoading] = useState(true)
-  const [autorizado, setAutorizado] = useState(false)
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
+  const autorizado = !authLoading && !!user && ADMINS.includes(user.email)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        router.push('/login')
-        return
-      }
-      if (ADMINS.includes(session.user.email)) {
-        setAutorizado(true)
-      } else {
-        router.push('/')
-      }
-      setLoading(false)
-    })
-  }, [])
+    if (authLoading) return
+    if (!user) {
+      router.push('/login')
+      return
+    }
+    if (!ADMINS.includes(user.email)) {
+      router.push('/')
+    }
+  }, [authLoading, user])
 
-  if (loading) return (
+  if (authLoading) return (
     <main className="min-h-screen bg-black flex items-center justify-center">
       <p className="text-white/50">Verificando acceso...</p>
     </main>

@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { getBanners, urlFor } from '@/lib/sanity'
+import { useAuth } from '@/app/components/AuthProvider'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
 export default function AdminBanners() {
+  const { user, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [banners, setBanners] = useState([])
   const [guardando, setGuardando] = useState(false)
@@ -24,14 +25,13 @@ export default function AdminBanners() {
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session || !ADMINS.includes(session.user.email)) {
-        router.push('/')
-        return
-      }
-      cargarBanners()
-    })
-  }, [])
+    if (authLoading) return
+    if (!user || !ADMINS.includes(user.email)) {
+      router.push('/')
+      return
+    }
+    cargarBanners()
+  }, [authLoading, user])
 
   async function cargarBanners() {
     const data = await getBanners()

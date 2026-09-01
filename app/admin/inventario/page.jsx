@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { getTodosProductos, urlFor } from '@/lib/sanity'
+import { useAuth } from '@/app/components/AuthProvider'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
@@ -51,6 +51,7 @@ function FilaStock({ producto, onGuardar }) {
 }
 
 export default function AdminInventario() {
+  const { user, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [productos, setProductos] = useState([])
   const [busqueda, setBusqueda] = useState('')
@@ -60,14 +61,13 @@ export default function AdminInventario() {
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session || !ADMINS.includes(session.user.email)) {
-        router.push('/')
-        return
-      }
-      cargarProductos()
-    })
-  }, [])
+    if (authLoading) return
+    if (!user || !ADMINS.includes(user.email)) {
+      router.push('/')
+      return
+    }
+    cargarProductos()
+  }, [authLoading, user])
 
   async function cargarProductos() {
     const data = await getTodosProductos()

@@ -4,24 +4,25 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { getProductosPorIds } from '@/lib/sanity'
+import { useAuth } from '@/app/components/AuthProvider'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
 export default function AdminBodega() {
+  const { user, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [bodegas, setBodegas] = useState([])
   const [busqueda, setBusqueda] = useState('')
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session || !ADMINS.includes(session.user.email)) {
-        router.push('/')
-        return
-      }
-      cargarBodegas()
-    })
-  }, [])
+    if (authLoading) return
+    if (!user || !ADMINS.includes(user.email)) {
+      router.push('/')
+      return
+    }
+    cargarBodegas()
+  }, [authLoading, user])
 
   async function cargarBodegas() {
     const { data: pedidosBodega } = await supabase

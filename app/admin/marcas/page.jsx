@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { getMarcas, urlFor } from '@/lib/sanity'
+import { useAuth } from '@/app/components/AuthProvider'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
 export default function AdminMarcas() {
+  const { user, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [marcas, setMarcas] = useState([])
   const [guardando, setGuardando] = useState(false)
@@ -21,14 +22,13 @@ export default function AdminMarcas() {
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session || !ADMINS.includes(session.user.email)) {
-        router.push('/')
-        return
-      }
-      cargarMarcas()
-    })
-  }, [])
+    if (authLoading) return
+    if (!user || !ADMINS.includes(user.email)) {
+      router.push('/')
+      return
+    }
+    cargarMarcas()
+  }, [authLoading, user])
 
   async function cargarMarcas() {
     const data = await getMarcas()

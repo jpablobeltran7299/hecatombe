@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { getTematicas, getLineas, getUniversos } from '@/lib/sanity'
+import { useAuth } from '@/app/components/AuthProvider'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
@@ -65,6 +65,7 @@ function SeccionClasificacion({ titulo, tipo, items, onCrear, onEliminar, guarda
 }
 
 export default function AdminClasificacion() {
+  const { user, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [tematicas, setTematicas] = useState([])
   const [universos, setUniversos] = useState([])
@@ -75,14 +76,13 @@ export default function AdminClasificacion() {
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session || !ADMINS.includes(session.user.email)) {
-        router.push('/')
-        return
-      }
-      cargarDatos()
-    })
-  }, [])
+    if (authLoading) return
+    if (!user || !ADMINS.includes(user.email)) {
+      router.push('/')
+      return
+    }
+    cargarDatos()
+  }, [authLoading, user])
 
   async function cargarDatos() {
     const [t, u, l] = await Promise.all([getTematicas(), getUniversos(), getLineas()])

@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { getProducto, getTematicas, getLineas, getUniversos, getMarcas, getCategorias, urlFor } from '@/lib/sanity'
+import { useAuth } from '@/app/components/AuthProvider'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
 export default function EditarProducto({ params }) {
+  const { user, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [guardando, setGuardando] = useState(false)
   const [eliminando, setEliminando] = useState(false)
@@ -56,14 +57,13 @@ export default function EditarProducto({ params }) {
 
   useEffect(() => {
     if (!productoId) return
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session || !ADMINS.includes(session.user.email)) {
-        router.push('/')
-        return
-      }
-      cargarDatos()
-    })
-  }, [productoId])
+    if (authLoading) return
+    if (!user || !ADMINS.includes(user.email)) {
+      router.push('/')
+      return
+    }
+    cargarDatos()
+  }, [productoId, authLoading, user])
 
   async function cargarDatos() {
     const [producto, m, c, t, l, u] = await Promise.all([
