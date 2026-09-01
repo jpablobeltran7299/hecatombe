@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@mercadopago/sdk-react": "^1.0.7",
     "@sanity/client": "^7.22.0",
     "@sanity/image-url": "^1.2.0",

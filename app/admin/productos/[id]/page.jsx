@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getProducto, getTematicas, getLineas, getUniversos, getMarcas, getCategorias, urlFor } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
+import ImagenesOrdenables from '../ImagenesOrdenables'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
@@ -19,8 +20,7 @@ export default function EditarProducto({ params }) {
   const [tematicas, setTematicas] = useState([])
   const [lineas, setLineas] = useState([])
   const [universos, setUniversos] = useState([])
-  const [imagenesActuales, setImagenesActuales] = useState([])
-  const [imagenesNuevas, setImagenesNuevas] = useState([])
+  const [imagenes, setImagenes] = useState([])
   const [subiendo, setSubiendo] = useState(false)
   const [productoId, setProductoId] = useState(null)
 
@@ -82,7 +82,10 @@ export default function EditarProducto({ params }) {
     setUniversos(u)
 
     if (producto) {
-      setImagenesActuales(producto.imagenes || [])
+      setImagenes((producto.imagenes || []).map(img => {
+        const ref = img.asset?._ref || img._ref
+        return { key: ref, previewUrl: urlFor(img).width(200).height(200).url(), esNueva: false, assetId: ref }
+      }))
       setForm({
         nombre: producto.nombre || '',
         descripcion: producto.descripcion || '',
@@ -114,17 +117,17 @@ export default function EditarProducto({ params }) {
     const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
     const data = await res.json()
     setSubiendo(false)
-    return data.assetId
+    return data.assetId ? { assetId: data.assetId, url: data.url } : null
   }
 
   async function handleImagenes(e) {
     const files = Array.from(e.target.files)
-    const nuevas = []
     for (const file of files) {
-      const assetId = await subirImagen(file)
-      if (assetId) nuevas.push(assetId)
+      const subida = await subirImagen(file)
+      if (subida) {
+        setImagenes(prev => [...prev, { key: subida.assetId, previewUrl: subida.url, esNueva: true, assetId: subida.assetId }])
+      }
     }
-    setImagenesNuevas(prev => [...prev, ...nuevas])
   }
 
   async function handleGuardar() {
@@ -135,21 +138,15 @@ export default function EditarProducto({ params }) {
     setGuardando(true)
     setError('')
 
-    const todasLasImagenes = [
-      ...imagenesActuales.map(img => img.asset?._ref || img._ref),
-      ...imagenesNuevas
-    ].filter(Boolean)
-
     const res = await fetch('/api/admin/producto', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: productoId, ...form, imagenes: todasLasImagenes })
+      body: JSON.stringify({ id: productoId, ...form, imagenes: imagenes.map(img => img.assetId) })
     })
 
     const data = await res.json()
     if (data.ok) {
       setMensaje('✅ Producto actualizado correctamente')
-      setImagenesNuevas([])
       await cargarDatos()
       setTimeout(() => setMensaje(''), 3000)
     } else {
@@ -175,8 +172,8 @@ export default function EditarProducto({ params }) {
     }
   }
 
-  function eliminarImagenActual(idx) {
-    setImagenesActuales(prev => prev.filter((_, i) => i !== idx))
+  function eliminarImagen(key) {
+    setImagenes(prev => prev.filter(img => img.key !== key))
   }
 
   if (loading) return (
@@ -345,28 +342,15 @@ export default function EditarProducto({ params }) {
             </div>
           </div>
 
-          {/* Imágenes actuales */}
-          {imagenesActuales.length > 0 && (
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
-              <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Imágenes actuales</h2>
-              <div className="flex flex-wrap gap-3">
-                {imagenesActuales.map((img, idx) => (
-                  <div key={idx} className="relative">
-                    <img src={urlFor(img).width(100).height(100).url()} alt=""
-                      className="w-20 h-20 object-contain rounded-xl bg-white" />
-                    <button onClick={() => eliminarImagenActual(idx)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-black">
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Agregar imágenes */}
+          {/* Imágenes */}
           <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
-            <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Agregar imágenes</h2>
+            <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Imágenes</h2>
+            {imagenes.length > 0 && (
+              <div className="mb-4">
+                <ImagenesOrdenables imagenes={imagenes} onReordenar={setImagenes} onEliminar={eliminarImagen} />
+                <p className="text-white/20 text-xs mt-2">Arrastra para reordenar. La primera imagen es la principal.</p>
+              </div>
+            )}
             <input
               type="file"
               multiple
@@ -375,9 +359,6 @@ export default function EditarProducto({ params }) {
               className="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer"
             />
             {subiendo && <p className="text-orange-500 text-xs mt-2">Subiendo imagen...</p>}
-            {imagenesNuevas.length > 0 && (
-              <p className="text-green-400 text-xs mt-2">{imagenesNuevas.length} imagen(es) nueva(s) lista(s)</p>
-            )}
           </div>
 
           {/* Guardar */}

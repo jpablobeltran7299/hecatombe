@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getTematicas, getLineas, getUniversos, getMarcas } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
+import ImagenesOrdenables from '../ImagenesOrdenables'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
@@ -66,17 +67,21 @@ export default function NuevoProducto() {
     const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
     const data = await res.json()
     setSubiendo(false)
-    return data.assetId
+    return data.assetId ? { assetId: data.assetId, url: data.url } : null
   }
 
   async function handleImagenes(e) {
     const files = Array.from(e.target.files)
-    const nuevas = []
     for (const file of files) {
-      const assetId = await subirImagen(file)
-      if (assetId) nuevas.push(assetId)
+      const subida = await subirImagen(file)
+      if (subida) {
+        setImagenes(prev => [...prev, { key: subida.assetId, previewUrl: subida.url, esNueva: true, assetId: subida.assetId }])
+      }
     }
-    setImagenes(prev => [...prev, ...nuevas])
+  }
+
+  function eliminarImagen(key) {
+    setImagenes(prev => prev.filter(img => img.key !== key))
   }
 
   async function handleGuardar() {
@@ -90,7 +95,7 @@ export default function NuevoProducto() {
     const res = await fetch('/api/admin/producto', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, imagenes })
+      body: JSON.stringify({ ...form, imagenes: imagenes.map(img => img.assetId) })
     })
 
     const data = await res.json()
@@ -246,6 +251,12 @@ export default function NuevoProducto() {
           {/* Imágenes */}
           <div className="bg-[#111] border border-white/10 rounded-2xl p-6">
             <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Imágenes</h2>
+            {imagenes.length > 0 && (
+              <div className="mb-4">
+                <ImagenesOrdenables imagenes={imagenes} onReordenar={setImagenes} onEliminar={eliminarImagen} />
+                <p className="text-white/20 text-xs mt-2">Arrastra para reordenar. La primera imagen es la principal.</p>
+              </div>
+            )}
             <input
               type="file"
               multiple
@@ -254,9 +265,6 @@ export default function NuevoProducto() {
               className="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer"
             />
             {subiendo && <p className="text-orange-500 text-xs mt-2">Subiendo imagen...</p>}
-            {imagenes.length > 0 && (
-              <p className="text-green-400 text-xs mt-2">{imagenes.length} imagen(es) lista(s)</p>
-            )}
           </div>
 
           {/* Guardar */}
