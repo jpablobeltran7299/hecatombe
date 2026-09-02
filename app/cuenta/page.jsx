@@ -217,7 +217,7 @@ export default function CuentaPage() {
 
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-black uppercase text-ink">Mi cuenta</h1>
-          <button onClick={handleLogout} className="text-ink/50 hover:text-orange-500 text-sm transition">
+          <button onClick={handleLogout} className="text-ink/50 hover:text-orange-600 text-sm transition">
             Cerrar sesión
           </button>
         </div>
@@ -243,12 +243,12 @@ export default function CuentaPage() {
         {tab === 'perfil' && (
           <div className="flex flex-col gap-4">
             <div className="bg-surface border border-line rounded-2xl p-6">
-              <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Cuenta</h2>
+              <h2 className="text-lg font-black uppercase text-orange-600 mb-4">Cuenta</h2>
               <p className="text-ink/70 text-sm">Correo: <span className="text-ink">{user?.email}</span></p>
               <p className="text-ink/70 text-sm mt-1">Miembro desde: <span className="text-ink">{new Date(user?.created_at).toLocaleDateString('es-MX')}</span></p>
             </div>
             <div className="bg-surface border border-line rounded-2xl p-6">
-              <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Datos personales</h2>
+              <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Datos personales</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>Nombre</label>
@@ -265,7 +265,7 @@ export default function CuentaPage() {
               </div>
             </div>
             <div className="bg-surface border border-line rounded-2xl p-6">
-              <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Dirección de envío</h2>
+              <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Dirección de envío</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className={labelClass}>Calle y número</label>
@@ -322,11 +322,11 @@ export default function CuentaPage() {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-ink font-black uppercase text-xs truncate">{p?.nombre || 'Cargando...'}</p>
-                        {p?.precio && <p className="text-orange-500 font-black text-sm">${p.precio.toLocaleString('es-MX')} MXN</p>}
+                        {p?.precio && <p className="text-orange-600 font-black text-sm">${p.precio.toLocaleString('es-MX')} MXN</p>}
                         <p className="text-ink/20 text-xs mt-1">{new Date(f.created_at).toLocaleDateString('es-MX')}</p>
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        <Link href={`/producto/${f.producto_id}`} className="text-orange-500 hover:underline text-xs font-black uppercase">Ver</Link>
+                        <Link href={`/producto/${f.producto_id}`} className="text-orange-600 hover:underline text-xs font-black uppercase">Ver</Link>
                         <button onClick={() => eliminarFavorito(f.producto_id)} className="text-ink/20 hover:text-red-400 transition">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                         </button>
@@ -359,7 +359,7 @@ export default function CuentaPage() {
                       <span className={`text-xs font-black uppercase px-3 py-1 rounded-full ${getBadgeEstado(pedido.estado)}`}>
                         {getLabelEstado(pedido.estado)}
                       </span>
-                      <span className="text-orange-500 font-black">${pedido.total?.toLocaleString('es-MX')} MXN</span>
+                      <span className="text-orange-600 font-black">${pedido.total?.toLocaleString('es-MX')} MXN</span>
                     </div>
                   </div>
                   {pedido.estado === 'apartado' && (
@@ -416,19 +416,19 @@ export default function CuentaPage() {
         {tab === 'bodega' && (
           <div className="flex flex-col gap-4">
             <div className="bg-surface border border-line rounded-2xl p-6">
-              <h2 className="text-lg font-black uppercase text-orange-500 mb-2">Bodegatombe</h2>
+              <h2 className="text-lg font-black uppercase text-orange-600 mb-2">Bodegatombe</h2>
               <p className="text-ink/40 text-sm mb-6">Acumula $1,200 MXN en compras y obtén envío gratis a todo México.</p>
               {totalBodega > 0 ? (
                 <>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-ink/50 text-xs font-black uppercase">Acumulado</span>
-                    <span className="text-orange-500 font-black">${totalBodega.toLocaleString('es-MX')} / $1,200 MXN</span>
+                    <span className="text-orange-600 font-black">${totalBodega.toLocaleString('es-MX')} / $1,200 MXN</span>
                   </div>
                   <div className="w-full bg-surface-alt rounded-full h-3 mb-4">
                     <div className="bg-orange-500 h-3 rounded-full transition-all duration-500" style={{ width: `${porcentajeBodega}%` }} />
                   </div>
                   {faltaBodega > 0 ? (
-                    <p className="text-ink/40 text-sm mb-6">Te faltan <span className="text-orange-500 font-black">${faltaBodega.toLocaleString('es-MX')} MXN</span> para envío gratis.</p>
+                    <p className="text-ink/40 text-sm mb-6">Te faltan <span className="text-orange-600 font-black">${faltaBodega.toLocaleString('es-MX')} MXN</span> para envío gratis.</p>
                   ) : (
                     <p className="text-green-400 text-sm font-black mb-6">🎉 ¡Ya tienes envío gratis disponible!</p>
                   )}
@@ -449,7 +449,7 @@ export default function CuentaPage() {
             </div>
             {pedidosBodega.length > 0 && (
               <div className="bg-surface border border-line rounded-2xl p-6">
-                <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Productos guardados</h2>
+                <h2 className="text-lg font-black uppercase text-orange-600 mb-4">Productos guardados</h2>
                 <div className="flex flex-col gap-3">
                   {pedidosBodega.map(pedido => (
                     <div key={pedido.id} className="flex items-center justify-between border-b border-ink/5 pb-3 last:border-0 last:pb-0">
@@ -457,7 +457,7 @@ export default function CuentaPage() {
                         <p className="text-ink text-sm font-black">Pedido #{pedido.id}</p>
                         <p className="text-ink/30 text-xs">{new Date(pedido.created_at).toLocaleDateString('es-MX')}</p>
                       </div>
-                      <span className="text-orange-500 font-black">${pedido.total?.toLocaleString('es-MX')} MXN</span>
+                      <span className="text-orange-600 font-black">${pedido.total?.toLocaleString('es-MX')} MXN</span>
                     </div>
                   ))}
                 </div>
@@ -472,18 +472,18 @@ export default function CuentaPage() {
             <div className="bg-surface border border-line rounded-2xl p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-lg font-black uppercase text-orange-500">Hecacoins</h2>
+                  <h2 className="text-lg font-black uppercase text-orange-600">Hecacoins</h2>
                   <p className="text-ink/40 text-sm mt-1">Ganas 3% de cada compra en Hecacoins. 1 HC = $1 MXN de descuento.</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-orange-500 font-black text-3xl">{saldoHC.toLocaleString('es-MX')}</p>
+                  <p className="text-orange-600 font-black text-3xl">{saldoHC.toLocaleString('es-MX')}</p>
                   <p className="text-ink/40 text-xs">HC disponibles</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <div className="bg-page rounded-xl p-4 text-center">
-                  <p className="text-orange-500 font-black text-xl">{hecacoins?.total_ganado?.toLocaleString('es-MX') || 0}</p>
+                  <p className="text-orange-600 font-black text-xl">{hecacoins?.total_ganado?.toLocaleString('es-MX') || 0}</p>
                   <p className="text-ink/30 text-xs mt-1 uppercase font-black">Total ganado</p>
                 </div>
                 <div className="bg-page rounded-xl p-4 text-center">
@@ -511,7 +511,7 @@ export default function CuentaPage() {
             {/* Historial */}
             {movimientos.length > 0 && (
               <div className="bg-surface border border-line rounded-2xl p-6">
-                <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Historial</h2>
+                <h2 className="text-lg font-black uppercase text-orange-600 mb-4">Historial</h2>
                 <div className="flex flex-col gap-3">
                   {movimientos.map(mov => (
                     <div key={mov.id} className="flex items-center justify-between border-b border-ink/5 pb-3 last:border-0 last:pb-0">
@@ -519,7 +519,7 @@ export default function CuentaPage() {
                         <p className="text-ink text-sm font-black">{mov.descripcion}</p>
                         <p className="text-ink/30 text-xs">{new Date(mov.created_at).toLocaleDateString('es-MX')}</p>
                       </div>
-                      <span className={`font-black text-sm ${mov.tipo === 'ganado' ? 'text-green-400' : 'text-orange-500'}`}>
+                      <span className={`font-black text-sm ${mov.tipo === 'ganado' ? 'text-green-400' : 'text-orange-600'}`}>
                         {mov.tipo === 'ganado' ? '+' : '-'}{mov.monto?.toLocaleString('es-MX')} HC
                       </span>
                     </div>

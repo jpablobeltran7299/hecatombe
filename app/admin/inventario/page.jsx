@@ -148,9 +148,9 @@ export default function AdminInventario() {
       <div className="max-w-7xl mx-auto">
 
         <div className="flex items-center gap-4 mb-8">
-          <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+          <a href="/admin" className="text-ink-muted hover:text-orange-600 transition text-sm">← Admin</a>
           <h1 className="text-2xl font-black uppercase text-ink">Inventario</h1>
-          <span className="text-white/30 text-sm">{productos.length} productos</span>
+          <span className="text-ink-muted text-sm">{productos.length} productos</span>
         </div>
 
         {error && <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6"><p className="text-red-400 text-sm">{error}</p></div>}
@@ -161,7 +161,7 @@ export default function AdminInventario() {
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar producto..."
-            className="flex-1 min-w-[200px] bg-surface border border-line-strong rounded-lg px-4 py-2 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm"
+            className="flex-1 min-w-[200px] bg-surface border border-line-strong rounded-lg px-4 py-2 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 text-sm"
           />
           {[
             { key: 'todos', label: 'Todos' },
@@ -179,7 +179,7 @@ export default function AdminInventario() {
         </div>
 
         <div className="bg-surface border border-line rounded-2xl overflow-hidden">
-          <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-line text-xs font-black uppercase text-white/30">
+          <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-line text-xs font-black uppercase text-ink-muted">
             <div className="col-span-1">Img</div>
             <div className="col-span-4">Nombre</div>
             <div className="col-span-2">Precio</div>
@@ -190,7 +190,7 @@ export default function AdminInventario() {
 
           {productosFiltrados.map(producto => (
             <div key={producto._id}
-              className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-white/5 items-center hover:bg-white/2 transition">
+              className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-line items-center hover:bg-surface-alt transition">
 
               <div className="col-span-1">
                 {producto.imagenes?.[0] ? (
@@ -204,11 +204,11 @@ export default function AdminInventario() {
 
               <div className="col-span-4">
                 <p className="text-ink text-sm font-bold truncate">{producto.nombre}</p>
-                <p className="text-white/30 text-xs">{producto.marca}</p>
+                <p className="text-ink-muted text-xs">{producto.marca}</p>
               </div>
 
               <div className="col-span-2">
-                <span className="text-orange-500 font-black text-sm">
+                <span className="text-orange-600 font-black text-sm">
                   ${producto.precio?.toLocaleString('es-MX') || '—'}
                 </span>
               </div>
@@ -231,7 +231,7 @@ export default function AdminInventario() {
                 <button
                   onClick={() => toggleDisponible(producto)}
                   disabled={guardando === producto._id}
-                  className="text-white/30 hover:text-orange-500 transition text-xs disabled:opacity-30">
+                  className="text-ink-muted hover:text-orange-600 transition text-xs disabled:opacity-30">
                   {guardando === producto._id ? '...' : '✏️'}
                 </button>
               </div>
@@ -241,7 +241,7 @@ export default function AdminInventario() {
 
           {productosFiltrados.length === 0 && (
             <div className="px-6 py-12 text-center">
-              <p className="text-white/30">No hay productos con ese filtro</p>
+              <p className="text-ink-muted">No hay productos con ese filtro</p>
             </div>
           )}
         </div>

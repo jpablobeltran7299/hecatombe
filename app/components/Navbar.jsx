@@ -56,14 +56,14 @@ export default function Navbar() {
 
         {/* Logo */}
         <Link href="/" onClick={() => setMenuOpen(false)}>
-          <img src="/logo.png" alt="Hecatombe" style={{ height: '32px', width: 'auto' }} />
+          <img src="/logo-dark.png" alt="Hecatombe" style={{ height: '32px', width: 'auto' }} />
         </Link>
 
         {/* Desktop links */}
         <div className="hidden md:flex items-center gap-6">
           {LINKS.map(({ href, label }) => (
             <Link key={href} href={href}
-              className="text-ink-muted text-xs font-bold uppercase tracking-widest hover:text-orange-500 transition">
+              className="text-ink text-xs font-bold uppercase tracking-widest hover:text-orange-600 transition">
               {label}
             </Link>
           ))}
@@ -83,7 +83,7 @@ export default function Navbar() {
             <button
               type={searchOpen ? 'submit' : 'button'}
               onClick={() => !searchOpen && setSearchOpen(true)}
-              className="text-ink-muted hover:text-orange-500 transition"
+              className="text-ink-muted hover:text-orange-600 transition"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <circle cx="11" cy="11" r="8"/>
@@ -93,7 +93,7 @@ export default function Navbar() {
           </form>
 
           {/* Ícono carrito */}
-          <Link href="/carrito" className="relative text-ink-muted hover:text-orange-500 transition">
+          <Link href="/carrito" className="relative text-ink-muted hover:text-orange-600 transition">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
               <line x1="3" y1="6" x2="21" y2="6"/>
@@ -130,7 +130,7 @@ export default function Navbar() {
 
         {/* Mobile — carrito + buscador + hamburguesa */}
         <div className="flex md:hidden items-center gap-3">
-          <Link href="/carrito" className="relative text-ink-muted hover:text-orange-500 transition">
+          <Link href="/carrito" className="relative text-ink-muted hover:text-orange-600 transition">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
               <line x1="3" y1="6" x2="21" y2="6"/>
@@ -144,7 +144,7 @@ export default function Navbar() {
           </Link>
           <button
             onClick={() => setSearchOpen(!searchOpen)}
-            className="text-ink-muted hover:text-orange-500 transition"
+            className="text-ink-muted hover:text-orange-600 transition"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <circle cx="11" cy="11" r="8"/>
@@ -153,7 +153,7 @@ export default function Navbar() {
           </button>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="text-ink hover:text-orange-500 transition"
+            className="text-ink hover:text-orange-600 transition"
           >
             {menuOpen ? (
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -194,20 +194,20 @@ export default function Navbar() {
           {LINKS.map(({ href, label }) => (
             <Link key={href} href={href}
               onClick={() => setMenuOpen(false)}
-              className="text-ink-muted text-sm font-bold uppercase tracking-widest hover:text-orange-500 transition border-b border-[#1a1a1a] pb-3 last:border-0 last:pb-0">
+              className="text-ink text-sm font-bold uppercase tracking-widest hover:text-orange-600 transition border-b border-[#1a1a1a] pb-3 last:border-0 last:pb-0">
               {label}
             </Link>
           ))}
           {esAdmin && (
             <Link href="/admin"
               onClick={() => setMenuOpen(false)}
-              className="text-ink-muted text-sm font-black uppercase tracking-widest hover:text-orange-500 transition border-b border-[#1a1a1a] pb-3">
+              className="text-ink-muted text-sm font-black uppercase tracking-widest hover:text-orange-600 transition border-b border-[#1a1a1a] pb-3">
               Admin
             </Link>
           )}
           <Link href={user ? '/cuenta' : '/login'}
             onClick={() => setMenuOpen(false)}
-            className="text-orange-500 text-sm font-black uppercase tracking-widest hover:text-orange-400 transition">
+            className="text-orange-600 text-sm font-black uppercase tracking-widest hover:text-orange-400 transition">
             {user ? 'Mi cuenta' : 'Iniciar sesión'}
           </Link>
         </div>

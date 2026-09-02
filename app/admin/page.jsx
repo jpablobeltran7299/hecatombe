@@ -35,7 +35,7 @@ export default function AdminPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-black uppercase text-ink">
-            Panel <span className="text-orange-500">Admin</span>
+            Panel <span className="text-orange-600">Admin</span>
           </h1>
         </div>
 

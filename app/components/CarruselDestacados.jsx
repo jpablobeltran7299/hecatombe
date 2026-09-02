@@ -24,7 +24,7 @@ function ProductoCard({ producto }) {
           <p className="text-ink font-black uppercase text-sm leading-tight truncate mb-1">
             {producto.nombre}
           </p>
-          <p className="text-orange-500 font-black text-lg">
+          <p className="text-orange-600 font-black text-lg">
             ${producto.precio?.toLocaleString('es-MX')} MXN
           </p>
           <span className={`text-xs font-bold mt-auto ${producto.disponible ? 'text-green-400' : 'text-red-400'}`}>

@@ -74,7 +74,7 @@ export default function AdminPedidos() {
       <div className="max-w-7xl mx-auto">
 
         <div className="flex items-center gap-4 mb-8">
-          <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+          <a href="/admin" className="text-ink-muted hover:text-orange-600 transition text-sm">← Admin</a>
           <h1 className="text-2xl font-black uppercase text-ink">Pedidos</h1>
         </div>
 
@@ -87,8 +87,8 @@ export default function AdminPedidos() {
           ].map(({ label, value, href }) => {
             const contenido = (
               <>
-                <p className="text-orange-500 font-black text-2xl">{value}</p>
-                <p className="text-white/30 text-xs uppercase font-black mt-1">{label}</p>
+                <p className="text-orange-600 font-black text-2xl">{value}</p>
+                <p className="text-ink-muted text-xs uppercase font-black mt-1">{label}</p>
               </>
             )
             return href ? (
@@ -105,7 +105,7 @@ export default function AdminPedidos() {
 
         <div className="bg-surface border border-line rounded-xl px-6 py-4 mb-6 flex items-center justify-between">
           <p className="text-ink-muted text-sm font-black uppercase">Total en ventas confirmadas</p>
-          <p className="text-orange-500 font-black text-2xl">${totalVentas.toLocaleString('es-MX')} MXN</p>
+          <p className="text-orange-600 font-black text-2xl">${totalVentas.toLocaleString('es-MX')} MXN</p>
         </div>
 
         <div className="flex flex-wrap gap-3 mb-6">
@@ -114,7 +114,7 @@ export default function AdminPedidos() {
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar por # pedido o ID MP..."
-            className="flex-1 min-w-[200px] bg-surface border border-line-strong rounded-lg px-4 py-2 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm"
+            className="flex-1 min-w-[200px] bg-surface border border-line-strong rounded-lg px-4 py-2 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 text-sm"
           />
           {['todos', 'pagado', 'apartado', 'enviado', 'entregado', 'cancelado'].map(estado => (
             <button key={estado} onClick={() => setFiltroEstado(estado)}
@@ -136,19 +136,19 @@ export default function AdminPedidos() {
                     {pedido.estado}
                   </span>
                   {pedido.tipo_pedido && pedido.tipo_pedido !== 'normal' && (
-                    <span className="text-xs text-white/30 uppercase font-black">{pedido.tipo_pedido}</span>
+                    <span className="text-xs text-ink-muted uppercase font-black">{pedido.tipo_pedido}</span>
                   )}
                 </div>
-                <p className="text-white/30 text-xs">{new Date(pedido.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                <p className="text-ink-muted text-xs">{new Date(pedido.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                 {pedido.mp_payment_id && (
-                  <p className="text-white/20 text-xs mt-1">MP: {pedido.mp_payment_id}</p>
+                  <p className="text-ink-muted text-xs mt-1">MP: {pedido.mp_payment_id}</p>
                 )}
               </div>
 
               <div className="text-right">
-                <p className="text-orange-500 font-black text-lg">${pedido.total?.toLocaleString('es-MX')} MXN</p>
+                <p className="text-orange-600 font-black text-lg">${pedido.total?.toLocaleString('es-MX')} MXN</p>
                 {pedido.estado === 'apartado' && pedido.monto_liquidacion && (
-                  <p className="text-white/30 text-xs">Pendiente: ${pedido.monto_liquidacion?.toLocaleString('es-MX')}</p>
+                  <p className="text-ink-muted text-xs">Pendiente: ${pedido.monto_liquidacion?.toLocaleString('es-MX')}</p>
                 )}
               </div>
 
@@ -168,7 +168,7 @@ export default function AdminPedidos() {
 
           {pedidosFiltrados.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-white/30">No hay pedidos con ese filtro</p>
+              <p className="text-ink-muted">No hay pedidos con ese filtro</p>
             </div>
           )}
         </div>

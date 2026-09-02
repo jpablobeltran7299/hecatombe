@@ -110,22 +110,22 @@ export default function AdminBodega() {
       <div className="max-w-7xl mx-auto">
 
         <div className="flex items-center gap-4 mb-8">
-          <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+          <a href="/admin" className="text-ink-muted hover:text-orange-600 transition text-sm">← Admin</a>
           <h1 className="text-2xl font-black uppercase text-ink">Bodegatombe</h1>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
           <div className="bg-surface border border-line rounded-2xl p-4 text-center">
-            <p className="text-orange-500 font-black text-2xl">{bodegas.filter(b => b.estado === 'guardando').length}</p>
-            <p className="text-white/30 text-xs uppercase font-black mt-1">Clientes en bodega</p>
+            <p className="text-orange-600 font-black text-2xl">{bodegas.filter(b => b.estado === 'guardando').length}</p>
+            <p className="text-ink-muted text-xs uppercase font-black mt-1">Clientes en bodega</p>
           </div>
           <div className="bg-surface border border-line rounded-2xl p-4 text-center">
-            <p className="text-orange-500 font-black text-2xl">${totalEnBodega.toLocaleString('es-MX')}</p>
-            <p className="text-white/30 text-xs uppercase font-black mt-1">Total acumulado</p>
+            <p className="text-orange-600 font-black text-2xl">${totalEnBodega.toLocaleString('es-MX')}</p>
+            <p className="text-ink-muted text-xs uppercase font-black mt-1">Total acumulado</p>
           </div>
           <div className="bg-surface border border-line rounded-2xl p-4 text-center">
-            <p className="text-orange-500 font-black text-2xl">{bodegas.filter(b => b.total_acumulado >= 1200).length}</p>
-            <p className="text-white/30 text-xs uppercase font-black mt-1">Listos para envío gratis</p>
+            <p className="text-orange-600 font-black text-2xl">{bodegas.filter(b => b.total_acumulado >= 1200).length}</p>
+            <p className="text-ink-muted text-xs uppercase font-black mt-1">Listos para envío gratis</p>
           </div>
         </div>
 
@@ -134,7 +134,7 @@ export default function AdminBodega() {
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
           placeholder="Buscar cliente..."
-          className="w-full max-w-md bg-surface border border-line-strong rounded-lg px-4 py-2 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm mb-6"
+          className="w-full max-w-md bg-surface border border-line-strong rounded-lg px-4 py-2 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 text-sm mb-6"
         />
 
         <div className="flex flex-col gap-4">
@@ -145,11 +145,11 @@ export default function AdminBodega() {
                   <p className="text-ink font-black text-sm">
                     {bodega.perfil?.nombre || 'Sin nombre'} {bodega.perfil?.apellido || ''}
                   </p>
-                  <p className="text-white/30 text-xs mt-1">{bodega.perfil?.telefono || 'Sin teléfono'}</p>
+                  <p className="text-ink-muted text-xs mt-1">{bodega.perfil?.telefono || 'Sin teléfono'}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-orange-500 font-black text-xl">${bodega.total_acumulado?.toLocaleString('es-MX')} MXN</p>
-                  <p className="text-white/30 text-xs">de $1,200</p>
+                  <p className="text-orange-600 font-black text-xl">${bodega.total_acumulado?.toLocaleString('es-MX')} MXN</p>
+                  <p className="text-ink-muted text-xs">de $1,200</p>
                 </div>
               </div>
 
@@ -162,12 +162,12 @@ export default function AdminBodega() {
 
               {bodega.pedidos.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-white/30 text-xs uppercase font-black mb-2">{bodega.pedidos.length} producto(s) guardados</p>
+                  <p className="text-ink-muted text-xs uppercase font-black mb-2">{bodega.pedidos.length} producto(s) guardados</p>
                   <div className="flex flex-col gap-2">
                     {bodega.pedidos.map(p => (
                       <div key={p.id} className="flex justify-between items-center text-xs bg-page rounded-lg px-3 py-2">
-                        <span className="text-white/70">{p.nombreProducto}</span>
-                        <span className="text-orange-500 font-black">${p.total?.toLocaleString('es-MX')} MXN</span>
+                        <span className="text-ink">{p.nombreProducto}</span>
+                        <span className="text-orange-600 font-black">${p.total?.toLocaleString('es-MX')} MXN</span>
                       </div>
                     ))}
                   </div>
@@ -200,7 +200,7 @@ export default function AdminBodega() {
 
           {bodegasFiltradas.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-white/30">No hay productos en bodega</p>
+              <p className="text-ink-muted">No hay productos en bodega</p>
             </div>
           )}
         </div>

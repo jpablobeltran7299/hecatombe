@@ -64,14 +64,14 @@ export default function AdminConfiguracion() {
     </main>
   )
 
-  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 transition text-sm"
+  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 transition text-sm"
   const labelClass = "text-ink-muted text-xs font-black uppercase tracking-widest mb-2 block"
 
   return (
     <main className="min-h-screen bg-page px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
-          <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+          <a href="/admin" className="text-ink-muted hover:text-orange-600 transition text-sm">← Admin</a>
           <h1 className="text-2xl font-black uppercase text-ink">Configuración del sitio</h1>
         </div>
 
@@ -79,14 +79,14 @@ export default function AdminConfiguracion() {
         {mensaje && <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-6"><p className="text-green-400 text-sm">{mensaje}</p></div>}
 
         <div className="bg-surface border border-line rounded-2xl p-6">
-          <h2 className="text-lg font-black uppercase text-orange-500 mb-2">Bloque de estadística (hero del home)</h2>
-          <p className="text-white/30 text-xs mb-6">El cuadro naranja junto al título principal del home. Ej: &quot;800+ Productos&quot;.</p>
+          <h2 className="text-lg font-black uppercase text-orange-600 mb-2">Bloque de estadística (hero del home)</h2>
+          <p className="text-ink-muted text-xs mb-6">El cuadro naranja junto al título principal del home. Ej: &quot;800+ Productos&quot;.</p>
 
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-ink text-sm font-black">Mostrar bloque</p>
-                <p className="text-white/30 text-xs">Si está apagado, el bloque no aparece en el home</p>
+                <p className="text-ink-muted text-xs">Si está apagado, el bloque no aparece en el home</p>
               </div>
               <button onClick={() => setHeroStat({ ...heroStat, mostrar: !heroStat.mostrar })}
                 className={`w-12 h-6 rounded-full transition-colors ${heroStat.mostrar ? 'bg-orange-500' : 'bg-surface-alt'}`}>
@@ -104,7 +104,7 @@ export default function AdminConfiguracion() {
               <label className={labelClass}>Link (ruta interna)</label>
               <input type="text" value={heroStat.link} onChange={e => setHeroStat({ ...heroStat, link: e.target.value })}
                 placeholder="Ej: /catalogo, /dinamicas, /producto/xxxx" className={inputClass} />
-              <p className="text-white/20 text-xs mt-2">Déjalo vacío para que el bloque no sea clickeable.</p>
+              <p className="text-ink-muted text-xs mt-2">Déjalo vacío para que el bloque no sea clickeable.</p>
             </div>
           </div>
         </div>

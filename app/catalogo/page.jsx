@@ -15,7 +15,7 @@ function Checkbox({ label, checked, onChange, count }) {
       }`}>
         {checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="black" strokeWidth="2" strokeLinecap="round"/></svg>}
       </span>
-      <span className={`text-xs font-bold uppercase tracking-wide flex-1 ${checked ? 'text-orange-500' : 'text-ink-muted group-hover:text-ink'}`}>
+      <span className={`text-xs font-bold uppercase tracking-wide flex-1 ${checked ? 'text-orange-600' : 'text-ink-muted group-hover:text-ink'}`}>
         {label}
       </span>
       {count !== undefined && <span className="text-ink-muted text-xs">({count})</span>}
@@ -28,7 +28,7 @@ function SeccionFiltro({ titulo, children, defaultOpen = true }) {
   return (
     <div className="border-b border-[#1a1a1a] py-4">
       <button onClick={() => setOpen(!open)} className="flex items-center justify-between w-full mb-2">
-        <span className="text-orange-500 text-xs font-black uppercase tracking-widest">{titulo}</span>
+        <span className="text-orange-600 text-xs font-black uppercase tracking-widest">{titulo}</span>
         <span className="text-ink-muted text-xs">{open ? '▲' : '▼'}</span>
       </button>
       {open && <div className="flex flex-col gap-0.5">{children}</div>}
@@ -150,7 +150,7 @@ function Catalogo() {
   const sidebar = (
     <div className="flex flex-col">
       {filtrosActivos > 0 && (
-        <button onClick={limpiarFiltros} className="mb-3 text-xs text-orange-500 font-black uppercase tracking-widest hover:text-orange-400 text-left">
+        <button onClick={limpiarFiltros} className="mb-3 text-xs text-orange-600 font-black uppercase tracking-widest hover:text-orange-400 text-left">
           ✕ Limpiar filtros ({filtrosActivos})
         </button>
       )}
@@ -217,7 +217,7 @@ function Catalogo() {
     <main className="min-h-screen bg-page">
       <section className="bg-page border-b-2 border-orange-500 px-6 py-8">
         <h1 className="text-ink text-2xl font-black uppercase tracking-wide mb-1">
-          Catálogo <span className="text-orange-500">completo</span>
+          Catálogo <span className="text-orange-600">completo</span>
         </h1>
         <p className="text-ink-muted text-xs uppercase tracking-widest mb-4">
           {productosFiltrados.length} producto{productosFiltrados.length !== 1 ? 's' : ''} encontrado{productosFiltrados.length !== 1 ? 's' : ''}
@@ -269,7 +269,7 @@ function Catalogo() {
             <div className="text-center py-20 border-2 border-dashed border-line rounded-xl">
               <p className="text-ink-muted text-sm font-bold uppercase">No hay productos</p>
               <p className="text-ink-muted text-xs mt-1">Intenta con otro filtro</p>
-              <button onClick={limpiarFiltros} className="mt-4 text-orange-500 text-xs font-black uppercase">Limpiar filtros</button>
+              <button onClick={limpiarFiltros} className="mt-4 text-orange-600 text-xs font-black uppercase">Limpiar filtros</button>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -291,13 +291,13 @@ function Catalogo() {
                     <p className="text-ink font-bold text-sm leading-snug mb-2 flex-1">{producto.nombre}</p>
                     <div className="flex items-center justify-between mt-auto">
                       {producto.tipo === 'preventa' && producto.anticipo ? (
-                        <span className="text-orange-500 font-black text-base">Anticipo: ${producto.anticipo.toLocaleString('es-MX')} MXN</span>
+                        <span className="text-orange-600 font-black text-base">Anticipo: ${producto.anticipo.toLocaleString('es-MX')} MXN</span>
                       ) : producto.precio ? (
-                        <span className="text-orange-500 font-black text-base">${producto.precio.toLocaleString('es-MX')}</span>
+                        <span className="text-orange-600 font-black text-base">${producto.precio.toLocaleString('es-MX')}</span>
                       ) : (
                         <span className="text-ink-muted text-xs font-bold uppercase">Consultar</span>
                       )}
-                      <span className="text-orange-500 text-xs font-black opacity-0 group-hover:opacity-100 transition-opacity">Ver →</span>
+                      <span className="text-orange-600 text-xs font-black opacity-0 group-hover:opacity-100 transition-opacity">Ver →</span>
                     </div>
                   </div>
                 </Link>

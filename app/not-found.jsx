@@ -10,7 +10,7 @@ export default function NotFound() {
       <div className="text-center max-w-md">
 
         {/* Número 404 */}
-        <p className="text-[120px] font-black leading-none text-orange-500 select-none">
+        <p className="text-[120px] font-black leading-none text-orange-600 select-none">
           404
         </p>
 

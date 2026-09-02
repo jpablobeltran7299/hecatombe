@@ -112,7 +112,7 @@ export default async function DinamicasPage() {
 
         {/* Header */}
         <div className="mb-10">
-          <p className="text-orange-500 font-black uppercase text-sm tracking-widest mb-2">Hecatombe</p>
+          <p className="text-orange-600 font-black uppercase text-sm tracking-widest mb-2">Hecatombe</p>
           <h1 className="text-ink font-black uppercase text-4xl md:text-5xl leading-none mb-4">
             DINÁMICAS
           </h1>

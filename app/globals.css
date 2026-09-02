@@ -1,37 +1,36 @@
 @import "tailwindcss";
 
 /*
- * Tokens de tema — fase 1 de la migración a variables centralizadas.
- * Valores actuales = tema oscuro (sin cambio visual). Cambiar a claro
- * en el futuro = editar solo este bloque.
+ * Tokens de tema — fase 2 de la migración a variables centralizadas.
+ * Fase 2: tema claro (fondo blanco), acento naranja sin cambio.
  *
- * --color-page         reemplaza: bg-black, bg-[#0d0d0d]        (fondo de página)
- * --color-surface      reemplaza: bg-[#111], bg-[#111111]       (tarjetas/paneles)
- * --color-surface-alt  reemplaza: bg-[#1a1a1a], bg-[#333]       (superficie anidada / toggle off)
- * --color-ink          reemplaza: text-white                    (texto principal)
- * --color-ink-muted    reemplaza: text-white/40-60, text-gray-400/500/600/700  (texto secundario)
- * --color-line         reemplaza: border-white/10, border-[#222], border-[#2a2a2a]  (borde sutil)
- * --color-line-strong  reemplaza: border-white/20, border-[#333]  (borde de inputs/hover)
+ * --color-page         (fondo de página)
+ * --color-surface      (tarjetas/paneles)
+ * --color-surface-alt  (superficie anidada / toggle off)
+ * --color-ink          (texto principal)
+ * --color-ink-muted    (texto secundario)
+ * --color-line         (borde sutil)
+ * --color-line-strong  (borde de inputs/hover)
  */
 @theme {
-  --color-page: #000000;
-  --color-surface: #111111;
-  --color-surface-alt: #1a1a1a;
-  --color-ink: #ffffff;
+  --color-page: #ffffff;
+  --color-surface: #f7f7f7;
+  --color-surface-alt: #ececec;
+  --color-ink: #111111;
   --color-ink-muted: #6b7280;
-  --color-line: rgba(255, 255, 255, 0.1);
-  --color-line-strong: rgba(255, 255, 255, 0.2);
+  --color-line: rgba(0, 0, 0, 0.2);
+  --color-line-strong: rgba(0, 0, 0, 0.4);
 }
 
 body {
-  background: #111111;
-  color: #ffffff;
+  background: var(--color-page);
+  color: var(--color-ink);
   font-family: Arial, Helvetica, sans-serif;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #f97316 #111;
+  scrollbar-color: #f97316 var(--color-surface-alt);
 }
 
 *::-webkit-scrollbar {
@@ -40,7 +39,7 @@ body {
 }
 
 *::-webkit-scrollbar-track {
-  background: #111;
+  background: var(--color-surface-alt);
 }
 
 *::-webkit-scrollbar-thumb {

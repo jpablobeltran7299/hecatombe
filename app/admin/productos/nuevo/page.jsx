@@ -114,7 +114,7 @@ export default function NuevoProducto() {
     </main>
   )
 
-  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 transition text-sm"
+  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 transition text-sm"
   const labelClass = "text-ink-muted text-xs font-black uppercase tracking-widest mb-2 block"
   const selectClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink focus:outline-none focus:border-orange-500 transition text-sm"
 
@@ -123,7 +123,7 @@ export default function NuevoProducto() {
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center gap-4 mb-8">
-          <a href="/admin/productos" className="text-ink-muted hover:text-orange-500 transition text-sm">← Productos</a>
+          <a href="/admin/productos" className="text-ink-muted hover:text-orange-600 transition text-sm">← Productos</a>
           <h1 className="text-2xl font-black uppercase text-ink">Nuevo producto</h1>
         </div>
 
@@ -134,7 +134,7 @@ export default function NuevoProducto() {
 
           {/* Info básica */}
           <div className="bg-surface border border-line rounded-2xl p-6">
-            <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Información básica</h2>
+            <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Información básica</h2>
             <div className="flex flex-col gap-4">
               <div>
                 <label className={labelClass}>Nombre *</label>
@@ -159,7 +159,7 @@ export default function NuevoProducto() {
 
           {/* Clasificación */}
           <div className="bg-surface border border-line rounded-2xl p-6">
-            <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Clasificación</h2>
+            <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Clasificación</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Marca *</label>
@@ -194,12 +194,12 @@ export default function NuevoProducto() {
 
           {/* Tipo */}
           <div className="bg-surface border border-line rounded-2xl p-6">
-            <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Tipo de producto</h2>
+            <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Tipo de producto</h2>
             <div className="flex gap-3 mb-4">
               {['normal', 'preventa'].map(tipo => (
                 <button key={tipo} onClick={() => setForm({ ...form, tipo })}
                   className={`flex-1 py-3 rounded-xl font-black uppercase text-sm transition border-2 ${
-                    form.tipo === tipo ? 'border-orange-500 bg-orange-500/10 text-orange-500' : 'border-line text-ink-muted hover:border-white/30'
+                    form.tipo === tipo ? 'border-orange-500 bg-orange-500/10 text-orange-500' : 'border-line text-ink-muted hover:border-line-strong'
                   }`}>
                   {tipo}
                 </button>
@@ -226,7 +226,7 @@ export default function NuevoProducto() {
 
           {/* Opciones */}
           <div className="bg-surface border border-line rounded-2xl p-6">
-            <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Opciones</h2>
+            <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Opciones</h2>
             <div className="flex flex-col gap-3">
               {[
                 { key: 'disponible', label: 'Disponible', desc: 'El producto está en existencia' },
@@ -234,10 +234,10 @@ export default function NuevoProducto() {
                 { key: 'destacado', label: 'Destacado', desc: 'Aparece en la sección de destacados del home' },
                 { key: 'ultimasPiezas', label: 'Últimas piezas', desc: 'Muestra el badge de últimas piezas' },
               ].map(({ key, label, desc }) => (
-                <div key={key} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
+                <div key={key} className="flex items-center justify-between py-3 border-b border-line last:border-0">
                   <div>
                     <p className="text-ink text-sm font-black">{label}</p>
-                    <p className="text-white/30 text-xs">{desc}</p>
+                    <p className="text-ink-muted text-xs">{desc}</p>
                   </div>
                   <button onClick={() => setForm({ ...form, [key]: !form[key] })}
                     className={`w-12 h-6 rounded-full transition-colors ${form[key] ? 'bg-orange-500' : 'bg-surface-alt'}`}>
@@ -250,11 +250,11 @@ export default function NuevoProducto() {
 
           {/* Imágenes */}
           <div className="bg-surface border border-line rounded-2xl p-6">
-            <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Imágenes</h2>
+            <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Imágenes</h2>
             {imagenes.length > 0 && (
               <div className="mb-4">
                 <ImagenesOrdenables imagenes={imagenes} onReordenar={setImagenes} onEliminar={eliminarImagen} />
-                <p className="text-white/20 text-xs mt-2">Arrastra para reordenar. La primera imagen es la principal.</p>
+                <p className="text-ink-muted text-xs mt-2">Arrastra para reordenar. La primera imagen es la principal.</p>
               </div>
             )}
             <input
@@ -264,7 +264,7 @@ export default function NuevoProducto() {
               onChange={handleImagenes}
               className="w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer"
             />
-            {subiendo && <p className="text-orange-500 text-xs mt-2">Subiendo imagen...</p>}
+            {subiendo && <p className="text-orange-600 text-xs mt-2">Subiendo imagen...</p>}
           </div>
 
           {/* Guardar */}

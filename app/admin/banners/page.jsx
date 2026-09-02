@@ -127,14 +127,14 @@ export default function AdminBanners() {
     </main>
   )
 
-  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 transition text-sm"
+  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 transition text-sm"
   const labelClass = "text-ink-muted text-xs font-black uppercase tracking-widest mb-2 block"
 
   if (modoEditar) return (
     <main className="min-h-screen bg-page px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
-          <button onClick={() => setModoEditar(null)} className="text-ink-muted hover:text-orange-500 transition text-sm">← Banners</button>
+          <button onClick={() => setModoEditar(null)} className="text-ink-muted hover:text-orange-600 transition text-sm">← Banners</button>
           <h1 className="text-2xl font-black uppercase text-ink">{modoEditar === 'nuevo' ? 'Nuevo banner' : 'Editar banner'}</h1>
         </div>
 
@@ -145,18 +145,18 @@ export default function AdminBanners() {
 
           {/* Imagen */}
           <div className="bg-surface border border-line rounded-2xl p-6">
-            <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Imagen *</h2>
+            <h2 className="text-lg font-black uppercase text-orange-600 mb-4">Imagen *</h2>
             {imagenPreview && (
               <img src={imagenPreview} alt="Preview" className="w-full rounded-xl mb-4 object-cover" style={{ maxHeight: 200 }} />
             )}
             <input type="file" accept="image/*" onChange={handleImagen}
               className="w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer" />
-            {subiendo && <p className="text-orange-500 text-xs mt-2">Subiendo imagen...</p>}
+            {subiendo && <p className="text-orange-600 text-xs mt-2">Subiendo imagen...</p>}
           </div>
 
           {/* Config */}
           <div className="bg-surface border border-line rounded-2xl p-6">
-            <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Configuración</h2>
+            <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Configuración</h2>
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -168,7 +168,7 @@ export default function AdminBanners() {
                   <input type="text" value={form.href} onChange={e => setForm({ ...form, href: e.target.value })} placeholder="/catalogo" className={inputClass} />
                 </div>
               </div>
-              <p className="text-white/20 text-xs -mt-2">
+              <p className="text-ink-muted text-xs -mt-2">
                 Si el banner es solo imagen, todo el banner será clickeable a este link. Si tiene texto, este link se usa en el botón.
               </p>
 
@@ -177,10 +177,10 @@ export default function AdminBanners() {
                 { key: 'activo', label: 'Activo', desc: 'El banner aparece en la tienda' },
                 { key: 'mostrarTexto', label: 'Mostrar texto sobre el banner', desc: 'Activa para mostrar título, subtítulo y botón encima de la imagen' },
               ].map(({ key, label, desc }) => (
-                <div key={key} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
+                <div key={key} className="flex items-center justify-between py-3 border-b border-line last:border-0">
                   <div>
                     <p className="text-ink text-sm font-black">{label}</p>
-                    <p className="text-white/30 text-xs">{desc}</p>
+                    <p className="text-ink-muted text-xs">{desc}</p>
                   </div>
                   <button onClick={() => setForm({ ...form, [key]: !form[key] })}
                     className={`w-12 h-6 rounded-full transition-colors ${form[key] ? 'bg-orange-500' : 'bg-surface-alt'}`}>
@@ -194,7 +194,7 @@ export default function AdminBanners() {
           {/* Texto — solo si mostrarTexto */}
           {form.mostrarTexto && (
             <div className="bg-surface border border-line rounded-2xl p-6">
-              <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Texto del banner</h2>
+              <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Texto del banner</h2>
               <div className="flex flex-col gap-4">
                 <div>
                   <label className={labelClass}>Etiqueta (ej: FLASH SALE)</label>
@@ -239,7 +239,7 @@ export default function AdminBanners() {
 
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+            <a href="/admin" className="text-ink-muted hover:text-orange-600 transition text-sm">← Admin</a>
             <h1 className="text-2xl font-black uppercase text-ink">Banners</h1>
           </div>
           <button onClick={abrirNuevo}
@@ -258,7 +258,7 @@ export default function AdminBanners() {
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-ink font-black text-sm truncate">{banner.titulo || 'Sin título'}</p>
-                <div className="flex gap-3 text-xs text-white/30 mt-1">
+                <div className="flex gap-3 text-xs text-ink-muted mt-1">
                   <span>Orden: {banner.orden}</span>
                   <span className={banner.activo ? 'text-green-400' : 'text-red-400'}>{banner.activo ? 'Activo' : 'Inactivo'}</span>
                   <span>{banner.mostrarTexto ? 'Con texto' : 'Solo imagen'}</span>
@@ -273,7 +273,7 @@ export default function AdminBanners() {
 
           {banners.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-white/30">No hay banners creados</p>
+              <p className="text-ink-muted">No hay banners creados</p>
             </div>
           )}
         </div>

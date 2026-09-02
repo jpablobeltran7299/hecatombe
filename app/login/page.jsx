@@ -57,7 +57,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
-                  className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/30 focus:outline-none focus:border-orange-500"
+                  className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500"
                 />
                 {error && <p className="text-red-400 text-sm">{error}</p>}
                 <button
@@ -82,7 +82,7 @@ export default function LoginPage() {
             <h1 className="text-2xl font-black uppercase text-ink mb-1">Inicia sesión</h1>
             <p className="text-ink-muted text-sm mb-6">
               ¿No tienes cuenta?{' '}
-              <Link href="/registro" className="text-orange-500 hover:underline">Regístrate</Link>
+              <Link href="/registro" className="text-orange-600 hover:underline">Regístrate</Link>
             </p>
 
             <form onSubmit={handleLogin} className="flex flex-col gap-4">
@@ -92,7 +92,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/30 focus:outline-none focus:border-orange-500"
+                className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500"
               />
               <div className="flex flex-col gap-1">
                 <input
@@ -101,12 +101,12 @@ export default function LoginPage() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
-                  className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/30 focus:outline-none focus:border-orange-500"
+                  className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500"
                 />
                 <button
                   type="button"
                   onClick={() => setModoRecuperar(true)}
-                  className="text-white/30 hover:text-orange-500 text-xs text-right transition"
+                  className="text-ink-muted hover:text-orange-600 text-xs text-right transition"
                 >
                   ¿Olvidaste tu contraseña?
                 </button>

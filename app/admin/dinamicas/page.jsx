@@ -143,7 +143,7 @@ export default function AdminDinamicas() {
     </main>
   )
 
-  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 transition text-sm"
+  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 transition text-sm"
   const labelClass = "text-ink-muted text-xs font-black uppercase tracking-widest mb-2 block"
 
   if (modoEditar) return (
@@ -151,7 +151,7 @@ export default function AdminDinamicas() {
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <button onClick={() => setModoEditar(null)} className="text-ink-muted hover:text-orange-500 transition text-sm">← Dinámicas</button>
+            <button onClick={() => setModoEditar(null)} className="text-ink-muted hover:text-orange-600 transition text-sm">← Dinámicas</button>
             <h1 className="text-2xl font-black uppercase text-ink">{modoEditar === 'nuevo' ? 'Nueva dinámica' : 'Editar dinámica'}</h1>
           </div>
           {modoEditar !== 'nuevo' && (
@@ -169,7 +169,7 @@ export default function AdminDinamicas() {
 
           {/* Info básica */}
           <div className="bg-surface border border-line rounded-2xl p-6">
-            <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Información</h2>
+            <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Información</h2>
             <div className="flex flex-col gap-4">
               <div>
                 <label className={labelClass}>Título *</label>
@@ -185,7 +185,7 @@ export default function AdminDinamicas() {
                   {TIPOS.map(t => (
                     <button key={t.value} onClick={() => setForm({ ...form, tipo: t.value })}
                       className={`py-2 rounded-lg font-black uppercase text-xs transition border-2 ${
-                        form.tipo === t.value ? 'border-orange-500 bg-orange-500/10 text-orange-500' : 'border-line text-ink-muted hover:border-white/30'
+                        form.tipo === t.value ? 'border-orange-500 bg-orange-500/10 text-orange-500' : 'border-line text-ink-muted hover:border-line-strong'
                       }`}>
                       {t.label}
                     </button>
@@ -212,7 +212,7 @@ export default function AdminDinamicas() {
           {/* Solo rifas */}
           {form.tipo === 'rifa' && (
             <div className="bg-surface border border-line rounded-2xl p-6">
-              <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Configuración de rifa</h2>
+              <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Configuración de rifa</h2>
               <div>
                 <label className={labelClass}>Total de números</label>
                 <input type="number" value={form.numerosTotal} onChange={e => setForm({ ...form, numerosTotal: e.target.value })} placeholder="Ej: 100" className={inputClass} />
@@ -246,13 +246,13 @@ export default function AdminDinamicas() {
 
           {/* Imagen */}
           <div className="bg-surface border border-line rounded-2xl p-6">
-            <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Imagen</h2>
+            <h2 className="text-lg font-black uppercase text-orange-600 mb-4">Imagen</h2>
             {imagenPreview && (
               <img src={imagenPreview} alt="Preview" className="w-full rounded-xl mb-4 object-cover" style={{ maxHeight: 200 }} />
             )}
             <input type="file" accept="image/*" onChange={handleImagen}
               className="w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer" />
-            {subiendo && <p className="text-orange-500 text-xs mt-2">Subiendo imagen...</p>}
+            {subiendo && <p className="text-orange-600 text-xs mt-2">Subiendo imagen...</p>}
           </div>
 
           <button onClick={handleGuardar} disabled={guardando || subiendo}
@@ -270,7 +270,7 @@ export default function AdminDinamicas() {
 
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+            <a href="/admin" className="text-ink-muted hover:text-orange-600 transition text-sm">← Admin</a>
             <h1 className="text-2xl font-black uppercase text-ink">Dinámicas</h1>
           </div>
           <button onClick={abrirNuevo}

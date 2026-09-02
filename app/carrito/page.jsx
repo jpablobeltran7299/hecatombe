@@ -108,7 +108,7 @@ export default function CarritoPage() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-ink font-black uppercase text-sm truncate">{item.nombre}</p>
-                    <p className="text-orange-500 font-black">${item.precio?.toLocaleString('es-MX')} MXN</p>
+                    <p className="text-orange-600 font-black">${item.precio?.toLocaleString('es-MX')} MXN</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => cambiarCantidad(item.productoId, -1)}
@@ -118,7 +118,7 @@ export default function CarritoPage() {
                       className="w-8 h-8 bg-[#222] hover:bg-orange-500 text-white rounded-lg font-black transition">+</button>
                   </div>
                   <button onClick={() => eliminar(item.productoId)}
-                    className="text-white/30 hover:text-red-400 transition ml-2">
+                    className="text-ink-muted hover:text-red-400 transition ml-2">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M18 6 6 18M6 6l12 12"/>
                     </svg>
@@ -130,11 +130,11 @@ export default function CarritoPage() {
             <div className="bg-surface border border-line rounded-2xl p-6">
               <div className="flex justify-between items-center mb-6">
                 <span className="text-ink-muted uppercase font-black text-sm">Total</span>
-                <span className="text-orange-500 font-black text-2xl">${total.toLocaleString('es-MX')} MXN</span>
+                <span className="text-orange-600 font-black text-2xl">${total.toLocaleString('es-MX')} MXN</span>
               </div>
               {!user && (
                 <p className="text-ink-muted text-xs text-center mb-3">
-                  Necesitas <Link href="/login" className="text-orange-500 hover:underline">iniciar sesión</Link> para proceder al pago
+                  Necesitas <Link href="/login" className="text-orange-600 hover:underline">iniciar sesión</Link> para proceder al pago
                 </p>
               )}
               <button
@@ -142,7 +142,7 @@ export default function CarritoPage() {
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black uppercase py-4 rounded-xl transition">
                 💳 Proceder al pago
               </button>
-              <p className="text-white/20 text-xs text-center mt-3">Pago seguro con Mercado Pago</p>
+              <p className="text-ink-muted text-xs text-center mt-3">Pago seguro con Mercado Pago</p>
             </div>
           </>
         )}

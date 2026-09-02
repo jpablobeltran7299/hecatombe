@@ -25,7 +25,7 @@ function SeccionClasificacion({ titulo, tipo, items, onCrear, onEliminar, guarda
 
   return (
     <div className="bg-surface border border-line rounded-2xl p-6">
-      <h2 className="text-lg font-black uppercase text-orange-500 mb-6">{titulo}</h2>
+      <h2 className="text-lg font-black uppercase text-orange-600 mb-6">{titulo}</h2>
 
       <div className="flex gap-2 mb-4">
         <input
@@ -34,7 +34,7 @@ function SeccionClasificacion({ titulo, tipo, items, onCrear, onEliminar, guarda
           onChange={e => setNuevo(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleCrear()}
           placeholder={`Nuevo ${titulo.toLowerCase()}...`}
-          className="flex-1 bg-page border border-line-strong rounded-lg px-3 py-2 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm min-w-0"
+          className="flex-1 bg-page border border-line-strong rounded-lg px-3 py-2 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 text-sm min-w-0"
         />
         <button
           onClick={handleCrear}
@@ -51,13 +51,13 @@ function SeccionClasificacion({ titulo, tipo, items, onCrear, onEliminar, guarda
             <button
               onClick={() => onEliminar(item._id, item.nombre, tipo)}
               disabled={guardando}
-              className="text-white/20 hover:text-red-400 transition text-xs disabled:opacity-30 flex-shrink-0">
+              className="text-ink-muted hover:text-red-400 transition text-xs disabled:opacity-30 flex-shrink-0">
               🗑
             </button>
           </div>
         ))}
         {items.length === 0 && (
-          <p className="text-white/20 text-xs text-center py-4">No hay {titulo.toLowerCase()} registradas</p>
+          <p className="text-ink-muted text-xs text-center py-4">No hay {titulo.toLowerCase()} registradas</p>
         )}
       </div>
     </div>
@@ -157,7 +157,7 @@ export default function AdminClasificacion() {
       <div className="max-w-5xl mx-auto">
 
         <div className="flex items-center gap-4 mb-8">
-          <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+          <a href="/admin" className="text-ink-muted hover:text-orange-600 transition text-sm">← Admin</a>
           <h1 className="text-2xl font-black uppercase text-ink">Clasificación</h1>
         </div>
 

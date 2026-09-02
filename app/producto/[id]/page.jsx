@@ -44,11 +44,11 @@ export default async function Producto({ params }) {
 
       {/* Breadcrumb */}
       <div className="bg-page border-b border-[#1f1f1f] px-6 py-3 flex items-center gap-2 text-xs">
-        <Link href="/" className="text-ink-muted hover:text-orange-500 font-bold uppercase tracking-wide transition">
+        <Link href="/" className="text-ink-muted hover:text-orange-600 font-bold uppercase tracking-wide transition">
           Inicio
         </Link>
         <span className="text-ink-muted">›</span>
-        <Link href="/catalogo" className="text-ink-muted hover:text-orange-500 font-bold uppercase tracking-wide transition">
+        <Link href="/catalogo" className="text-ink-muted hover:text-orange-600 font-bold uppercase tracking-wide transition">
           Catálogo
         </Link>
         <span className="text-ink-muted">›</span>
@@ -84,13 +84,13 @@ export default async function Producto({ params }) {
           {/* Precio — diferente para preventa */}
           {esPreventa && anticipo ? (
             <div className="mb-5 bg-orange-500/10 border border-orange-500/30 rounded-xl p-4">
-              <p className="text-orange-500 text-xs font-black uppercase tracking-widest mb-2">Preventa</p>
+              <p className="text-orange-600 text-xs font-black uppercase tracking-widest mb-2">Preventa</p>
               <div className="flex items-baseline gap-3 mb-1">
                 <span className="text-ink-muted text-sm">${producto.precio?.toLocaleString('es-MX')} MXN</span>
                 <span className="text-ink-muted text-xs">precio total</span>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-orange-500 font-black text-4xl">${anticipo.toLocaleString('es-MX')}</span>
+                <span className="text-orange-600 font-black text-4xl">${anticipo.toLocaleString('es-MX')}</span>
                 <span className="text-ink-muted text-sm">MXN anticipo</span>
               </div>
               {precioLiquidacion && (
@@ -106,7 +106,7 @@ export default async function Producto({ params }) {
             </div>
           ) : producto.precio ? (
             <div className="mb-5">
-              <span className="text-orange-500 font-black text-4xl">
+              <span className="text-orange-600 font-black text-4xl">
                 ${producto.precio.toLocaleString('es-MX')}
               </span>
               <span className="text-ink-muted text-sm ml-2">MXN</span>
@@ -184,7 +184,7 @@ export default async function Producto({ params }) {
 
           <p className="text-ink-muted text-xs text-center mt-3">
             ¿No está disponible? Pregúntanos por preventa →{' '}
-            <a href={whatsappUrl} className="text-orange-500 hover:underline">WhatsApp</a>
+            <a href={whatsappUrl} className="text-orange-600 hover:underline">WhatsApp</a>
           </p>
 
         </div>

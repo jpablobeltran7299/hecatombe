@@ -143,7 +143,7 @@ export default function CheckoutPage() {
   const totalFinal = totalBruto - descuentoHC
   const envioGratis = totalBruto >= 1200
 
-  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 transition"
+  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 transition"
   const labelClass = "text-ink-muted text-xs font-black uppercase tracking-widest mb-2 block"
 
   if (loading) return (
@@ -159,7 +159,7 @@ export default function CheckoutPage() {
           {modoApartar ? 'Apartar producto' : 'Confirmar pedido'}
         </h1>
         {modoApartar && (
-          <p className="text-orange-500 text-sm mb-8">
+          <p className="text-orange-600 text-sm mb-8">
             Pagas el anticipo ahora y liquidas el resto cuando llegue tu producto.
           </p>
         )}
@@ -173,10 +173,10 @@ export default function CheckoutPage() {
             {/* Opción de envío */}
             {!modoApartar && (
               <div className="bg-surface border border-line rounded-2xl p-6">
-                <h2 className="text-lg font-black uppercase text-orange-500 mb-4">¿Cómo quieres recibir tu pedido?</h2>
+                <h2 className="text-lg font-black uppercase text-orange-600 mb-4">¿Cómo quieres recibir tu pedido?</h2>
                 <div className="flex flex-col gap-3">
                   <button onClick={() => setModoEnvio('inmediato')}
-                    className={`flex items-start gap-4 p-4 rounded-xl border-2 transition text-left ${modoEnvio === 'inmediato' ? 'border-orange-500 bg-orange-500/10' : 'border-line hover:border-white/30'}`}>
+                    className={`flex items-start gap-4 p-4 rounded-xl border-2 transition text-left ${modoEnvio === 'inmediato' ? 'border-orange-500 bg-orange-500/10' : 'border-line hover:border-line-strong'}`}>
                     <span className="text-2xl mt-0.5">🚚</span>
                     <div>
                       <p className="text-ink font-black uppercase text-sm">Envío inmediato</p>
@@ -186,13 +186,13 @@ export default function CheckoutPage() {
                     </div>
                   </button>
                   <button onClick={() => setModoEnvio('bodega')}
-                    className={`flex items-start gap-4 p-4 rounded-xl border-2 transition text-left ${modoEnvio === 'bodega' ? 'border-orange-500 bg-orange-500/10' : 'border-line hover:border-white/30'}`}>
+                    className={`flex items-start gap-4 p-4 rounded-xl border-2 transition text-left ${modoEnvio === 'bodega' ? 'border-orange-500 bg-orange-500/10' : 'border-line hover:border-line-strong'}`}>
                     <span className="text-2xl mt-0.5">📦</span>
                     <div>
                       <p className="text-ink font-black uppercase text-sm">Guardar en Bodega</p>
                       <p className="text-ink-muted text-xs mt-1">Acumula compras hasta $1,200 MXN y obtén envío gratis.</p>
                       {!envioGratis && (
-                        <p className="text-orange-500 text-xs mt-1 font-bold">
+                        <p className="text-orange-600 text-xs mt-1 font-bold">
                           Te faltan ${(1200 - totalBruto).toLocaleString('es-MX')} MXN para envío gratis
                         </p>
                       )}
@@ -207,9 +207,9 @@ export default function CheckoutPage() {
               <div className="bg-surface border border-line rounded-2xl p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-black uppercase text-orange-500">Hecacoins</h2>
+                    <h2 className="text-lg font-black uppercase text-orange-600">Hecacoins</h2>
                     <p className="text-ink-muted text-sm mt-1">
-                      Tienes <span className="text-orange-500 font-black">{hecacoins.toLocaleString('es-MX')} HC</span> disponibles (= ${hecacoins.toLocaleString('es-MX')} MXN)
+                      Tienes <span className="text-orange-600 font-black">{hecacoins.toLocaleString('es-MX')} HC</span> disponibles (= ${hecacoins.toLocaleString('es-MX')} MXN)
                     </p>
                   </div>
                   <button
@@ -228,7 +228,7 @@ export default function CheckoutPage() {
 
             {/* Datos personales */}
             <div className="bg-surface border border-line rounded-2xl p-6">
-              <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Datos personales</h2>
+              <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Datos personales</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>Nombre *</label>
@@ -248,7 +248,7 @@ export default function CheckoutPage() {
             {/* Dirección */}
             {(modoEnvio === 'inmediato' || modoApartar) && (
               <div className="bg-surface border border-line rounded-2xl p-6">
-                <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Dirección de envío</h2>
+                <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Dirección de envío</h2>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className={labelClass}>Calle y número *</label>
@@ -271,7 +271,7 @@ export default function CheckoutPage() {
                     <input type="text" value={direccion.cp} onChange={e => setDireccion({ ...direccion, cp: e.target.value })} placeholder="CP" className={inputClass} />
                   </div>
                   <div className="col-span-2">
-                    <label className={labelClass}>Referencias <span className="text-white/20 normal-case font-normal">(opcional)</span></label>
+                    <label className={labelClass}>Referencias <span className="text-ink-muted normal-case font-normal">(opcional)</span></label>
                     <textarea value={direccion.referencias} onChange={e => setDireccion({ ...direccion, referencias: e.target.value })} placeholder="Ej. Casa azul, portón negro" rows={2} className={`${inputClass} resize-none`} />
                   </div>
                 </div>
@@ -282,7 +282,7 @@ export default function CheckoutPage() {
           {/* Resumen */}
           <div className="flex flex-col gap-4">
             <div className="bg-surface border border-line rounded-2xl p-6 sticky top-24">
-              <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Resumen</h2>
+              <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Resumen</h2>
 
               {modoApartar && itemApartar ? (
                 <div className="flex flex-col gap-3 mb-6">
@@ -304,7 +304,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex justify-between text-xs mb-1">
                       <span className="text-ink-muted">Pagas ahora (anticipo)</span>
-                      <span className="text-orange-500 font-black">${itemApartar.anticipo?.toLocaleString('es-MX')} MXN</span>
+                      <span className="text-orange-600 font-black">${itemApartar.anticipo?.toLocaleString('es-MX')} MXN</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-ink-muted">Al recibir el producto</span>
@@ -325,7 +325,7 @@ export default function CheckoutPage() {
                         <p className="text-ink text-xs font-black uppercase truncate">{item.nombre}</p>
                         <p className="text-ink-muted text-xs">x{item.cantidad}</p>
                       </div>
-                      <p className="text-orange-500 font-black text-sm">${(item.precio * item.cantidad).toLocaleString('es-MX')}</p>
+                      <p className="text-orange-600 font-black text-sm">${(item.precio * item.cantidad).toLocaleString('es-MX')}</p>
                     </div>
                   ))}
                 </div>
@@ -340,13 +340,13 @@ export default function CheckoutPage() {
                 )}
                 {descuentoHC > 0 && (
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-orange-500 text-sm font-black">Hecacoins</span>
-                    <span className="text-orange-500 text-sm font-black">-${descuentoHC.toLocaleString('es-MX')} MXN</span>
+                    <span className="text-orange-600 text-sm font-black">Hecacoins</span>
+                    <span className="text-orange-600 text-sm font-black">-${descuentoHC.toLocaleString('es-MX')} MXN</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center">
                   <span className="text-ink-muted font-black uppercase text-sm">{modoApartar ? 'Anticipo' : 'Total'}</span>
-                  <span className="text-orange-500 font-black text-2xl">${totalFinal.toLocaleString('es-MX')} MXN</span>
+                  <span className="text-orange-600 font-black text-2xl">${totalFinal.toLocaleString('es-MX')} MXN</span>
                 </div>
                 {modoEnvio === 'bodega' && !modoApartar && (
                   <div className="mt-3 bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
@@ -362,7 +362,7 @@ export default function CheckoutPage() {
                 className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black uppercase py-4 rounded-xl transition">
                 {procesando ? 'Procesando...' : totalFinal === 0 ? '🎉 Canjear con Hecacoins' : modoApartar ? '🔒 Pagar anticipo' : '💳 Ir a pagar'}
               </button>
-              <p className="text-white/20 text-xs text-center mt-3">Pago seguro con Mercado Pago</p>
+              <p className="text-ink-muted text-xs text-center mt-3">Pago seguro con Mercado Pago</p>
             </div>
           </div>
 

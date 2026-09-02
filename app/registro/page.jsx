@@ -37,7 +37,7 @@ export default function RegistroPage() {
         <h1 className="text-2xl font-black uppercase text-ink mb-1">Crea tu cuenta</h1>
         <p className="text-ink-muted text-sm mb-6">
           ¿Ya tienes cuenta?{' '}
-          <Link href="/login" className="text-orange-500 hover:underline">Inicia sesión</Link>
+          <Link href="/login" className="text-orange-600 hover:underline">Inicia sesión</Link>
         </p>
 
         <form onSubmit={handleRegistro} className="flex flex-col gap-4">
@@ -47,7 +47,7 @@ export default function RegistroPage() {
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/30 focus:outline-none focus:border-orange-500"
+            className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500"
           />
           <input
             type="password"
@@ -55,7 +55,7 @@ export default function RegistroPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/30 focus:outline-none focus:border-orange-500"
+            className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500"
           />
           <input
             type="password"
@@ -63,7 +63,7 @@ export default function RegistroPage() {
             value={confirmar}
             onChange={e => setConfirmar(e.target.value)}
             required
-            className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/30 focus:outline-none focus:border-orange-500"
+            className="bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500"
           />
           <ul className="text-ink-muted text-xs space-y-1 pl-1">
             <li className={password.length >= 8 ? 'text-green-400' : ''}>• Al menos 8 caracteres</li>

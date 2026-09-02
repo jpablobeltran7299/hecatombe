@@ -68,9 +68,9 @@ export default function AdminProductos() {
 
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+            <a href="/admin" className="text-ink-muted hover:text-orange-600 transition text-sm">← Admin</a>
             <h1 className="text-2xl font-black uppercase text-ink">Productos</h1>
-            <span className="text-white/30 text-sm">{productos.length} total</span>
+            <span className="text-ink-muted text-sm">{productos.length} total</span>
           </div>
           <Link href="/admin/productos/nuevo"
             className="bg-orange-500 hover:bg-orange-600 text-black font-black uppercase text-sm px-5 py-2 rounded-xl transition">
@@ -87,8 +87,8 @@ export default function AdminProductos() {
             { label: 'Sin imagen', value: productos.filter(p => !p.imagenes?.length).length },
           ].map(({ label, value }) => (
             <div key={label} className="bg-surface border border-line rounded-2xl p-4 text-center">
-              <p className="text-orange-500 font-black text-2xl">{value}</p>
-              <p className="text-white/30 text-xs uppercase font-black mt-1">{label}</p>
+              <p className="text-orange-600 font-black text-2xl">{value}</p>
+              <p className="text-ink-muted text-xs uppercase font-black mt-1">{label}</p>
             </div>
           ))}
         </div>
@@ -100,7 +100,7 @@ export default function AdminProductos() {
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar producto o marca..."
-            className="flex-1 min-w-[200px] bg-surface border border-line-strong rounded-lg px-4 py-2 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 text-sm"
+            className="flex-1 min-w-[200px] bg-surface border border-line-strong rounded-lg px-4 py-2 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 text-sm"
           />
           {[
             { key: 'todos', label: 'Todos' },
@@ -143,9 +143,9 @@ export default function AdminProductos() {
                     <span className="bg-yellow-500/20 text-yellow-400 text-xs font-black px-2 py-0.5 rounded-full flex-shrink-0">⚠️ ÚLTIMAS</span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 text-xs text-white/30">
+                <div className="flex items-center gap-3 text-xs text-ink-muted">
                   <span>{producto.marca}</span>
-                  {producto.precio && <span className="text-orange-500 font-black">${producto.precio.toLocaleString('es-MX')}</span>}
+                  {producto.precio && <span className="text-orange-600 font-black">${producto.precio.toLocaleString('es-MX')}</span>}
                   {producto.stock !== null && producto.stock !== undefined && (
                     <span>Stock: {producto.stock}</span>
                   )}
@@ -179,7 +179,7 @@ export default function AdminProductos() {
 
           {productosFiltrados.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-white/30">No hay productos con ese filtro</p>
+              <p className="text-ink-muted">No hay productos con ese filtro</p>
             </div>
           )}
         </div>

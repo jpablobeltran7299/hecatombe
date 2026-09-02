@@ -122,7 +122,7 @@ export default function AdminMarcas() {
     </main>
   )
 
-  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-white/20 focus:outline-none focus:border-orange-500 transition text-sm"
+  const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 transition text-sm"
   const labelClass = "text-ink-muted text-xs font-black uppercase tracking-widest mb-2 block"
 
   if (modoEditar) return (
@@ -130,7 +130,7 @@ export default function AdminMarcas() {
       <div className="max-w-xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <button onClick={() => setModoEditar(null)} className="text-ink-muted hover:text-orange-500 transition text-sm">← Marcas</button>
+            <button onClick={() => setModoEditar(null)} className="text-ink-muted hover:text-orange-600 transition text-sm">← Marcas</button>
             <h1 className="text-2xl font-black uppercase text-ink">{modoEditar === 'nuevo' ? 'Nueva marca' : 'Editar marca'}</h1>
           </div>
           {modoEditar !== 'nuevo' && (
@@ -146,7 +146,7 @@ export default function AdminMarcas() {
 
         <div className="flex flex-col gap-6">
           <div className="bg-surface border border-line rounded-2xl p-6">
-            <h2 className="text-lg font-black uppercase text-orange-500 mb-6">Información</h2>
+            <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Información</h2>
             <div className="flex flex-col gap-4">
               <div>
                 <label className={labelClass}>Nombre *</label>
@@ -160,13 +160,13 @@ export default function AdminMarcas() {
           </div>
 
           <div className="bg-surface border border-line rounded-2xl p-6">
-            <h2 className="text-lg font-black uppercase text-orange-500 mb-4">Logo</h2>
+            <h2 className="text-lg font-black uppercase text-orange-600 mb-4">Logo</h2>
             {logoPreview && (
               <img src={logoPreview} alt="Preview" className="w-24 h-24 object-contain rounded-xl bg-white p-2 mb-4" />
             )}
             <input type="file" accept="image/*" onChange={handleLogo}
               className="w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black file:font-black file:text-xs file:uppercase cursor-pointer" />
-            {subiendo && <p className="text-orange-500 text-xs mt-2">Subiendo logo...</p>}
+            {subiendo && <p className="text-orange-600 text-xs mt-2">Subiendo logo...</p>}
           </div>
 
           <button onClick={handleGuardar} disabled={guardando || subiendo}
@@ -184,9 +184,9 @@ export default function AdminMarcas() {
 
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <a href="/admin" className="text-ink-muted hover:text-orange-500 transition text-sm">← Admin</a>
+            <a href="/admin" className="text-ink-muted hover:text-orange-600 transition text-sm">← Admin</a>
             <h1 className="text-2xl font-black uppercase text-ink">Marcas</h1>
-            <span className="text-white/30 text-sm">{marcas.length} total</span>
+            <span className="text-ink-muted text-sm">{marcas.length} total</span>
           </div>
           <button onClick={abrirNuevo}
             className="bg-orange-500 hover:bg-orange-600 text-black font-black uppercase text-sm px-5 py-2 rounded-xl transition">
@@ -205,7 +205,7 @@ export default function AdminMarcas() {
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-ink font-black text-sm truncate">{marca.nombre}</p>
-                {marca.descripcion && <p className="text-white/30 text-xs truncate mt-1">{marca.descripcion}</p>}
+                {marca.descripcion && <p className="text-ink-muted text-xs truncate mt-1">{marca.descripcion}</p>}
               </div>
               <button onClick={() => abrirEditar(marca)}
                 className="bg-orange-500 hover:bg-orange-600 text-black font-black uppercase text-xs px-4 py-2 rounded-lg transition flex-shrink-0">
@@ -216,7 +216,7 @@ export default function AdminMarcas() {
 
           {marcas.length === 0 && (
             <div className="col-span-2 text-center py-12">
-              <p className="text-white/30">No hay marcas creadas</p>
+              <p className="text-ink-muted">No hay marcas creadas</p>
             </div>
           )}
         </div>
