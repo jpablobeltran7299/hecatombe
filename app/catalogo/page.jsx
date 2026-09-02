@@ -1,10 +1,20 @@
 'use client'
 import { useState, useEffect, useMemo, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { getTodosProductos, getTematicas, getLineas, getUniversos, getCategorias, getMarcas, urlFor } from '@/lib/sanity'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { getTodosProductos, getTematicas, getLineas, getUniversos, getCategorias, getMarcas, urlFor, slugify } from '@/lib/sanity'
 import BadgesProducto from '../components/BadgesProducto'
 import BotonFavoritoCard from '../components/BotonFavoritoCard'
 import Link from 'next/link'
+
+// slug(s) -> nombre(s) exacto(s), buscando en la lista de opciones cargadas
+// tambi\u00e9n soporta _id de Sanity (retrocompatibilidad con links viejos ?categoria=<id>)
+function slugsToNombres(param, lista) {
+  if (!param) return []
+  const slugs = param.split(',')
+  return lista
+    .filter(item => slugs.includes(slugify(item.nombre)) || slugs.includes(item._id))
+    .map(item => item.nombre)
+}
 
 function Checkbox({ label, checked, onChange, count }) {
   return (
@@ -38,6 +48,8 @@ function SeccionFiltro({ titulo, children, defaultOpen = true }) {
 
 function Catalogo() {
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
   const [productos, setProductos] = useState([])
   const [marcas, setMarcas] = useState([])
   const [categorias, setCategorias] = useState([])
@@ -46,6 +58,7 @@ function Catalogo() {
   const [lineas, setLineas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [hidratado, setHidratado] = useState(false)
 
   const [busqueda, setBusqueda] = useState('')
   const [marcasSel, setMarcasSel] = useState([])
@@ -81,23 +94,42 @@ function Catalogo() {
 
       const busquedaParam = searchParams.get('busqueda')
       const tipoParam = searchParams.get('tipo')
-      const categoriaParam = searchParams.get('categoria')
-      const marcaParam = searchParams.get('marca')
+      const disponibleParam = searchParams.get('disponible')
+      const ordenParam = searchParams.get('orden')
 
       if (busquedaParam) setBusqueda(busquedaParam)
-      if (tipoParam) setTipoSel([tipoParam])
-      if (categoriaParam) {
-        const categoria = cat.find(c => c._id === categoriaParam)
-        if (categoria) setCategoriasSel([categoria.nombre])
-      }
-      if (marcaParam) {
-        const marca = m.find(x => x._id === marcaParam)
-        if (marca) setMarcasSel([marca.nombre])
-      }
+      if (tipoParam) setTipoSel(tipoParam.split(','))
+      if (disponibleParam === '1') setSoloDisponibles(true)
+      if (ordenParam) setOrdenar(ordenParam)
+
+      setMarcasSel(slugsToNombres(searchParams.get('marca'), m))
+      setCategoriasSel(slugsToNombres(searchParams.get('categoria'), cat))
+      setTematicasSel(slugsToNombres(searchParams.get('tematica'), t))
+      setUniversosSel(slugsToNombres(searchParams.get('universo'), u))
+      setLineasSel(slugsToNombres(searchParams.get('linea'), l))
 
       setCargando(false)
+      setHidratado(true)
     })
   }, [])
+
+  // Sincroniza los filtros activos hacia la URL (router.replace, sin ensuciar el historial)
+  useEffect(() => {
+    if (!hidratado) return
+    const params = new URLSearchParams()
+    if (busqueda) params.set('busqueda', busqueda)
+    if (tipoSel.length) params.set('tipo', tipoSel.join(','))
+    if (marcasSel.length) params.set('marca', marcasSel.map(slugify).join(','))
+    if (categoriasSel.length) params.set('categoria', categoriasSel.map(slugify).join(','))
+    if (tematicasSel.length) params.set('tematica', tematicasSel.map(slugify).join(','))
+    if (universosSel.length) params.set('universo', universosSel.map(slugify).join(','))
+    if (lineasSel.length) params.set('linea', lineasSel.map(slugify).join(','))
+    if (soloDisponibles) params.set('disponible', '1')
+    if (ordenar !== 'recientes') params.set('orden', ordenar)
+
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [hidratado, busqueda, marcasSel, categoriasSel, tematicasSel, universosSel, lineasSel, tipoSel, soloDisponibles, ordenar])
 
   const toggleItem = (val, sel, setSel) => {
     setSel(prev => prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val])

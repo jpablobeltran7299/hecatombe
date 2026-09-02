@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getProductosDestacados, getMarcas, getCategorias, getPreventas, getDinamicas, getConfiguracion, urlFor } from '@/lib/sanity'
+import { getProductosDestacados, getMarcas, getCategorias, getPreventas, getDinamicas, getConfiguracion, urlFor, slugify } from '@/lib/sanity'
 import BannerCarousel from "./components/BannerCarousel";
 import CarruselDestacados from './components/CarruselDestacados'
 import DinamicaPopup from './components/DinamicaPopup'
@@ -124,7 +124,7 @@ export default async function Home() {
           {categorias.map((cat) => (
             <Link
               key={cat._id}
-              href={'/catalogo?categoria=' + cat._id}
+              href={'/catalogo?categoria=' + slugify(cat.nombre)}
               className="bg-page border-2 border-line hover:border-orange-500 rounded-lg p-4 text-center transition"
             >
               <p className="text-ink text-xs font-bold uppercase">{cat.nombre}</p>
@@ -144,7 +144,7 @@ export default async function Home() {
     {marcas.map((marca) => (
       <Link
         key={marca._id}
-        href={'/catalogo?marca=' + marca._id}
+        href={'/catalogo?marca=' + slugify(marca.nombre)}
         className="bg-page border border-line-strong hover:border-orange-500 text-ink-muted text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition"
       >
         {marca.nombre}
