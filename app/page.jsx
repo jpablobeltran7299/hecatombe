@@ -78,9 +78,9 @@ export default async function Home() {
       <section className="bg-page px-6 py-12 flex items-center justify-between gap-6 flex-wrap">
         <div>
           <h1 className="text-ink text-4xl font-black uppercase leading-tight mb-3">
-            La tienda<br />
-            <span className="text-orange-500">geek</span> que<br />
-            te entiende
+            La tienda <span className="text-orange-500">geek</span><br />
+            donde colisionan<br />
+            todos los multiversos
           </h1>
           <p className="text-ink-muted text-sm mb-6 max-w-xs">
             Funkos, figuras y coleccionables de cultura pop. Comunidad activa, preventas y dinámicas.
