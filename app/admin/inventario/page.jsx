@@ -109,15 +109,14 @@ export default function AdminInventario() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productoId: producto._id,
-          disponible: !producto.disponible,
-          activo: !producto.disponible
+          disponible: !producto.disponible
         })
       })
       const data = await res.json()
       if (data.ok) {
         setProductos(prev => prev.map(p =>
           p._id === producto._id
-            ? { ...p, disponible: !p.disponible, activo: !p.disponible }
+            ? { ...p, disponible: !p.disponible }
             : p
         ))
       } else {

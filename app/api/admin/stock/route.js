@@ -27,7 +27,11 @@ export async function POST(request) {
     }
 
     if (disponible !== undefined) {
-      patch.set({ disponible, activo: activo ?? disponible })
+      patch.set({ disponible })
+    }
+
+    if (activo !== undefined) {
+      patch.set({ activo })
     }
 
     await patch.commit()

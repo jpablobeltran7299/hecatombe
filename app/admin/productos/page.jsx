@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getTodosProductos, getMarcas, getCategorias, getTematicas, getUniversos, getLineas, urlFor, calcularPrecioFinal } from '@/lib/sanity'
+import { getTodosProductosParaAdmin, getMarcas, getCategorias, getTematicas, getUniversos, getLineas, urlFor, calcularPrecioFinal } from '@/lib/sanity'
 import Link from 'next/link'
 import { useAuth } from '@/app/components/AuthProvider'
 
@@ -85,7 +85,7 @@ export default function AdminProductos() {
 
   async function cargarProductos() {
     const [p, m, cat, t, u, l] = await Promise.all([
-      getTodosProductos(), getMarcas(), getCategorias(), getTematicas(), getUniversos(), getLineas()
+      getTodosProductosParaAdmin(), getMarcas(), getCategorias(), getTematicas(), getUniversos(), getLineas()
     ])
     setProductos(p)
     setMarcas(m)
@@ -97,17 +97,14 @@ export default function AdminProductos() {
   }
 
   async function toggleActivo(producto) {
+    const nuevoActivo = !(producto.activo !== false)
     await fetch('/api/admin/stock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        productoId: producto._id,
-        disponible: !producto.disponible,
-        activo: !producto.disponible
-      })
+      body: JSON.stringify({ productoId: producto._id, activo: nuevoActivo })
     })
     setProductos(prev => prev.map(p =>
-      p._id === producto._id ? { ...p, disponible: !p.disponible } : p
+      p._id === producto._id ? { ...p, activo: nuevoActivo } : p
     ))
   }
 
@@ -443,21 +440,32 @@ export default function AdminProductos() {
                 </div>
               </div>
 
-              {/* Estado */}
-              <span className={`text-xs font-black uppercase px-3 py-1 rounded-full flex-shrink-0 ${
-                producto.disponible
-                  ? 'bg-green-500/10 text-green-400 border border-green-500/30'
-                  : 'bg-red-500/10 text-red-400 border border-red-500/30'
-              }`}>
-                {producto.disponible ? 'Activo' : 'Inactivo'}
-              </span>
+              {/* Estado: disponibilidad de stock (independiente de si está activo) */}
+              <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                <span className={`text-xs font-black uppercase px-3 py-1 rounded-full ${
+                  producto.disponible
+                    ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+                    : 'bg-red-500/10 text-red-400 border border-red-500/30'
+                }`}>
+                  {producto.disponible ? 'Disponible' : 'Agotado'}
+                </span>
+                {producto.activo === false && (
+                  <span className="text-xs font-black uppercase px-3 py-1 rounded-full bg-surface-alt border border-line-strong text-ink-muted">
+                    Desactivado
+                  </span>
+                )}
+              </div>
 
               {/* Acciones */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={() => toggleActivo(producto)}
-                  className="text-ink-muted hover:text-orange-500 transition text-xs px-2 py-1 border border-line hover:border-orange-500 rounded-lg">
-                  {producto.disponible ? 'Desactivar' : 'Activar'}
+                  className={`transition text-xs px-2 py-1 border rounded-lg ${
+                    producto.activo === false
+                      ? 'text-green-400 border-green-500/30 hover:border-green-400'
+                      : 'text-ink-muted border-line hover:text-red-400 hover:border-red-400'
+                  }`}>
+                  {producto.activo === false ? 'Activar' : 'Desactivar'}
                 </button>
                 <Link href={`/admin/productos/${producto._id}`}
                   className="bg-orange-500 hover:bg-orange-600 text-black font-black uppercase text-xs px-3 py-1 rounded-lg transition">
