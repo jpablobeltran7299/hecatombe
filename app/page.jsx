@@ -113,7 +113,7 @@ export default async function Home() {
       </section>
 
       {/* ── Marcas ── */}
-<section className="bg-surface px-6 pb-8">
+<section className="bg-surface px-6 pb-4">
   <div className="flex items-baseline justify-between mb-4">
     <h2 className="text-ink text-lg font-black uppercase tracking-wide">
       Marcas <span className="text-orange-500">disponibles</span>
@@ -133,7 +133,7 @@ export default async function Home() {
 </section>
 
  {/* ── Destacados ── */}
-<section id="destacados" className="py-16 px-4 sm:px-8 bg-surface w-full">
+<section id="destacados" className="pt-6 pb-16 px-4 sm:px-8 bg-surface w-full">
   <div className="w-full">
     <p className="text-orange-500 font-black uppercase text-sm tracking-widest mb-2">Esta semana</p>
     <h2 className="text-ink font-black uppercase text-4xl mb-10">DESTACADOS</h2>
