@@ -1,13 +1,13 @@
 'use client'
 import { useState, useEffect, useMemo, Suspense } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { getTodosProductos, getTematicas, getLineas, getUniversos, getCategorias, getMarcas, urlFor, slugify, calcularPrecioFinal } from '@/lib/sanity'
+import { getTodosProductos, getTematicas, getLineas, getUniversos, getMarcas, urlFor, slugify, calcularPrecioFinal } from '@/lib/sanity'
 import BadgesProducto from '../components/BadgesProducto'
 import BotonFavoritoCard from '../components/BotonFavoritoCard'
 import Link from 'next/link'
 
 // slug(s) -> nombre(s) exacto(s), buscando en la lista de opciones cargadas
-// tambi\u00e9n soporta _id de Sanity (retrocompatibilidad con links viejos ?categoria=<id>)
+// tambi\u00e9n soporta _id de Sanity (retrocompatibilidad con links viejos)
 function slugsToNombres(param, lista) {
   if (!param) return []
   const slugs = param.split(',')
@@ -52,7 +52,6 @@ function Catalogo() {
   const pathname = usePathname()
   const [productos, setProductos] = useState([])
   const [marcas, setMarcas] = useState([])
-  const [categorias, setCategorias] = useState([])
   const [tematicas, setTematicas] = useState([])
   const [universos, setUniversos] = useState([])
   const [lineas, setLineas] = useState([])
@@ -62,7 +61,6 @@ function Catalogo() {
 
   const [busqueda, setBusqueda] = useState('')
   const [marcasSel, setMarcasSel] = useState([])
-  const [categoriasSel, setCategoriasSel] = useState([])
   const [tematicasSel, setTematicasSel] = useState([])
   const [universosSel, setUniversosSel] = useState([])
   const [lineasSel, setLineasSel] = useState([])
@@ -75,12 +73,11 @@ function Catalogo() {
   const [ordenar, setOrdenar] = useState('recientes')
 
   useEffect(() => {
-    Promise.all([getTodosProductos(), getTematicas(), getUniversos(), getLineas(), getCategorias(), getMarcas()]).then(([p, t, u, l, cat, m]) => {
+    Promise.all([getTodosProductos(), getTematicas(), getUniversos(), getLineas(), getMarcas()]).then(([p, t, u, l, m]) => {
       setProductos(p)
       setTematicas(t)
       setUniversos(u)
       setLineas(l)
-      setCategorias(cat)
       setMarcas(m)
       const precios = p.map(x => x.precio).filter(Boolean)
       if (precios.length) {
@@ -103,7 +100,6 @@ function Catalogo() {
       if (ordenParam) setOrdenar(ordenParam)
 
       setMarcasSel(slugsToNombres(searchParams.get('marca'), m))
-      setCategoriasSel(slugsToNombres(searchParams.get('categoria'), cat))
       setTematicasSel(slugsToNombres(searchParams.get('tematica'), t))
       setUniversosSel(slugsToNombres(searchParams.get('universo'), u))
       setLineasSel(slugsToNombres(searchParams.get('linea'), l))
@@ -120,7 +116,6 @@ function Catalogo() {
     if (busqueda) params.set('busqueda', busqueda)
     if (tipoSel.length) params.set('tipo', tipoSel.join(','))
     if (marcasSel.length) params.set('marca', marcasSel.map(slugify).join(','))
-    if (categoriasSel.length) params.set('categoria', categoriasSel.map(slugify).join(','))
     if (tematicasSel.length) params.set('tematica', tematicasSel.map(slugify).join(','))
     if (universosSel.length) params.set('universo', universosSel.map(slugify).join(','))
     if (lineasSel.length) params.set('linea', lineasSel.map(slugify).join(','))
@@ -129,7 +124,7 @@ function Catalogo() {
 
     const qs = params.toString()
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
-  }, [hidratado, busqueda, marcasSel, categoriasSel, tematicasSel, universosSel, lineasSel, tipoSel, soloDisponibles, ordenar])
+  }, [hidratado, busqueda, marcasSel, tematicasSel, universosSel, lineasSel, tipoSel, soloDisponibles, ordenar])
 
   const toggleItem = (val, sel, setSel) => {
     setSel(prev => prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val])
@@ -148,7 +143,6 @@ function Catalogo() {
         if (!coincide) return false
       }
       if (marcasSel.length && !marcasSel.includes(p.marca)) return false
-      if (categoriasSel.length && !categoriasSel.includes(p.categoria)) return false
       if (tematicasSel.length && !tematicasSel.includes(p.tematica)) return false
       if (universosSel.length && !universosSel.includes(p.universo)) return false
       if (lineasSel.length && !lineasSel.includes(p.linea)) return false
@@ -161,12 +155,11 @@ function Catalogo() {
     else if (ordenar === 'precio_desc') result.sort((a, b) => (b.precio || 0) - (a.precio || 0))
     else if (ordenar === 'nombre') result.sort((a, b) => a.nombre?.localeCompare(b.nombre))
     return result
-  }, [productos, busqueda, marcasSel, categoriasSel, tematicasSel, universosSel, lineasSel, tipoSel, soloDisponibles, rangoMin, rangoMax, ordenar])
+  }, [productos, busqueda, marcasSel, tematicasSel, universosSel, lineasSel, tipoSel, soloDisponibles, rangoMin, rangoMax, ordenar])
 
   const limpiarFiltros = () => {
     setBusqueda('')
     setMarcasSel([])
-    setCategoriasSel([])
     setTematicasSel([])
     setUniversosSel([])
     setLineasSel([])
@@ -177,7 +170,7 @@ function Catalogo() {
     setOrdenar('recientes')
   }
 
-  const filtrosActivos = marcasSel.length + categoriasSel.length + tematicasSel.length + universosSel.length + lineasSel.length + tipoSel.length + (soloDisponibles ? 1 : 0)
+  const filtrosActivos = marcasSel.length + tematicasSel.length + universosSel.length + lineasSel.length + tipoSel.length + (soloDisponibles ? 1 : 0)
 
   const sidebar = (
     <div className="flex flex-col">
@@ -198,13 +191,6 @@ function Catalogo() {
           <Checkbox key={m._id} label={m.nombre} checked={marcasSel.includes(m.nombre)}
             onChange={() => toggleItem(m.nombre, marcasSel, setMarcasSel)}
             count={productos.filter(p => p.marca === m.nombre).length} />
-        ))}
-      </SeccionFiltro>
-      <SeccionFiltro titulo="Categoría" defaultOpen={false}>
-        {categorias.map(c => (
-          <Checkbox key={c._id} label={c.nombre} checked={categoriasSel.includes(c.nombre)}
-            onChange={() => toggleItem(c.nombre, categoriasSel, setCategoriasSel)}
-            count={productos.filter(p => p.categoria === c.nombre).length} />
         ))}
       </SeccionFiltro>
       <SeccionFiltro titulo="Temática" defaultOpen={false}>

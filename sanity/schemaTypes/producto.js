@@ -81,13 +81,6 @@ export default {
       validation: Rule => Rule.required()
     },
     {
-      name: 'categoria',
-      title: 'Categoría',
-      type: 'reference',
-      to: [{ type: 'categoria' }],
-      validation: Rule => Rule.required()
-    },
-    {
       name: 'tematica',
       title: 'Temática',
       type: 'reference',

@@ -26,7 +26,7 @@ function ProductoCard({ producto }) {
             {producto.nombre}
           </p>
           {enOferta ? (
-            <p className="flex items-center gap-2">
+            <p className="flex items-center gap-2 flex-wrap">
               <span className="text-ink-muted text-xs line-through">${producto.precio?.toLocaleString('es-MX')}</span>
               <span className="text-orange-600 font-black text-lg">${precioFinal?.toLocaleString('es-MX')} MXN</span>
             </p>
@@ -45,20 +45,26 @@ function ProductoCard({ producto }) {
 }
 
 const GAP = 16 // gap-4 = 16px
+const SEGUNDOS_POR_TARJETA = 4 // ritmo constante del avance automático
+
+function tarjetasVisibles(width) {
+  if (width < 640) return 2
+  if (width < 1024) return 3
+  return 4
+}
 
 export default function CarruselDestacados({ productos = [] }) {
-  const [idx, setIdx] = useState(0)
   const [cardWidth, setCardWidth] = useState(0)
-  const [visible, setVisible] = useState(4)
+  const [pausado, setPausado] = useState(false)
+  const [manualOffset, setManualOffset] = useState(0)
   const containerRef = useRef(null)
 
   useEffect(() => {
     const calcular = () => {
       if (!containerRef.current) return
+      const visible = tarjetasVisibles(window.innerWidth)
       const containerWidth = containerRef.current.offsetWidth
-      const v = window.innerWidth < 640 ? 2 : window.innerWidth < 1024 ? 3 : 4
-      setVisible(v)
-      setCardWidth((containerWidth - GAP * (v - 1)) / v)
+      setCardWidth((containerWidth - GAP * (visible - 1)) / visible)
     }
     calcular()
     window.addEventListener('resize', calcular)
@@ -66,33 +72,53 @@ export default function CarruselDestacados({ productos = [] }) {
   }, [])
 
   const total = productos.length
-  const maxIdx = Math.max(0, total - visible)
+  const step = (cardWidth || 0) + GAP
+  const singleSetWidth = total * step
+  const duracion = total * SEGUNDOS_POR_TARJETA
 
-  const prev = () => setIdx(i => Math.max(0, i - 1))
-  const next = () => setIdx(i => Math.min(maxIdx, i + 1))
+  const dosCopias = [
+    ...productos.map(p => ({ ...p, __k: `${p._id}-a` })),
+    ...productos.map(p => ({ ...p, __k: `${p._id}-b` })),
+  ]
+
+  const prev = () => {
+    if (!singleSetWidth) return
+    setManualOffset(o => {
+      const n = o + step
+      return n > 0 ? n - singleSetWidth : n
+    })
+  }
+
+  const next = () => {
+    if (!singleSetWidth) return
+    setManualOffset(o => {
+      const n = o - step
+      return n <= -singleSetWidth ? n + singleSetWidth : n
+    })
+  }
 
   if (!total) return null
 
-  const offset = idx * (cardWidth + GAP)
-
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onMouseEnter={() => setPausado(true)}
+      onMouseLeave={() => setPausado(false)}
+    >
       {/* Controles */}
       <div className="flex items-center justify-between mb-6">
         <p className="text-ink-muted text-sm">{total} producto{total !== 1 ? 's' : ''}</p>
         <div className="flex gap-2">
           <button
             onClick={prev}
-            disabled={idx === 0}
-            className="w-10 h-10 rounded-full border border-gray-700 hover:border-orange-500 disabled:opacity-30 disabled:cursor-not-allowed text-ink text-2xl flex items-center justify-center transition-colors leading-none"
+            className="w-10 h-10 rounded-full border border-gray-700 hover:border-orange-500 text-ink text-2xl flex items-center justify-center transition-colors leading-none"
             aria-label="Anterior"
           >
             ‹
           </button>
           <button
             onClick={next}
-            disabled={idx >= maxIdx}
-            className="w-10 h-10 rounded-full border border-gray-700 hover:border-orange-500 disabled:opacity-30 disabled:cursor-not-allowed text-ink text-2xl flex items-center justify-center transition-colors leading-none"
+            className="w-10 h-10 rounded-full border border-gray-700 hover:border-orange-500 text-ink text-2xl flex items-center justify-center transition-colors leading-none"
             aria-label="Siguiente"
           >
             ›
@@ -103,35 +129,26 @@ export default function CarruselDestacados({ productos = [] }) {
       {/* Track */}
       <div ref={containerRef} className="overflow-hidden">
         <div
-          className="flex transition-transform duration-300 ease-in-out"
           style={{
-            gap: `${GAP}px`,
-            transform: `translateX(-${offset}px)`,
+            transform: `translateX(${manualOffset}px)`,
+            transition: 'transform 400ms ease',
           }}
         >
-          {productos.map(p => (
-            <div
-              key={p._id}
-              style={{ width: cardWidth || '25%', flexShrink: 0 }}
-            >
-              <ProductoCard producto={p} />
-            </div>
-          ))}
+          <div
+            className={`flex marquee-destacados-track${pausado ? ' pausado' : ''}`}
+            style={{ gap: `${GAP}px`, '--marquee-duration': `${duracion}s` }}
+          >
+            {dosCopias.map(p => (
+              <div
+                key={p.__k}
+                style={{ width: cardWidth || '25%', flexShrink: 0 }}
+              >
+                <ProductoCard producto={p} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-
-      {/* Dots */}
-      {maxIdx > 0 && (
-        <div className="flex justify-center gap-2 mt-6">
-          {Array.from({ length: maxIdx + 1 }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setIdx(i)}
-              className={`w-2 h-2 rounded-full transition-colors ${i === idx ? 'bg-orange-500' : 'bg-gray-700'}`}
-            />
-          ))}
-        </div>
-      )}
     </div>
   )
 }

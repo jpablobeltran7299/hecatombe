@@ -46,3 +46,17 @@ body {
   background: #f97316;
   border-radius: 999px;
 }
+
+@keyframes marquee-destacados {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.marquee-destacados-track {
+  animation: marquee-destacados linear infinite;
+  animation-duration: var(--marquee-duration, 60s);
+}
+
+.marquee-destacados-track.pausado {
+  animation-play-state: paused;
+}

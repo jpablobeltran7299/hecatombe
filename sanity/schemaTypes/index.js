@@ -1,5 +1,4 @@
 import marca from './marca'
-import categoria from './categoria'
 import producto from './producto'
 import banner from './banner'
 import dinamica from './dinamica'
@@ -8,4 +7,4 @@ import linea from './linea'
 import universo from './universo'
 import configuracion from './configuracion'
 
-export const schemaTypes = [marca, categoria, producto, banner, dinamica, tematica, linea, universo, configuracion]
+export const schemaTypes = [marca, producto, banner, dinamica, tematica, linea, universo, configuracion]

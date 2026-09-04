@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getProducto, getTematicas, getLineas, getUniversos, getMarcas, getCategorias, urlFor } from '@/lib/sanity'
+import { getProducto, getTematicas, getLineas, getUniversos, getMarcas, urlFor } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 import ImagenesOrdenables from '../ImagenesOrdenables'
 
@@ -16,7 +16,6 @@ export default function EditarProducto({ params }) {
   const [mensaje, setMensaje] = useState('')
   const [error, setError] = useState('')
   const [marcas, setMarcas] = useState([])
-  const [categorias, setCategorias] = useState([])
   const [tematicas, setTematicas] = useState([])
   const [lineas, setLineas] = useState([])
   const [universos, setUniversos] = useState([])
@@ -30,7 +29,6 @@ export default function EditarProducto({ params }) {
     precio: '',
     stock: '',
     marca: '',
-    categoria: '',
     tematica: '',
     universo: '',
     linea: '',
@@ -66,17 +64,15 @@ export default function EditarProducto({ params }) {
   }, [productoId, authLoading, user])
 
   async function cargarDatos() {
-    const [producto, m, c, t, l, u] = await Promise.all([
+    const [producto, m, t, l, u] = await Promise.all([
       getProducto(productoId),
       getMarcas(),
-      getCategorias(),
       getTematicas(),
       getLineas(),
       getUniversos(),
     ])
 
     setMarcas(m)
-    setCategorias(c)
     setTematicas(t)
     setLineas(l)
     setUniversos(u)
@@ -92,7 +88,6 @@ export default function EditarProducto({ params }) {
         precio: producto.precio ?? '',
         stock: producto.stock ?? '',
         marca: producto.marca ? m.find(x => x.nombre === producto.marca)?._id || '' : '',
-        categoria: producto.categoria ? c.find(x => x.nombre === producto.categoria)?._id || '' : '',
         tematica: producto.tematica ? t.find(x => x.nombre === producto.tematica)?._id || '' : '',
         universo: producto.universo ? u.find(x => x.nombre === producto.universo)?._id || '' : '',
         linea: producto.linea ? l.find(x => x.nombre === producto.linea)?._id || '' : '',
@@ -240,13 +235,6 @@ export default function EditarProducto({ params }) {
                 <select value={form.marca} onChange={e => setForm({ ...form, marca: e.target.value })} className={selectClass}>
                   <option value="">Seleccionar marca</option>
                   {marcas.map(m => <option key={m._id} value={m._id}>{m.nombre}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className={labelClass}>Categoría</label>
-                <select value={form.categoria} onChange={e => setForm({ ...form, categoria: e.target.value })} className={selectClass}>
-                  <option value="">Seleccionar categoría</option>
-                  {categorias.map(c => <option key={c._id} value={c._id}>{c.nombre}</option>)}
                 </select>
               </div>
               <div>

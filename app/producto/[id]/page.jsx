@@ -66,11 +66,6 @@ export default async function Producto({ params }) {
             <span className="bg-surface-alt border border-line text-ink-muted text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full">
               {producto.marca}
             </span>
-            {producto.categoria && (
-              <span className="bg-surface-alt border border-line text-ink-muted text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">
-                {producto.categoria}
-              </span>
-            )}
             {esPreventa && (
               <span className="bg-orange-500 text-black text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full">
                 Preventa

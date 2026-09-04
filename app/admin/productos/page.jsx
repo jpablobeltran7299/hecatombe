@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getTodosProductosParaAdmin, getMarcas, getCategorias, getTematicas, getUniversos, getLineas, urlFor, calcularPrecioFinal } from '@/lib/sanity'
+import { getTodosProductosParaAdmin, getMarcas, getTematicas, getUniversos, getLineas, urlFor, calcularPrecioFinal } from '@/lib/sanity'
 import Link from 'next/link'
 import { useAuth } from '@/app/components/AuthProvider'
 
@@ -51,14 +51,12 @@ export default function AdminProductos() {
   const [loading, setLoading] = useState(true)
   const [productos, setProductos] = useState([])
   const [marcas, setMarcas] = useState([])
-  const [categorias, setCategorias] = useState([])
   const [tematicas, setTematicas] = useState([])
   const [universos, setUniversos] = useState([])
   const [lineas, setLineas] = useState([])
   const [busqueda, setBusqueda] = useState('')
   const [filtro, setFiltro] = useState('todos')
   const [marcasSel, setMarcasSel] = useState([])
-  const [categoriasSel, setCategoriasSel] = useState([])
   const [tematicasSel, setTematicasSel] = useState([])
   const [universosSel, setUniversosSel] = useState([])
   const [lineasSel, setLineasSel] = useState([])
@@ -84,12 +82,11 @@ export default function AdminProductos() {
   }, [authLoading, user])
 
   async function cargarProductos() {
-    const [p, m, cat, t, u, l] = await Promise.all([
-      getTodosProductosParaAdmin(), getMarcas(), getCategorias(), getTematicas(), getUniversos(), getLineas()
+    const [p, m, t, u, l] = await Promise.all([
+      getTodosProductosParaAdmin(), getMarcas(), getTematicas(), getUniversos(), getLineas()
     ])
     setProductos(p)
     setMarcas(m)
-    setCategorias(cat)
     setTematicas(t)
     setUniversos(u)
     setLineas(l)
@@ -120,7 +117,6 @@ export default function AdminProductos() {
     if (filtro === 'agotado' && p.disponible) return false
     if (filtro === 'sin_imagen' && p.imagenes?.length) return false
     if (marcasSel.length && !marcasSel.includes(p.marca)) return false
-    if (categoriasSel.length && !categoriasSel.includes(p.categoria)) return false
     if (tematicasSel.length && !tematicasSel.includes(p.tematica)) return false
     if (universosSel.length && !universosSel.includes(p.universo)) return false
     if (lineasSel.length && !lineasSel.includes(p.linea)) return false
@@ -131,11 +127,10 @@ export default function AdminProductos() {
     return 0
   })
 
-  const filtrosCatalogoActivos = marcasSel.length + categoriasSel.length + tematicasSel.length + universosSel.length + lineasSel.length
+  const filtrosCatalogoActivos = marcasSel.length + tematicasSel.length + universosSel.length + lineasSel.length
 
   function limpiarFiltrosCatalogo() {
     setMarcasSel([])
-    setCategoriasSel([])
     setTematicasSel([])
     setUniversosSel([])
     setLineasSel([])
@@ -298,9 +293,6 @@ export default function AdminProductos() {
         <div className="flex flex-wrap items-center gap-2 mb-6">
           <SeccionFiltro titulo="Marca" activos={marcasSel.length}>
             {marcas.map(m => <Checkbox key={m._id} label={m.nombre} checked={marcasSel.includes(m.nombre)} onChange={() => toggleItem(m.nombre, marcasSel, setMarcasSel)} />)}
-          </SeccionFiltro>
-          <SeccionFiltro titulo="Categoría" activos={categoriasSel.length}>
-            {categorias.map(c => <Checkbox key={c._id} label={c.nombre} checked={categoriasSel.includes(c.nombre)} onChange={() => toggleItem(c.nombre, categoriasSel, setCategoriasSel)} />)}
           </SeccionFiltro>
           <SeccionFiltro titulo="Temática" activos={tematicasSel.length}>
             {tematicas.map(t => <Checkbox key={t._id} label={t.nombre} checked={tematicasSel.includes(t.nombre)} onChange={() => toggleItem(t.nombre, tematicasSel, setTematicasSel)} />)}

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getProductosDestacados, getMarcas, getCategorias, getPreventas, getDinamicas, getConfiguracion, urlFor, slugify } from '@/lib/sanity'
+import { getProductosDestacados, getMarcas, getPreventas, getDinamicas, getConfiguracion, urlFor, slugify } from '@/lib/sanity'
 import BannerCarousel from "./components/BannerCarousel";
 import CarruselDestacados from './components/CarruselDestacados'
 import DinamicaPopup from './components/DinamicaPopup'
@@ -17,10 +17,9 @@ export const metadata = {
 export const revalidate = 0
 
 export default async function Home() {
-  const [destacados, marcas, categorias, preventas, dinamicas, configuracion] = await Promise.all([
+  const [destacados, marcas, preventas, dinamicas, configuracion] = await Promise.all([
     getProductosDestacados(),
     getMarcas(),
-    getCategorias(),
     getPreventas(),
     getDinamicas(),
     getConfiguracion(),
@@ -113,26 +112,6 @@ export default async function Home() {
         )}
       </section>
 
-      {/* ── Categorías ── */}
-      <section className="bg-surface px-6 py-8">
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-ink text-lg font-black uppercase tracking-wide">
-            Categorías <span className="text-orange-500">populares</span>
-          </h2>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {categorias.map((cat) => (
-            <Link
-              key={cat._id}
-              href={'/catalogo?categoria=' + slugify(cat.nombre)}
-              className="bg-page border-2 border-line hover:border-orange-500 rounded-lg p-4 text-center transition"
-            >
-              <p className="text-ink text-xs font-bold uppercase">{cat.nombre}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
       {/* ── Marcas ── */}
 <section className="bg-surface px-6 pb-8">
   <div className="flex items-baseline justify-between mb-4">
@@ -140,12 +119,12 @@ export default async function Home() {
       Marcas <span className="text-orange-500">disponibles</span>
     </h2>
   </div>
-  <div className="flex gap-2 flex-wrap">
+  <div className="flex flex-wrap gap-2">
     {marcas.map((marca) => (
       <Link
         key={marca._id}
         href={'/catalogo?marca=' + slugify(marca.nombre)}
-        className="bg-page border border-line-strong hover:border-orange-500 text-ink-muted text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition"
+        className="bg-page border border-line-strong hover:border-orange-500 text-ink text-xs font-bold px-4 py-2 rounded-full uppercase tracking-wide transition text-center grow basis-[140px]"
       >
         {marca.nombre}
       </Link>
@@ -154,8 +133,8 @@ export default async function Home() {
 </section>
 
  {/* ── Destacados ── */}
-<section id="destacados" className="py-16 px-4 bg-surface">
-  <div className="max-w-6xl mx-auto">
+<section id="destacados" className="py-16 px-4 sm:px-8 bg-surface w-full">
+  <div className="w-full">
     <p className="text-orange-500 font-black uppercase text-sm tracking-widest mb-2">Esta semana</p>
     <h2 className="text-ink font-black uppercase text-4xl mb-10">DESTACADOS</h2>
     <CarruselDestacados productos={destacados} />
