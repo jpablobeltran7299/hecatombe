@@ -1,4 +1,4 @@
-import { getProducto, urlFor } from '@/lib/sanity'
+import { getProducto, urlFor, calcularPrecioFinal } from '@/lib/sanity'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import GaleriaProducto from '@/app/components/GaleriaProducto'
@@ -38,6 +38,7 @@ export default async function Producto({ params }) {
   const esPreventa = producto.tipo === 'preventa'
   const anticipo = producto.anticipo || null
   const precioLiquidacion = producto.precioLiquidacion || (producto.precio && anticipo ? producto.precio - anticipo : null)
+  const { precioFinal, enOferta, porcentajeOff } = calcularPrecioFinal(producto)
 
   return (
     <main className="min-h-screen bg-page">
@@ -106,8 +107,14 @@ export default async function Producto({ params }) {
             </div>
           ) : producto.precio ? (
             <div className="mb-5">
+              {enOferta && (
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-ink-muted text-base line-through">${producto.precio.toLocaleString('es-MX')}</span>
+                  <span className="bg-red-500/10 text-red-400 border border-red-500/30 text-xs font-black uppercase px-2 py-0.5 rounded-full">-{porcentajeOff}%</span>
+                </div>
+              )}
               <span className="text-orange-600 font-black text-4xl">
-                ${producto.precio.toLocaleString('es-MX')}
+                ${(enOferta ? precioFinal : producto.precio).toLocaleString('es-MX')}
               </span>
               <span className="text-ink-muted text-sm ml-2">MXN</span>
             </div>
@@ -160,7 +167,7 @@ export default async function Producto({ params }) {
               <BotonCarrito
                 productoId={producto._id}
                 nombre={producto.nombre}
-                precio={producto.precio}
+                precio={enOferta ? precioFinal : producto.precio}
                 imagen={producto.imagenes?.[0] ? urlFor(producto.imagenes[0]).width(200).url() : null}
               />
             )

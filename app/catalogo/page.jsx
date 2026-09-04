@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useMemo, Suspense } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { getTodosProductos, getTematicas, getLineas, getUniversos, getCategorias, getMarcas, urlFor, slugify } from '@/lib/sanity'
+import { getTodosProductos, getTematicas, getLineas, getUniversos, getCategorias, getMarcas, urlFor, slugify, calcularPrecioFinal } from '@/lib/sanity'
 import BadgesProducto from '../components/BadgesProducto'
 import BotonFavoritoCard from '../components/BotonFavoritoCard'
 import Link from 'next/link'
@@ -305,7 +305,9 @@ function Catalogo() {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {productosFiltrados.map((producto) => (
+              {productosFiltrados.map((producto) => {
+                const { precioFinal, enOferta } = calcularPrecioFinal(producto)
+                return (
                 <Link key={producto._id} href={`/producto/${producto._id}`}
                   className="group bg-surface border border-line hover:border-orange-500 rounded-xl overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-orange-500/10 flex flex-col">
                   <div className="relative bg-white aspect-square flex items-center justify-center overflow-hidden">
@@ -325,7 +327,14 @@ function Catalogo() {
                       {producto.tipo === 'preventa' && producto.anticipo ? (
                         <span className="text-orange-600 font-black text-base">Anticipo: ${producto.anticipo.toLocaleString('es-MX')} MXN</span>
                       ) : producto.precio ? (
-                        <span className="text-orange-600 font-black text-base">${producto.precio.toLocaleString('es-MX')}</span>
+                        enOferta ? (
+                          <div className="flex flex-col">
+                            <span className="text-ink-muted text-xs line-through">${producto.precio.toLocaleString('es-MX')}</span>
+                            <span className="text-orange-600 font-black text-base">${precioFinal.toLocaleString('es-MX')}</span>
+                          </div>
+                        ) : (
+                          <span className="text-orange-600 font-black text-base">${producto.precio.toLocaleString('es-MX')}</span>
+                        )
                       ) : (
                         <span className="text-ink-muted text-xs font-bold uppercase">Consultar</span>
                       )}
@@ -333,7 +342,8 @@ function Catalogo() {
                     </div>
                   </div>
                 </Link>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>

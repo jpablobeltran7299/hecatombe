@@ -32,6 +32,48 @@ export default {
       type: 'number',
     },
     {
+      name: 'descuentoActivo',
+      title: 'Descuento activo',
+      type: 'boolean',
+      initialValue: false,
+      description: 'Activa un descuento sobre el precio de este producto.',
+    },
+    {
+      name: 'descuentoTipo',
+      title: 'Tipo de descuento',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Porcentaje (%)', value: 'porcentaje' },
+          { title: 'Monto fijo ($)', value: 'fijo' },
+        ],
+        layout: 'radio'
+      },
+      initialValue: 'porcentaje',
+      hidden: ({ document }) => !document?.descuentoActivo,
+    },
+    {
+      name: 'descuentoValor',
+      title: 'Valor del descuento',
+      type: 'number',
+      description: 'Si es porcentaje: número del 1 al 100. Si es monto fijo: pesos MXN a restar del precio.',
+      hidden: ({ document }) => !document?.descuentoActivo,
+    },
+    {
+      name: 'descuentoInicio',
+      title: 'Descuento válido desde',
+      type: 'date',
+      description: 'Opcional. Si se deja vacío, el descuento es válido desde ya.',
+      hidden: ({ document }) => !document?.descuentoActivo,
+    },
+    {
+      name: 'descuentoFin',
+      title: 'Descuento válido hasta',
+      type: 'date',
+      description: 'Opcional. Si se deja vacío, el descuento no expira solo (hay que desactivarlo manualmente).',
+      hidden: ({ document }) => !document?.descuentoActivo,
+    },
+    {
       name: 'marca',
       title: 'Marca',
       type: 'reference',

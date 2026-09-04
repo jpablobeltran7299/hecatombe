@@ -1,5 +1,12 @@
+import { calcularPrecioFinal } from '@/lib/sanity'
+
 export default function BadgesProducto({ producto }) {
   const badges = []
+  const { enOferta, porcentajeOff } = calcularPrecioFinal(producto)
+
+  if (enOferta) {
+    badges.push({ label: `-${porcentajeOff}%`, bg: '#7f1d1d', color: '#fca5a5' })
+  }
 
   if (producto.tipo === 'preventa') {
     badges.push({ label: 'Preventa', bg: '#1e40af', color: '#93c5fd' })

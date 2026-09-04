@@ -1,7 +1,7 @@
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getProducto, getProductosPorIds } from '@/lib/sanity'
+import { getProducto, getProductosPorIds, calcularPrecioFinal } from '@/lib/sanity'
 
 // Rate limit en memoria: 10 solicitudes por IP cada 60s.
 // Vive solo en la instancia serverless que lo procesa (no es un límite
@@ -96,7 +96,7 @@ export async function POST(request) {
 
       itemsValidados = items.map(item => ({
         ...item,
-        precio: productosMap[item.productoId].precio,
+        precio: calcularPrecioFinal(productosMap[item.productoId]).precioFinal,
       }))
     }
 

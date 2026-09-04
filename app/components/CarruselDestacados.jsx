@@ -2,9 +2,10 @@
 import { useState, useRef, useEffect } from 'react'
 import BadgesProducto from './BadgesProducto'
 import Link from 'next/link'
-import { urlFor } from '@/lib/sanity'
+import { urlFor, calcularPrecioFinal } from '@/lib/sanity'
 
 function ProductoCard({ producto }) {
+  const { precioFinal, enOferta } = calcularPrecioFinal(producto)
   return (
     <Link href={`/producto/${producto._id}`} className="block group h-full">
       <div className="bg-surface rounded-2xl overflow-hidden border border-gray-800 group-hover:border-orange-500 transition-colors flex flex-col h-full">
@@ -24,9 +25,16 @@ function ProductoCard({ producto }) {
           <p className="text-ink font-black uppercase text-sm leading-tight truncate mb-1">
             {producto.nombre}
           </p>
-          <p className="text-orange-600 font-black text-lg">
-            ${producto.precio?.toLocaleString('es-MX')} MXN
-          </p>
+          {enOferta ? (
+            <p className="flex items-center gap-2">
+              <span className="text-ink-muted text-xs line-through">${producto.precio?.toLocaleString('es-MX')}</span>
+              <span className="text-orange-600 font-black text-lg">${precioFinal?.toLocaleString('es-MX')} MXN</span>
+            </p>
+          ) : (
+            <p className="text-orange-600 font-black text-lg">
+              ${producto.precio?.toLocaleString('es-MX')} MXN
+            </p>
+          )}
           <span className={`text-xs font-bold mt-auto ${producto.disponible ? 'text-green-400' : 'text-red-400'}`}>
             {producto.disponible ? '● Disponible' : '● Agotado'}
           </span>
