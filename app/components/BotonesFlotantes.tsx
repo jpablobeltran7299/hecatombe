@@ -3,7 +3,7 @@ import { usePathname } from 'next/navigation'
 
 export default function BotonesFlotantes() {
   const pathname = usePathname()
-  if (pathname?.startsWith('/studio')) return null
+  if (pathname !== '/') return null
 
   return (
     <div style={{position:'fixed', bottom:'24px', right:'24px', display:'flex', flexDirection:'column', gap:'10px', zIndex:999}}>
