@@ -3,8 +3,45 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createSanityClient } from 'next-sanity'
 import { Resend } from 'resend'
+import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
+
+function validarFirmaMercadoPago(request, dataId) {
+  const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET
+  if (!secret) {
+    console.warn('MERCADOPAGO_WEBHOOK_SECRET no configurado — omitiendo validación de firma')
+    return true
+  }
+
+  const xSignature = request.headers.get('x-signature')
+  const xRequestId = request.headers.get('x-request-id')
+  if (!xSignature || !xRequestId || !dataId) return false
+
+  const partes = Object.fromEntries(
+    xSignature.split(',').map((p) => p.trim().split('=').map((s) => s.trim()))
+  )
+  const { ts, v1 } = partes
+  if (!ts || !v1) return false
+
+  const manifest = `id:${String(dataId).toLowerCase()};request-id:${xRequestId};ts:${ts};`
+  const hash = crypto.createHmac('sha256', secret).update(manifest).digest('hex')
+
+  return hash === v1
+}
+
+async function alertarAdmin(resend, asunto, detalle) {
+  try {
+    await resend.emails.send({
+      from: 'Hecatombe Sistema <noreply@hecatombe.com.mx>',
+      to: 'hecatombe.9194@gmail.com',
+      subject: asunto,
+      html: `<pre style="font-family:monospace;white-space:pre-wrap;">${detalle}</pre>`,
+    })
+  } catch (e) {
+    console.error('No se pudo enviar alerta al admin:', e)
+  }
+}
 
 export async function POST(request) {
   const mpClient = new MercadoPagoConfig({
@@ -30,11 +67,17 @@ export async function POST(request) {
     const body = await request.json()
 
     if (body.type !== 'payment') {
+      console.log('Webhook ignorado (type != payment):', body.type)
       return NextResponse.json({ ok: true })
     }
 
     const paymentId = body.data?.id
     if (!paymentId) return NextResponse.json({ ok: true })
+
+    if (!validarFirmaMercadoPago(request, paymentId)) {
+      console.error('Firma de webhook inválida para payment', paymentId)
+      return NextResponse.json({ error: 'invalid signature' }, { status: 401 })
+    }
 
     const { data: pedidoExistente } = await supabase
       .from('pedidos')
@@ -50,6 +93,14 @@ export async function POST(request) {
     const pago = await payment.get({ id: paymentId })
 
     if (pago.status !== 'approved') {
+      console.log(`Pago ${paymentId} en estado "${pago.status}" — aún no aprobado`)
+      if (pago.status === 'pending' || pago.status === 'in_process') {
+        await alertarAdmin(
+          resend,
+          `⏳ Pago pendiente #${paymentId} — revisar`,
+          `Payment ID: ${paymentId}\nEstado: ${pago.status}\nMonto: $${pago.transaction_amount}\nExternal reference: ${pago.external_reference}\n\nSi este pago se aprueba después, MercadoPago debería reenviar el webhook. Si no llega el pedido en unas horas, revisar manualmente en el dashboard de MercadoPago.`
+        )
+      }
       return NextResponse.json({ ok: true })
     }
 
@@ -328,6 +379,11 @@ export async function POST(request) {
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('Webhook error:', error)
+    await alertarAdmin(
+      resend,
+      '🚨 Error en webhook de pagos — venta posiblemente no procesada',
+      `Error: ${error.message}\n\nBody recibido: revisar logs de Vercel para más contexto.\nHora: ${new Date().toISOString()}`
+    )
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
