@@ -28,24 +28,40 @@ export default function CarritoPage() {
     setLoading(false)
   }
 
-  function eliminar(productoId) {
+  // Mantener sincronizada la tabla `carrito` de Supabase con localStorage —
+  // el webhook de pagos usa esa tabla para saber qué se compró y descontar
+  // stock, así que si solo se actualizaba localStorage, un producto quitado
+  // o con cantidad cambiada aquí seguía "vendiéndose" según Supabase.
+  async function eliminar(productoId) {
     const nuevo = items.filter(i => i.productoId !== productoId)
     setItems(nuevo)
     localStorage.setItem('carrito', JSON.stringify(nuevo))
     window.dispatchEvent(new Event('carritoActualizado'))
+
+    if (user) {
+      await supabase.from('carrito').delete().eq('user_id', user.id).eq('producto_id', productoId)
+    }
   }
 
-  function cambiarCantidad(productoId, delta) {
+  async function cambiarCantidad(productoId, delta) {
+    let nuevaCantidad = 1
     const nuevo = items.map(i => {
       if (i.productoId === productoId) {
-        const cantidad = Math.max(1, i.cantidad + delta)
-        return { ...i, cantidad }
+        nuevaCantidad = Math.max(1, i.cantidad + delta)
+        return { ...i, cantidad: nuevaCantidad }
       }
       return i
     })
     setItems(nuevo)
     localStorage.setItem('carrito', JSON.stringify(nuevo))
     window.dispatchEvent(new Event('carritoActualizado'))
+
+    if (user) {
+      await supabase.from('carrito')
+        .update({ cantidad: nuevaCantidad, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .eq('producto_id', productoId)
+    }
   }
 
   function handlePagar() {
