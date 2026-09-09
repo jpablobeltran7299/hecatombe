@@ -76,17 +76,62 @@ export async function POST(request) {
     }
 
     const esNotificacionDePago = body.type === 'payment' || topicQuery === 'payment'
+    const esMerchantOrder = topicQuery === 'merchant_order' || body.topic === 'merchant_order'
 
-    if (!esNotificacionDePago) {
+    let paymentId = body.data?.id || idQuery
+
+    if (esMerchantOrder && idQuery) {
+      // Checkout Pro a veces notifica vía "merchant_order" en vez de "payment" —
+      // hay que resolver el/los pagos dentro de esa orden.
+      try {
+        const moRes = await fetch(`https://api.mercadopago.com/merchant_orders/${idQuery}`, {
+          headers: { Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}` },
+        })
+        const mo = await moRes.json()
+        const pagoAprobado = mo.payments?.find(p => p.status === 'approved')
+        if (pagoAprobado) {
+          paymentId = pagoAprobado.id
+        } else {
+          console.log('merchant_order sin pagos aprobados todavía:', idQuery)
+          return NextResponse.json({ ok: true })
+        }
+      } catch (e) {
+        console.error('Error resolviendo merchant_order:', e)
+        await alertarAdmin(
+          resend,
+          `⚠️ Error resolviendo merchant_order ${idQuery}`,
+          `${e.message}\n\nRevisar manualmente en MercadoPago si corresponde a una venta real.`
+        )
+        return NextResponse.json({ ok: true })
+      }
+    } else if (!esNotificacionDePago) {
       console.log('Webhook ignorado (no es notificación de pago):', { bodyType: body.type, topicQuery })
+      // Se avisa por correo (y no solo por log) porque ya se nos pasó una venta real
+      // por confiar en que esta rama era inofensiva — mejor revisar cada vez que pase.
+      await alertarAdmin(
+        resend,
+        '⚠️ Webhook recibió una notificación no reconocida',
+        `No se reconoció el formato de esta notificación de MercadoPago, así que se ignoró.\n\nbody.type: ${body.type}\ntopic (query): ${topicQuery}\nurl completa: ${request.url}\nbody recibido: ${JSON.stringify(body)}\n\nSi esto correspondía a un pago real, hay que revisarlo manualmente en el dashboard de MercadoPago.`
+      )
       return NextResponse.json({ ok: true })
     }
 
-    const paymentId = body.data?.id || idQuery
-    if (!paymentId) return NextResponse.json({ ok: true })
+    if (!paymentId) {
+      await alertarAdmin(
+        resend,
+        '⚠️ Webhook recibió una notificación de pago sin ID',
+        `body: ${JSON.stringify(body)}\nurl: ${request.url}`
+      )
+      return NextResponse.json({ ok: true })
+    }
 
     if (!validarFirmaMercadoPago(request, paymentId)) {
       console.error('Firma de webhook inválida para payment', paymentId)
+      await alertarAdmin(
+        resend,
+        `⚠️ Firma inválida en webhook — payment ${paymentId}`,
+        `Se rechazó una notificación para el payment ${paymentId} porque la firma no coincidió. Si este pago es real, revisarlo manualmente en MercadoPago.`
+      )
       return NextResponse.json({ error: 'invalid signature' }, { status: 401 })
     }
 
