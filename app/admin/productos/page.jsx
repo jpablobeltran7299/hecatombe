@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getTodosProductosParaAdmin, getMarcas, getTematicas, getUniversos, getLineas, urlFor, calcularPrecioFinal } from '@/lib/sanity'
 import Link from 'next/link'
 import { useAuth } from '@/app/components/AuthProvider'
-
-const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
+import { ADMINS } from '@/lib/constants'
 
 function Checkbox({ label, checked, onChange }) {
   return (
@@ -70,6 +69,8 @@ export default function AdminProductos() {
   const [descuentoFin, setDescuentoFin] = useState('')
   const [aplicandoDescuento, setAplicandoDescuento] = useState(false)
   const [error, setError] = useState('')
+  const [avisando, setAvisando] = useState(null)
+  const [avisoMensaje, setAvisoMensaje] = useState(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -103,6 +104,33 @@ export default function AdminProductos() {
     setProductos(prev => prev.map(p =>
       p._id === producto._id ? { ...p, activo: nuevoActivo } : p
     ))
+  }
+
+  async function avisarLlegada(producto) {
+    if (!confirm(`¿Avisar a todos los clientes que apartaron "${producto.nombre}" que ya llegó? Se les enviará un correo a cada uno.`)) return
+    setAvisando(producto._id)
+    setAvisoMensaje(null)
+    try {
+      const res = await fetch('/api/admin/notificar-llegada', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productoId: producto._id })
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setAvisoMensaje({
+          id: producto._id,
+          texto: data.enviados > 0
+            ? `✅ Se avisó a ${data.enviados} cliente(s)`
+            : (data.mensaje || 'No hay apartados pendientes de este producto'),
+        })
+      } else {
+        setAvisoMensaje({ id: producto._id, texto: `❌ ${data.error || 'Error al avisar'}` })
+      }
+    } catch {
+      setAvisoMensaje({ id: producto._id, texto: '❌ Error al avisar' })
+    }
+    setAvisando(null)
   }
 
   const toggleItem = (val, sel, setSel) => {
@@ -387,7 +415,7 @@ export default function AdminProductos() {
             const { precioFinal, enOferta, porcentajeOff } = calcularPrecioFinal(producto)
             return (
             <div key={producto._id}
-              className="bg-surface border border-line rounded-2xl p-4 flex items-center gap-4">
+              className="bg-surface border border-line rounded-2xl p-4 flex flex-wrap items-center gap-4">
 
               <input type="checkbox" checked={seleccionados.has(producto._id)} onChange={() => toggleSeleccion(producto._id)} className="flex-shrink-0" />
 
@@ -450,6 +478,14 @@ export default function AdminProductos() {
 
               {/* Acciones */}
               <div className="flex items-center gap-2 flex-shrink-0">
+                {producto.tipo === 'preventa' && (
+                  <button
+                    onClick={() => avisarLlegada(producto)}
+                    disabled={avisando === producto._id}
+                    className="text-xs px-2 py-1 border border-orange-500/40 text-orange-500 hover:bg-orange-500/10 rounded-lg transition disabled:opacity-50">
+                    {avisando === producto._id ? 'Avisando...' : '📦 Avisar que llegó'}
+                  </button>
+                )}
                 <button
                   onClick={() => toggleActivo(producto)}
                   className={`transition text-xs px-2 py-1 border rounded-lg ${
@@ -464,6 +500,10 @@ export default function AdminProductos() {
                   Editar
                 </Link>
               </div>
+
+              {avisoMensaje?.id === producto._id && (
+                <p className="w-full text-xs text-ink-muted">{avisoMensaje.texto}</p>
+              )}
 
             </div>
             )
