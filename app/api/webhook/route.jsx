@@ -64,14 +64,25 @@ export async function POST(request) {
   const resend = new Resend(process.env.RESEND_API_KEY)
 
   try {
-    const body = await request.json()
+    const url = new URL(request.url)
+    const topicQuery = url.searchParams.get('topic')
+    const idQuery = url.searchParams.get('id') || url.searchParams.get('data.id')
 
-    if (body.type !== 'payment') {
-      console.log('Webhook ignorado (type != payment):', body.type)
+    let body = {}
+    try {
+      body = await request.json()
+    } catch {
+      body = {}
+    }
+
+    const esNotificacionDePago = body.type === 'payment' || topicQuery === 'payment'
+
+    if (!esNotificacionDePago) {
+      console.log('Webhook ignorado (no es notificación de pago):', { bodyType: body.type, topicQuery })
       return NextResponse.json({ ok: true })
     }
 
-    const paymentId = body.data?.id
+    const paymentId = body.data?.id || idQuery
     if (!paymentId) return NextResponse.json({ ok: true })
 
     if (!validarFirmaMercadoPago(request, paymentId)) {
