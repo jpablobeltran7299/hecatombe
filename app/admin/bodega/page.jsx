@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { getProductosPorIds } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 import { ADMINS, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
-import ProductoThumb from '@/app/components/ProductoThumb'
+import { resolverItemsPedidos } from '@/lib/pedidos'
+import PedidoItemsList from '@/app/components/PedidoItemsList'
 import BodegaProgress from '@/app/components/BodegaProgress'
 
 export default function AdminBodega() {
@@ -28,7 +28,7 @@ export default function AdminBodega() {
   async function cargarBodegas() {
     const { data: pedidosBodega } = await supabase
       .from('pedidos')
-      .select('user_id, id, total, created_at, producto_id, bodega_estado')
+      .select('user_id, id, total, created_at, producto_id, items, bodega_estado')
       .eq('destino', 'bodega')
       .order('created_at', { ascending: false })
 
@@ -39,20 +39,13 @@ export default function AdminBodega() {
     const perfilesMap = {}
     perfilesData?.forEach(p => { perfilesMap[p.user_id] = p })
 
-    const todosLosIds = []
-    pedidosBodega?.forEach(pedido => {
-      if (pedido.producto_id && !todosLosIds.includes(pedido.producto_id)) {
-        todosLosIds.push(pedido.producto_id)
-      }
-    })
-
-    const productosInfo = todosLosIds.length > 0 ? await getProductosPorIds(todosLosIds) : []
-    const productosMap = {}
-    productosInfo.forEach(p => { productosMap[p._id] = p })
+    // resolverItemsPedidos entiende tanto `items` (compra normal, varios
+    // productos) como `producto_id` (apartado/bodega de un solo producto).
+    const pedidosResueltos = await resolverItemsPedidos(pedidosBodega || [])
 
     // Agrupar por usuario + bodega_estado (reemplaza a la antigua fila "bodega")
     const grupos = {}
-    pedidosBodega?.forEach(pedido => {
+    pedidosResueltos.forEach(pedido => {
       const key = `${pedido.user_id}|${pedido.bodega_estado}`
       if (!grupos[key]) {
         grupos[key] = {
@@ -63,11 +56,7 @@ export default function AdminBodega() {
         }
       }
       grupos[key].total_acumulado += pedido.total || 0
-      grupos[key].pedidos.push({
-        ...pedido,
-        nombreProducto: productosMap[pedido.producto_id]?.nombre || `Pedido #${pedido.id}`,
-        productoInfo: productosMap[pedido.producto_id] || null,
-      })
+      grupos[key].pedidos.push(pedido)
     })
 
     const bodegasCombinadas = Object.values(grupos).map(g => ({
@@ -161,15 +150,12 @@ export default function AdminBodega() {
 
               {bodega.pedidos.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-ink-muted text-xs uppercase font-black mb-2">{bodega.pedidos.length} producto(s) guardados</p>
-                  <div className="flex flex-col gap-2">
+                  <p className="text-ink-muted text-xs uppercase font-black mb-2">{bodega.pedidos.length} pedido(s) guardados</p>
+                  <div className="flex flex-col gap-3">
                     {bodega.pedidos.map(p => (
-                      <div key={p.id} className="flex justify-between items-center gap-3 text-xs bg-page rounded-lg px-3 py-2">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <ProductoThumb imagenes={p.productoInfo?.imagenes} nombre={p.nombreProducto} size={32} />
-                          <span className="text-ink truncate">{p.nombreProducto}</span>
-                        </div>
-                        <span className="text-orange-600 font-black flex-shrink-0">${p.total?.toLocaleString('es-MX')} MXN</span>
+                      <div key={p.id} className="flex justify-between items-center gap-3 bg-page rounded-lg px-3 py-2">
+                        <PedidoItemsList lineas={p.lineas} size={32} />
+                        <span className="text-orange-600 font-black text-xs flex-shrink-0">${p.total?.toLocaleString('es-MX')} MXN</span>
                       </div>
                     ))}
                   </div>
@@ -179,13 +165,13 @@ export default function AdminBodega() {
               <div className="flex items-center justify-between">
                 <span className={`text-xs font-black uppercase px-3 py-1 rounded-full ${
                   bodega.estado === 'guardando'
-                    ? bodega.total_acumulado >= 1200
+                    ? bodega.total_acumulado >= BODEGA_THRESHOLD_MXN
                       ? 'bg-green-500/10 text-green-400 border border-green-500/30'
                       : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
                     : 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
                 }`}>
                   {bodega.estado === 'guardando'
-                    ? bodega.total_acumulado >= 1200 ? '✅ Listo para envío gratis' : '📦 Acumulando'
+                    ? bodega.total_acumulado >= BODEGA_THRESHOLD_MXN ? '✅ Listo para envío gratis' : '📦 Acumulando'
                     : '🚚 Enviado'}
                 </span>
 
