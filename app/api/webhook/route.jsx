@@ -116,13 +116,14 @@ export async function POST(request) {
     }
 
     // Parsear external_reference
-    let userId, tipo_pedido, destino, producto_id, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas
+    let userId, tipo_pedido, destino, producto_id, pedido_id_apartado, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas
     try {
       const ref = JSON.parse(pago.external_reference)
       userId = ref.userId
       tipo_pedido = ref.tipo_pedido || 'normal'
       destino = ref.destino || 'directo'
       producto_id = ref.producto_id
+      pedido_id_apartado = ref.pedido_id || null
       anticipo_pagado = ref.anticipo_pagado
       monto_liquidacion = ref.monto_liquidacion
       hecacoins_canjeadas = ref.hecacoins_canjeadas || 0
@@ -130,6 +131,26 @@ export async function POST(request) {
       userId = pago.external_reference
       tipo_pedido = 'normal'
       destino = 'directo'
+    }
+
+    // Si es liquidación, verificar que el apartado original siga pendiente —
+    // evita cobrar/procesar dos veces la misma liquidación (ej. doble clic o pago duplicado).
+    if (tipo_pedido === 'liquidacion' && pedido_id_apartado) {
+      const { data: pedidoApartado } = await supabase
+        .from('pedidos')
+        .select('id, estado')
+        .eq('id', pedido_id_apartado)
+        .single()
+
+      if (!pedidoApartado || pedidoApartado.estado !== 'apartado') {
+        console.warn(`Liquidación ${paymentId} ignorada: pedido #${pedido_id_apartado} ya no está en estado "apartado" (posible doble pago)`)
+        await alertarAdmin(
+          resend,
+          `⚠️ Posible doble liquidación — pedido #${pedido_id_apartado}`,
+          `Payment ID: ${paymentId}\nMonto: $${pago.transaction_amount}\nEl pedido #${pedido_id_apartado} ya no estaba en estado "apartado" cuando llegó esta liquidación. Revisar manualmente si hay que reembolsar.`
+        )
+        return NextResponse.json({ ok: true })
+      }
     }
 
     const { data: { user } } = await supabase.auth.admin.getUserById(userId)
@@ -165,6 +186,12 @@ export async function POST(request) {
       anticipo_pagado: anticipo_pagado || null,
       monto_liquidacion: monto_liquidacion || null,
     }).select().single()
+
+    // Si esta compra liquida un apartado, cerrar el pedido original para
+    // que no se pueda volver a liquidar (ver validación arriba).
+    if (tipo_pedido === 'liquidacion' && pedido_id_apartado) {
+      await supabase.from('pedidos').update({ estado: 'liquidado' }).eq('id', pedido_id_apartado)
+    }
 
     // Vaciar carrito solo si no es apartado
     if (tipo_pedido !== 'apartado') {

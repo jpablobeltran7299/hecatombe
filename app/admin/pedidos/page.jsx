@@ -119,7 +119,7 @@ export default function AdminPedidos() {
             placeholder="Buscar por # pedido o ID MP..."
             className="flex-1 min-w-[200px] bg-surface border border-line-strong rounded-lg px-4 py-2 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 text-sm"
           />
-          {['todos', 'pagado', 'apartado', 'enviado', 'entregado', 'cancelado'].map(estado => (
+          {['todos', 'pagado', 'apartado', 'liquidado', 'enviado', 'entregado', 'cancelado'].map(estado => (
             <button key={estado} onClick={() => setFiltroEstado(estado)}
               className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition ${
                 filtroEstado === estado ? 'bg-orange-500 text-black' : 'bg-surface text-ink-muted hover:text-ink border border-line'
@@ -172,6 +172,7 @@ export default function AdminPedidos() {
                 className="bg-page border border-line-strong text-ink text-xs px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500 disabled:opacity-50">
                 <option value="pagado">Pagado</option>
                 <option value="apartado">Apartado</option>
+                <option value="liquidado">Liquidado</option>
                 <option value="enviado">Enviado</option>
                 <option value="entregado">Entregado</option>
                 <option value="cancelado">Cancelado</option>

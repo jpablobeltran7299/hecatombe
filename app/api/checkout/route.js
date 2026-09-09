@@ -181,6 +181,7 @@ export async function POST(request) {
           tipo_pedido: tipo_pedido || 'normal',
           destino: destino || 'directo',
           producto_id: producto_id || null,
+          pedido_id: tipo_pedido === 'liquidacion' ? pedido_id : null,
           anticipo_pagado: anticipo_pagado || null,
           monto_liquidacion: tipo_pedido === 'liquidacion' ? montoLiquidacionReal : (monto_liquidacion || null),
           hecacoins_canjeadas: descuentoHecacoins,
