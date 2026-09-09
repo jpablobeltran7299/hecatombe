@@ -119,6 +119,8 @@ export default function CheckoutPage() {
 
       // Si pagó todo con Hecacoins
       if (data.pago_completo_hecacoins) {
+        if (!modoApartar) localStorage.removeItem('carrito')
+        else localStorage.removeItem('apartar')
         window.location.href = '/carrito?estado=exitoso'
         return
       }

@@ -18,10 +18,11 @@ export async function POST(request) {
     const patch = sanityClient.patch(productoId)
 
     if (stock !== undefined) {
+      // "activo" (visibilidad en el sitio/admin) es una decisión aparte de si
+      // hay stock — quedarse en 0 nunca debe desactivar el producto solo.
       patch.set({
         stock,
         disponible: stock > 0,
-        activo: stock > 0,
         ultimasPiezas: stock <= 3 && stock > 0,
       })
     }

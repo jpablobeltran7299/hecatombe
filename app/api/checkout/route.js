@@ -1,6 +1,8 @@
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createSanityClient } from 'next-sanity'
+import { Resend } from 'resend'
 import { getProducto, getProductosPorIds, calcularPrecioFinal } from '@/lib/sanity'
 
 // Rate limit en memoria: 10 solicitudes por IP cada 60s.
@@ -118,21 +120,107 @@ export async function POST(request) {
 
     const totalFinal = Math.max(0, totalOriginal - descuentoHecacoins)
 
-    // Si paga todo con Hecacoins
+    // Si paga todo con Hecacoins — no pasa por MercadoPago, así que hay que
+    // generar el pedido, descontar stock y mandar los correos aquí mismo
+    // (antes esto no hacía nada de eso: la compra "se completaba" pero no
+    // quedaba ningún registro ni aviso).
     if (totalFinal === 0) {
-      // Descontar Hecacoins directamente sin pasar por MP
+      const { data: saldoActual } = await supabase
+        .from('hecacoins')
+        .select('id, saldo, total_canjeado')
+        .eq('user_id', userId)
+        .single()
+
+      if (!saldoActual || saldoActual.saldo < descuentoHecacoins) {
+        return NextResponse.json({ error: 'Saldo de Hecacoins insuficiente.' }, { status: 400 })
+      }
+
       await supabase
         .from('hecacoins')
         .update({
-          saldo: supabase.rpc('decrement', { x: descuentoHecacoins }),
-          total_canjeado: supabase.rpc('increment', { x: descuentoHecacoins }),
+          saldo: saldoActual.saldo - descuentoHecacoins,
+          total_canjeado: saldoActual.total_canjeado + descuentoHecacoins,
         })
-        .eq('user_id', userId)
+        .eq('id', saldoActual.id)
+
+      const itemsPedido = itemsValidados.map(i => ({ producto_id: i.productoId, cantidad: i.cantidad }))
+
+      const { data: pedido } = await supabase.from('pedidos').insert({
+        user_id: userId,
+        total: totalOriginal,
+        estado: tipo_pedido === 'apartado' ? 'apartado' : 'pagado',
+        items: itemsPedido,
+        mp_payment_id: null,
+        tipo_pedido: tipo_pedido || 'normal',
+        destino: destino || 'directo',
+        bodega_estado: destino === 'bodega' ? 'guardando' : null,
+        producto_id: producto_id || null,
+        anticipo_pagado: anticipo_pagado || null,
+        monto_liquidacion: tipo_pedido === 'liquidacion' ? montoLiquidacionReal : (monto_liquidacion || null),
+      }).select().single()
+
+      await supabase.from('hecacoins_movimientos').insert({
+        user_id: userId,
+        pedido_id: pedido?.id,
+        tipo: 'canjeado',
+        monto: descuentoHecacoins,
+        descripcion: `Canje en pedido #${pedido?.id}`,
+      })
+
+      if (tipo_pedido === 'liquidacion' && pedido_id) {
+        await supabase.from('pedidos').update({ estado: 'liquidado' }).eq('id', pedido_id)
+      }
+
+      if (tipo_pedido === 'normal') {
+        await supabase.from('carrito').delete().eq('user_id', userId)
+
+        const sanityClient = createSanityClient({
+          projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
+          dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
+          apiVersion: '2024-01-01',
+          token: process.env.SANITY_WRITE_TOKEN,
+          useCdn: false,
+        })
+        for (const item of itemsPedido) {
+          const real = await sanityClient.fetch(
+            `*[_type == "producto" && _id == $id][0]{ _id, stock }`,
+            { id: item.producto_id }
+          )
+          if (real && real.stock !== null && real.stock !== undefined) {
+            const nuevoStock = Math.max(0, real.stock - (item.cantidad || 1))
+            await sanityClient.patch(real._id).set({
+              stock: nuevoStock,
+              disponible: nuevoStock > 0,
+              ...(nuevoStock <= 3 && nuevoStock > 0 && { ultimasPiezas: true }),
+            }).commit()
+          }
+        }
+      }
+
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY)
+        const esApartado = tipo_pedido === 'apartado'
+        await resend.emails.send({
+          from: 'Hecatombe Coleccionables <noreply@hecatombe.com.mx>',
+          to: userEmail,
+          subject: esApartado ? '🔒 ¡Producto apartado! — Hecatombe Coleccionables' : '✅ ¡Tu pedido está confirmado! — Hecatombe Coleccionables',
+          html: `<p>Hola, tu pedido #${pedido?.id} fue pagado por completo con ${descuentoHecacoins.toLocaleString('es-MX')} Hecacoins. ${esApartado ? 'Te avisaremos cuando llegue para que puedas liquidar el resto.' : 'En breve nos pondremos en contacto contigo para coordinar el envío.'}</p>`,
+        })
+        await resend.emails.send({
+          from: 'Hecatombe Sistema <noreply@hecatombe.com.mx>',
+          to: 'hecatombe.9194@gmail.com',
+          subject: `🪙 Pedido #${pedido?.id} pagado 100% con Hecacoins — $${totalOriginal.toLocaleString('es-MX')} MXN`,
+          html: `<p>Cliente: ${userEmail}<br>Pedido #${pedido?.id}<br>Valor: $${totalOriginal.toLocaleString('es-MX')} MXN<br>Hecacoins usadas: ${descuentoHecacoins.toLocaleString('es-MX')}</p>`,
+        })
+      } catch (e) {
+        console.error('Error enviando correos de pago con Hecacoins:', e)
+      }
 
       return NextResponse.json({
         pago_completo_hecacoins: true,
         descuento: descuentoHecacoins,
-        total_final: 0
+        total_final: 0,
+        pedido_id: pedido?.id,
       })
     }
 

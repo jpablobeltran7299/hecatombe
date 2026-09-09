@@ -30,6 +30,27 @@ function validarFirmaMercadoPago(request, dataId) {
   return hash === v1
 }
 
+// Nunca marcar activo:false solo por quedarse sin stock — eso oculta el
+// producto del admin y le impide reabastecerlo (bug ya corregido una vez
+// para /admin/inventario; "disponible" es lo que refleja que no hay stock).
+async function descontarStock(sanityClient, productoId, cantidad) {
+  const producto = await sanityClient.fetch(
+    `*[_type == "producto" && _id == $id][0]{ _id, stock, disponible }`,
+    { id: productoId }
+  )
+  if (producto && producto.stock !== null && producto.stock !== undefined) {
+    const nuevoStock = Math.max(0, producto.stock - (cantidad || 1))
+    await sanityClient
+      .patch(producto._id)
+      .set({
+        stock: nuevoStock,
+        disponible: nuevoStock > 0,
+        ...(nuevoStock <= 3 && nuevoStock > 0 && { ultimasPiezas: true }),
+      })
+      .commit()
+  }
+}
+
 async function alertarAdmin(resend, asunto, detalle) {
   try {
     await resend.emails.send({
@@ -125,7 +146,12 @@ export async function POST(request) {
       return NextResponse.json({ ok: true })
     }
 
-    if (!validarFirmaMercadoPago(request, paymentId)) {
+    // La firma de MercadoPago se calcula con el "id" que vino en la URL de la
+    // notificación (idQuery) — para merchant_order eso es el id de la orden,
+    // NO el paymentId que resolvimos después. Usar el id equivocado aquí
+    // rompería la validación en cuanto se configure MERCADOPAGO_WEBHOOK_SECRET.
+    const idParaFirma = esMerchantOrder ? idQuery : paymentId
+    if (!validarFirmaMercadoPago(request, idParaFirma)) {
       console.error('Firma de webhook inválida para payment', paymentId)
       await alertarAdmin(
         resend,
@@ -217,12 +243,19 @@ export async function POST(request) {
       ? `${perfil.calle}, ${perfil.colonia}, ${perfil.ciudad}, ${perfil.estado} CP ${perfil.cp}${perfil.referencias ? ` — ${perfil.referencias}` : ''}`
       : 'No proporcionada'
 
+    // Los "items" del pedido deben ser lo que realmente se pagó, no el carrito
+    // general del cliente (que es un dato no relacionado para apartado/liquidación
+    // y puede tener productos que el cliente ni siquiera compró en esta operación).
+    const itemsPedido = tipo_pedido === 'normal'
+      ? (carritoItems || [])
+      : (producto_id ? [{ producto_id, cantidad: 1 }] : [])
+
     // Guardar pedido
     const { data: pedido } = await supabase.from('pedidos').insert({
       user_id: userId,
       total: pago.transaction_amount,
       estado: tipo_pedido === 'apartado' ? 'apartado' : 'pagado',
-      items: carritoItems || [],
+      items: itemsPedido,
       mp_payment_id: String(paymentId),
       tipo_pedido: tipo_pedido || 'normal',
       destino: destino || 'directo',
@@ -238,32 +271,23 @@ export async function POST(request) {
       await supabase.from('pedidos').update({ estado: 'liquidado' }).eq('id', pedido_id_apartado)
     }
 
-    // Vaciar carrito solo si no es apartado
-    if (tipo_pedido !== 'apartado') {
+    // Vaciar carrito SOLO en compras normales — es el único tipo_pedido que
+    // realmente se originó desde ese carrito. Para apartado/liquidación el
+    // carrito del cliente es un dato no relacionado y no debe tocarse.
+    if (tipo_pedido === 'normal') {
       await supabase.from('carrito').delete().eq('user_id', userId)
     }
 
     // Descontar stock en Sanity
-    if (tipo_pedido === 'normal' || tipo_pedido === 'liquidacion') {
+    if (tipo_pedido === 'normal') {
       const itemsVendidos = carritoItems || []
       for (const item of itemsVendidos) {
-        const producto = await sanityClient.fetch(
-          `*[_type == "producto" && _id == $id][0]{ _id, stock, disponible }`,
-          { id: item.producto_id }
-        )
-        if (producto && producto.stock !== null && producto.stock !== undefined) {
-          const nuevoStock = Math.max(0, producto.stock - (item.cantidad || 1))
-          await sanityClient
-            .patch(producto._id)
-            .set({
-              stock: nuevoStock,
-              disponible: nuevoStock > 0,
-              ...(nuevoStock === 0 && { activo: false }),
-              ...(nuevoStock <= 3 && nuevoStock > 0 && { ultimasPiezas: true }),
-            })
-            .commit()
-        }
+        await descontarStock(sanityClient, item.producto_id, item.cantidad || 1)
       }
+    } else if (tipo_pedido === 'liquidacion' && producto_id) {
+      // La liquidación es una sola unidad del producto apartado originalmente,
+      // no lo que haya en el carrito general del cliente.
+      await descontarStock(sanityClient, producto_id, 1)
     }
 
     // Descontar Hecacoins si se canjearon
