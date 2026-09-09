@@ -6,8 +6,11 @@ import { useRouter } from 'next/navigation'
 import { getTodosProductos, urlFor } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 import { ADMINS, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
+import { resolverItemsPedidos } from '@/lib/pedidos'
 import ProductoThumb from '@/app/components/ProductoThumb'
 import BodegaProgress from '@/app/components/BodegaProgress'
+import EstadoBadge from '@/app/components/EstadoBadge'
+import PedidoItemsList from '@/app/components/PedidoItemsList'
 
 export default function AdminClientes() {
   const { user, loading: authLoading } = useAuth()
@@ -22,6 +25,7 @@ export default function AdminClientes() {
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
   const [pedidosBodega, setPedidosBodega] = useState([])
+  const [pedidosCliente, setPedidosCliente] = useState([])
   const [historial, setHistorial] = useState([])
   const [mostrarFormHistorial, setMostrarFormHistorial] = useState(false)
   const [historialNombre, setHistorialNombre] = useState('')
@@ -106,6 +110,16 @@ export default function AdminClientes() {
     setPedidosBodega(data || [])
   }
 
+  async function cargarPedidosCliente(userId) {
+    const { data } = await supabase
+      .from('pedidos')
+      .select('id, created_at, total, estado, tipo_pedido, items, producto_id, anticipo_pagado, monto_liquidacion')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+    const resueltos = await resolverItemsPedidos(data || [])
+    setPedidosCliente(resueltos)
+  }
+
   async function cargarHistorial(userId) {
     const res = await fetch(`/api/admin/historial?userId=${userId}`)
     const data = await res.json()
@@ -124,6 +138,7 @@ export default function AdminClientes() {
     setHistorialFecha('')
     setHistorialImagenUrl(null)
     await cargarPedidosBodega(cliente.user_id)
+    await cargarPedidosCliente(cliente.user_id)
     await cargarHistorial(cliente.user_id)
   }
 
@@ -392,6 +407,24 @@ export default function AdminClientes() {
                   {clienteSeleccionado.nombre || 'Cliente'} {clienteSeleccionado.apellido || ''}
                 </h2>
                 <p className="text-ink/30 text-xs mb-6">{clienteSeleccionado.telefono || 'Sin teléfono'}</p>
+
+                <h3 className="text-ink/50 text-xs font-black uppercase mb-3">Pedidos ({pedidosCliente.length})</h3>
+                {pedidosCliente.length > 0 ? (
+                  <div className="flex flex-col gap-3 mb-6">
+                    {pedidosCliente.map(pedido => (
+                      <div key={pedido.id} className="bg-page rounded-xl p-4">
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <p className="text-ink text-xs font-black">Pedido #{pedido.id}</p>
+                          <EstadoBadge estado={pedido.estado} />
+                        </div>
+                        <p className="text-ink/30 text-xs mb-2">{new Date(pedido.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })} · <span className="text-orange-500 font-black">${pedido.total?.toLocaleString('es-MX')} MXN</span></p>
+                        {pedido.lineas?.length > 0 && <PedidoItemsList lineas={pedido.lineas} size={36} />}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-ink/20 text-xs mb-6">Este cliente aún no tiene pedidos</p>
+                )}
 
                 <h3 className="text-ink/50 text-xs font-black uppercase mb-3">Hecacoins</h3>
                 <div className="bg-page rounded-xl p-4 mb-3">
