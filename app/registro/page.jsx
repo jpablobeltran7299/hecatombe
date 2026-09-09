@@ -24,6 +24,10 @@ export default function RegistroPage() {
       setError('La contraseña debe tener al menos 8 caracteres')
       return
     }
+    if (!/[0-9!@#$%^&*]/.test(password)) {
+      setError('La contraseña debe incluir al menos un número o símbolo especial')
+      return
+    }
     setLoading(true)
     const { error } = await supabase.auth.signUp({ email, password })
     if (error) setError(error.message)

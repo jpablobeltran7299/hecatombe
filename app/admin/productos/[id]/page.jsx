@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { adminFetch } from '@/lib/adminFetch'
 import { getProducto, getTematicas, getLineas, getUniversos, getMarcas, urlFor } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 import ImagenesOrdenables from '../ImagenesOrdenables'
@@ -109,7 +110,7 @@ export default function EditarProducto({ params }) {
     setSubiendo(true)
     const formData = new FormData()
     formData.append('file', file)
-    const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+    const res = await adminFetch('/api/admin/upload', { method: 'POST', body: formData })
     const data = await res.json()
     setSubiendo(false)
     return data.assetId ? { assetId: data.assetId, url: data.url } : null
@@ -133,7 +134,7 @@ export default function EditarProducto({ params }) {
     setGuardando(true)
     setError('')
 
-    const res = await fetch('/api/admin/producto', {
+    const res = await adminFetch('/api/admin/producto', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: productoId, ...form, imagenes: imagenes.map(img => img.assetId) })
@@ -153,7 +154,7 @@ export default function EditarProducto({ params }) {
   async function handleEliminar() {
     if (!confirm('¿Estás seguro de eliminar este producto?')) return
     setEliminando(true)
-    const res = await fetch('/api/admin/producto', {
+    const res = await adminFetch('/api/admin/producto', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: productoId })

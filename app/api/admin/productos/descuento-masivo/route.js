@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from 'next-sanity'
+import { requireAdmin } from '@/lib/adminAuth'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,8 @@ const getSanityClient = () => createClient({
 })
 
 export async function POST(request) {
+  const auth = await requireAdmin(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
   const client = getSanityClient()
   try {
     const { productoIds, accion, tipo, valor, fechaInicio, fechaFin } = await request.json()
@@ -30,14 +33,18 @@ export async function POST(request) {
     }
 
     if (accion === 'aplicar') {
-      if (!['porcentaje', 'fijo'].includes(tipo) || !valor || isNaN(parseFloat(valor))) {
+      const valorNum = parseFloat(valor)
+      if (!['porcentaje', 'fijo'].includes(tipo) || !valor || isNaN(valorNum) || valorNum <= 0) {
         return NextResponse.json({ error: 'Tipo o valor de descuento inválido' }, { status: 400 })
+      }
+      if (tipo === 'porcentaje' && valorNum > 100) {
+        return NextResponse.json({ error: 'El porcentaje de descuento no puede ser mayor a 100' }, { status: 400 })
       }
 
       const campos = {
         descuentoActivo: true,
         descuentoTipo: tipo,
-        descuentoValor: parseFloat(valor),
+        descuentoValor: valorNum,
         descuentoInicio: fechaInicio || null,
         descuentoFin: fechaFin || null,
       }

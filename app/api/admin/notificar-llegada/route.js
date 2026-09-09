@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { getProducto } from '@/lib/sanity'
+import { requireAdmin } from '@/lib/adminAuth'
 
 export async function POST(request) {
+  const auth = await requireAdmin(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_KEY

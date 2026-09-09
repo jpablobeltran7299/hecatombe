@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { adminFetch } from '@/lib/adminFetch'
 import { getTodosProductos, urlFor } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 import { ADMINS, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
@@ -121,7 +122,7 @@ export default function AdminClientes() {
   }
 
   async function cargarHistorial(userId) {
-    const res = await fetch(`/api/admin/historial?userId=${userId}`)
+    const res = await adminFetch(`/api/admin/historial?userId=${userId}`)
     const data = await res.json()
     setHistorial(data.ok ? data.historial : [])
   }
@@ -146,7 +147,7 @@ export default function AdminClientes() {
     setSubiendoImagenHistorial(true)
     const formData = new FormData()
     formData.append('file', file)
-    const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+    const res = await adminFetch('/api/admin/upload', { method: 'POST', body: formData })
     const data = await res.json()
     if (data.url) setHistorialImagenUrl(data.url)
     setSubiendoImagenHistorial(false)
@@ -157,7 +158,7 @@ export default function AdminClientes() {
     setGuardando(true)
     setMensaje('')
 
-    const res = await fetch('/api/admin/historial', {
+    const res = await adminFetch('/api/admin/historial', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -188,7 +189,7 @@ export default function AdminClientes() {
     setGuardando(true)
     setMensaje('')
 
-    const res = await fetch('/api/admin/historial', {
+    const res = await adminFetch('/api/admin/historial', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id })

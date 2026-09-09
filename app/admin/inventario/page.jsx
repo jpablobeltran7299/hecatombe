@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { adminFetch } from '@/lib/adminFetch'
 import { getTodosProductos, urlFor } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 
@@ -78,7 +79,7 @@ export default function AdminInventario() {
   async function actualizarStock(productoId, nuevoStock) {
     setError('')
     try {
-      const res = await fetch('/api/admin/stock', {
+      const res = await adminFetch('/api/admin/stock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productoId, stock: nuevoStock })
@@ -104,7 +105,7 @@ export default function AdminInventario() {
     setGuardando(producto._id)
     setError('')
     try {
-      const res = await fetch('/api/admin/stock', {
+      const res = await adminFetch('/api/admin/stock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

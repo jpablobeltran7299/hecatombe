@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from 'next-sanity'
+import { requireAdmin } from '@/lib/adminAuth'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,11 +13,20 @@ const getSanityClient = () => createClient({
 })
 
 export async function POST(request) {
+  const auth = await requireAdmin(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
   const client = getSanityClient()
   try {
     const { nombre, descripcion, precio, stock, marca, tematica, universo, linea,
       tipo, disponible, activo, destacado, ultimasPiezas, anticipo, precioLiquidacion,
       fechaEstimada, imagenes, ordenDestacado } = await request.json()
+
+    if (precio !== '' && precio !== undefined && isNaN(parseFloat(precio))) {
+      return NextResponse.json({ error: 'Precio inválido' }, { status: 400 })
+    }
+    if (stock !== '' && stock !== undefined && isNaN(parseInt(stock))) {
+      return NextResponse.json({ error: 'Stock inválido' }, { status: 400 })
+    }
 
     const doc = {
       _type: 'producto',
@@ -55,11 +65,20 @@ export async function POST(request) {
 }
 
 export async function PUT(request) {
+  const auth = await requireAdmin(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
   const client = getSanityClient()
   try {
     const { id, nombre, descripcion, precio, stock, marca, tematica, universo, linea,
       tipo, disponible, activo, destacado, ultimasPiezas, anticipo, precioLiquidacion,
       fechaEstimada, imagenes, ordenDestacado } = await request.json()
+
+    if (precio !== '' && precio !== undefined && isNaN(parseFloat(precio))) {
+      return NextResponse.json({ error: 'Precio inválido' }, { status: 400 })
+    }
+    if (stock !== '' && stock !== undefined && isNaN(parseInt(stock))) {
+      return NextResponse.json({ error: 'Stock inválido' }, { status: 400 })
+    }
 
     const campos = {
       nombre,
@@ -98,6 +117,8 @@ export async function PUT(request) {
 }
 
 export async function DELETE(request) {
+  const auth = await requireAdmin(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
   const client = getSanityClient()
   try {
     const { id } = await request.json()

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { adminFetch } from '@/lib/adminFetch'
 import { useAuth } from '@/app/components/AuthProvider'
 
 const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
@@ -25,7 +26,7 @@ export default function AdminConfiguracion() {
   }, [authLoading, user])
 
   async function cargarConfiguracion() {
-    const res = await fetch('/api/admin/configuracion')
+    const res = await adminFetch('/api/admin/configuracion')
     const data = await res.json()
     if (data.configuracion?.heroStat) {
       setHeroStat({
@@ -42,7 +43,7 @@ export default function AdminConfiguracion() {
     setError('')
     setMensaje('')
 
-    const res = await fetch('/api/admin/configuracion', {
+    const res = await adminFetch('/api/admin/configuracion', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ heroStat }),

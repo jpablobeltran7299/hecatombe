@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { adminFetch } from '@/lib/adminFetch'
 import { getMarcas, urlFor } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 
@@ -43,7 +44,7 @@ export default function AdminMarcas() {
     setLogoPreview(URL.createObjectURL(file))
     const formData = new FormData()
     formData.append('file', file)
-    const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+    const res = await adminFetch('/api/admin/upload', { method: 'POST', body: formData })
     const data = await res.json()
     setLogoId(data.assetId)
     setSubiendo(false)
@@ -75,7 +76,7 @@ export default function AdminMarcas() {
     setGuardando(true)
     setError('')
 
-    const res = await fetch('/api/admin/marca', {
+    const res = await adminFetch('/api/admin/marca', {
       method: modoEditar === 'nuevo' ? 'POST' : 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -99,7 +100,7 @@ export default function AdminMarcas() {
   async function handleEliminar(id) {
     if (!confirm('¿Eliminar esta marca? Asegúrate de que ningún producto la use.')) return
     setGuardando(true)
-    const res = await fetch('/api/admin/marca', {
+    const res = await adminFetch('/api/admin/marca', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id })

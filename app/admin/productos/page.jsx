@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { adminFetch } from '@/lib/adminFetch'
 import { getTodosProductosParaAdmin, getMarcas, getTematicas, getUniversos, getLineas, urlFor, calcularPrecioFinal } from '@/lib/sanity'
 import Link from 'next/link'
 import { useAuth } from '@/app/components/AuthProvider'
@@ -96,7 +97,7 @@ export default function AdminProductos() {
 
   async function toggleActivo(producto) {
     const nuevoActivo = !(producto.activo !== false)
-    await fetch('/api/admin/stock', {
+    await adminFetch('/api/admin/stock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ productoId: producto._id, activo: nuevoActivo })
@@ -111,7 +112,7 @@ export default function AdminProductos() {
     setAvisando(producto._id)
     setAvisoMensaje(null)
     try {
-      const res = await fetch('/api/admin/notificar-llegada', {
+      const res = await adminFetch('/api/admin/notificar-llegada', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productoId: producto._id })
@@ -194,7 +195,7 @@ export default function AdminProductos() {
     setAplicandoDescuento(true)
     setError('')
     try {
-      const res = await fetch('/api/admin/productos/descuento-masivo', {
+      const res = await adminFetch('/api/admin/productos/descuento-masivo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -235,7 +236,7 @@ export default function AdminProductos() {
     setAplicandoDescuento(true)
     setError('')
     try {
-      const res = await fetch('/api/admin/productos/descuento-masivo', {
+      const res = await adminFetch('/api/admin/productos/descuento-masivo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productoIds: Array.from(seleccionados), accion: 'quitar' })

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { adminFetch } from '@/lib/adminFetch'
 import { getTematicas, getLineas, getUniversos, getMarcas } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 import ImagenesOrdenables from '../ImagenesOrdenables'
@@ -64,7 +65,7 @@ export default function NuevoProducto() {
     setSubiendo(true)
     const formData = new FormData()
     formData.append('file', file)
-    const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+    const res = await adminFetch('/api/admin/upload', { method: 'POST', body: formData })
     const data = await res.json()
     setSubiendo(false)
     return data.assetId ? { assetId: data.assetId, url: data.url } : null
@@ -92,7 +93,7 @@ export default function NuevoProducto() {
     setGuardando(true)
     setError('')
 
-    const res = await fetch('/api/admin/producto', {
+    const res = await adminFetch('/api/admin/producto', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...form, imagenes: imagenes.map(img => img.assetId) })

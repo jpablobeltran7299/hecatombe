@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from 'next-sanity'
+import { requireAdmin } from '@/lib/adminAuth'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,8 @@ const getSanityClient = () => createClient({
 })
 
 export async function POST(request) {
+  const auth = await requireAdmin(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
   const client = getSanityClient()
   try {
     const { tag, titulo, subtitulo, cta, href, orden, activo, mostrarTexto, imagenId } = await request.json()
@@ -30,6 +33,8 @@ export async function POST(request) {
 }
 
 export async function PUT(request) {
+  const auth = await requireAdmin(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
   const client = getSanityClient()
   try {
     const { id, tag, titulo, subtitulo, cta, href, orden, activo, mostrarTexto, imagenId } = await request.json()
@@ -47,6 +52,8 @@ export async function PUT(request) {
 }
 
 export async function DELETE(request) {
+  const auth = await requireAdmin(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
   const client = getSanityClient()
   try {
     const { id } = await request.json()

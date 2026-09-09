@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { adminFetch } from '@/lib/adminFetch'
 import { getDinamicas, urlFor } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 
@@ -57,7 +58,7 @@ export default function AdminDinamicas() {
     setImagenPreview(URL.createObjectURL(file))
     const formData = new FormData()
     formData.append('file', file)
-    const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+    const res = await adminFetch('/api/admin/upload', { method: 'POST', body: formData })
     const data = await res.json()
     setImagenId(data.assetId)
     setSubiendo(false)
@@ -104,7 +105,7 @@ export default function AdminDinamicas() {
       imagenId: imagenId || undefined,
     }
 
-    const res = await fetch('/api/admin/dinamica', {
+    const res = await adminFetch('/api/admin/dinamica', {
       method: modoEditar === 'nuevo' ? 'POST' : 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: modoEditar !== 'nuevo' ? modoEditar : undefined, ...body })
@@ -124,7 +125,7 @@ export default function AdminDinamicas() {
   async function handleEliminar(id) {
     if (!confirm('¿Eliminar esta dinámica?')) return
     setGuardando(true)
-    const res = await fetch('/api/admin/dinamica', {
+    const res = await adminFetch('/api/admin/dinamica', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id })

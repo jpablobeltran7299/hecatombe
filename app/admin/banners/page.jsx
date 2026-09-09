@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { adminFetch } from '@/lib/adminFetch'
 import { getBanners, urlFor } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 
@@ -46,7 +47,7 @@ export default function AdminBanners() {
     setImagenPreview(URL.createObjectURL(file))
     const formData = new FormData()
     formData.append('file', file)
-    const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+    const res = await adminFetch('/api/admin/upload', { method: 'POST', body: formData })
     const data = await res.json()
     setImagenId(data.assetId)
     setSubiendo(false)
@@ -84,7 +85,7 @@ export default function AdminBanners() {
     setGuardando(true)
     setError('')
 
-    const res = await fetch('/api/admin/banner', {
+    const res = await adminFetch('/api/admin/banner', {
       method: modoEditar === 'nuevo' ? 'POST' : 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -108,7 +109,7 @@ export default function AdminBanners() {
   async function handleEliminar(id) {
     if (!confirm('¿Eliminar este banner?')) return
     setGuardando(true)
-    const res = await fetch('/api/admin/banner', {
+    const res = await adminFetch('/api/admin/banner', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id })

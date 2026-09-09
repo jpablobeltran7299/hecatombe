@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from 'next-sanity'
+import { requireAdmin } from '@/lib/adminAuth'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,8 @@ export async function GET() {
 }
 
 export async function PUT(request) {
+  const auth = await requireAdmin(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
   const client = getSanityClient()
   try {
     const { heroStat } = await request.json()
