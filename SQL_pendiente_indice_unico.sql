@@ -6,3 +6,15 @@
 create unique index if not exists pedidos_mp_payment_id_unique
   on pedidos (mp_payment_id)
   where mp_payment_id is not null;
+
+-- Registro de clientes interesados en una preventa que ya se quedó sin
+-- piezas disponibles (stock en 0). Se lee/escribe solo vía rutas API con
+-- SUPABASE_SERVICE_KEY (app/api/preventa-interes y
+-- app/api/admin/preventa-interes), así que no requiere configurar RLS.
+create table if not exists interesados_preventa (
+  id bigint generated always as identity primary key,
+  producto_id text not null,
+  user_id uuid not null,
+  created_at timestamptz not null default now(),
+  unique (producto_id, user_id)
+);

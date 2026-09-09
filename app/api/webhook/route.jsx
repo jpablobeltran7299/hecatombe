@@ -269,9 +269,11 @@ export async function POST(request) {
       for (const item of itemsVendidos) {
         await descontarStock(sanityClient, item.producto_id, item.cantidad || 1)
       }
-    } else if (tipo_pedido === 'liquidacion' && producto_id) {
-      // La liquidación es una sola unidad del producto apartado originalmente,
-      // no lo que haya en el carrito general del cliente.
+    } else if (tipo_pedido === 'apartado' && producto_id) {
+      // El stock de una preventa son las piezas conseguidas con el proveedor —
+      // el apartado es lo que reclama una de esas piezas, no la liquidación
+      // (que es solo el pago final de una pieza ya reclamada; no se vuelve a
+      // descontar para no restar dos veces la misma unidad).
       await descontarStock(sanityClient, producto_id, 1)
     }
 

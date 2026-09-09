@@ -62,6 +62,12 @@ export async function POST(request) {
       if (real.anticipo == null) {
         return NextResponse.json({ error: `"${item.nombre}" ya no está disponible para apartar.` }, { status: 400 })
       }
+      // El stock de una preventa son las piezas que se consiguieron con el
+      // proveedor — al agotarse, ya no se puede apartar más (el cliente debe
+      // registrar su interés en vez de pagar por una pieza que no existe).
+      if (real.stock !== null && real.stock !== undefined && real.stock <= 0) {
+        return NextResponse.json({ error: `Ya no quedan piezas de "${item.nombre}" disponibles para apartar. Regístrate en la página del producto para que te avisemos si conseguimos más.` }, { status: 400 })
+      }
       itemsValidados = [{ ...item, precio: real.anticipo }]
     } else if (tipo_pedido === 'liquidacion') {
       if (!pedido_id) {
@@ -174,7 +180,9 @@ export async function POST(request) {
         for (const item of itemsPedido) {
           await descontarStock(sanityClient, item.producto_id, item.cantidad || 1)
         }
-      } else if (tipo_pedido === 'liquidacion' && producto_id) {
+      } else if (tipo_pedido === 'apartado' && producto_id) {
+        // El apartado es lo que reclama la pieza reservada del proveedor —
+        // la liquidación (pago final) no vuelve a descontar, ya se contó aquí.
         const sanityClient = getSanityWriteClient()
         await descontarStock(sanityClient, producto_id, 1)
       }

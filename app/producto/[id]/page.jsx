@@ -5,6 +5,7 @@ import GaleriaProducto from '@/app/components/GaleriaProducto'
 import BotonCarrito from '@/app/components/BotonCarrito'
 import BotonFavorito from '@/app/components/BotonFavorito'
 import BotonApartar from '@/app/components/BotonApartar'
+import BotonInteresPreventa from '@/app/components/BotonInteresPreventa'
 
 export async function generateMetadata({ params }) {
   const { id } = await params
@@ -36,6 +37,7 @@ export default async function Producto({ params }) {
     encodeURIComponent(producto.nombre)
 
   const esPreventa = producto.tipo === 'preventa'
+  const sinPiezasPreventa = esPreventa && producto.stock !== null && producto.stock !== undefined && producto.stock <= 0
   const anticipo = producto.anticipo || null
   const precioLiquidacion = producto.precioLiquidacion || (producto.precio && anticipo ? producto.precio - anticipo : null)
   const { precioFinal, enOferta, porcentajeOff } = calcularPrecioFinal(producto)
@@ -123,7 +125,7 @@ export default async function Producto({ params }) {
               : 'bg-surface-alt border border-line-strong text-ink-muted'
           }`}>
             <span className={`w-2 h-2 rounded-full ${producto.disponible ? 'bg-green-400' : 'bg-gray-600'}`} />
-            {producto.disponible ? (esPreventa ? 'Preventa abierta' : 'En existencia') : 'Agotado'}
+            {producto.disponible ? (esPreventa ? 'Preventa abierta' : 'En existencia') : (sinPiezasPreventa ? 'Preventa agotada' : 'Agotado')}
           </div>
 
           {producto.descripcion && (
@@ -149,14 +151,18 @@ export default async function Producto({ params }) {
 
           {/* Botones según tipo */}
           {esPreventa ? (
-            <BotonApartar
-              productoId={producto._id}
-              nombre={producto.nombre}
-              anticipo={anticipo}
-              precioLiquidacion={precioLiquidacion}
-              precioTotal={producto.precio}
-              imagen={producto.imagenes?.[0] ? urlFor(producto.imagenes[0]).width(200).url() : null}
-            />
+            sinPiezasPreventa ? (
+              <BotonInteresPreventa productoId={producto._id} />
+            ) : (
+              <BotonApartar
+                productoId={producto._id}
+                nombre={producto.nombre}
+                anticipo={anticipo}
+                precioLiquidacion={precioLiquidacion}
+                precioTotal={producto.precio}
+                imagen={producto.imagenes?.[0] ? urlFor(producto.imagenes[0]).width(200).url() : null}
+              />
+            )
           ) : (
             producto.disponible && (
               <BotonCarrito
@@ -178,16 +184,18 @@ export default async function Producto({ params }) {
               </svg>
               Preguntar por WhatsApp
             </a>
-          ) : (
+          ) : !sinPiezasPreventa ? (
             <div className="w-full bg-surface-alt border border-line-strong text-ink-muted font-black text-sm uppercase tracking-widest py-4 rounded-xl text-center mt-3">
               Producto agotado
             </div>
-          )}
+          ) : null}
 
-          <p className="text-ink-muted text-xs text-center mt-3">
-            ¿No está disponible? Pregúntanos por preventa →{' '}
-            <a href={whatsappUrl} className="text-orange-600 hover:underline">WhatsApp</a>
-          </p>
+          {!esPreventa && (
+            <p className="text-ink-muted text-xs text-center mt-3">
+              ¿No está disponible? Pregúntanos por preventa →{' '}
+              <a href={whatsappUrl} className="text-orange-600 hover:underline">WhatsApp</a>
+            </p>
+          )}
 
         </div>
       </div>

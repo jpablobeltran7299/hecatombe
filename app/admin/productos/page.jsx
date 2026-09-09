@@ -72,6 +72,7 @@ export default function AdminProductos() {
   const [error, setError] = useState('')
   const [avisando, setAvisando] = useState(null)
   const [avisoMensaje, setAvisoMensaje] = useState(null)
+  const [interesadosPorProducto, setInteresadosPorProducto] = useState({})
   const router = useRouter()
 
   useEffect(() => {
@@ -93,6 +94,30 @@ export default function AdminProductos() {
     setUniversos(u)
     setLineas(l)
     setLoading(false)
+
+    // Contador de "interesados" solo tiene sentido en preventas agotadas.
+    const preventasAgotadas = p.filter(prod => prod.tipo === 'preventa' && !prod.disponible)
+    const resultados = await Promise.all(preventasAgotadas.map(async prod => {
+      try {
+        const res = await adminFetch(`/api/admin/preventa-interes?productoId=${prod._id}`)
+        const data = await res.json()
+        return [prod._id, data.ok ? data : null]
+      } catch {
+        return [prod._id, null]
+      }
+    }))
+    const mapa = {}
+    resultados.forEach(([id, data]) => { if (data) mapa[id] = data })
+    setInteresadosPorProducto(mapa)
+  }
+
+  function verInteresados(producto) {
+    const data = interesadosPorProducto[producto._id]
+    if (!data || data.count === 0) return
+    const lineas = data.interesados.map(i =>
+      `${i.nombre || 'Sin nombre'} — ${i.telefono || 'sin tel.'} — ${i.email || ''}`
+    ).join('\n')
+    alert(`Interesados en "${producto.nombre}":\n\n${lineas}`)
   }
 
   async function toggleActivo(producto) {
@@ -479,6 +504,13 @@ export default function AdminProductos() {
 
               {/* Acciones */}
               <div className="flex items-center gap-2 flex-shrink-0">
+                {producto.tipo === 'preventa' && !producto.disponible && interesadosPorProducto[producto._id]?.count > 0 && (
+                  <button
+                    onClick={() => verInteresados(producto)}
+                    className="text-xs px-2 py-1 border border-blue-500/40 text-blue-400 hover:bg-blue-500/10 rounded-lg transition">
+                    🙋 {interesadosPorProducto[producto._id].count} interesado{interesadosPorProducto[producto._id].count > 1 ? 's' : ''}
+                  </button>
+                )}
                 {producto.tipo === 'preventa' && (
                   <button
                     onClick={() => avisarLlegada(producto)}
