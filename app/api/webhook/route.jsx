@@ -1,9 +1,10 @@
 import { MercadoPagoConfig, Payment } from 'mercadopago'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { createClient as createSanityClient } from 'next-sanity'
 import { Resend } from 'resend'
 import crypto from 'crypto'
+import { getSanityWriteClient, descontarStock } from '@/lib/sanityAdmin'
+import { ajustarHecacoins } from '@/lib/hecacoins'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,27 +31,6 @@ function validarFirmaMercadoPago(request, dataId) {
   return hash === v1
 }
 
-// Nunca marcar activo:false solo por quedarse sin stock — eso oculta el
-// producto del admin y le impide reabastecerlo (bug ya corregido una vez
-// para /admin/inventario; "disponible" es lo que refleja que no hay stock).
-async function descontarStock(sanityClient, productoId, cantidad) {
-  const producto = await sanityClient.fetch(
-    `*[_type == "producto" && _id == $id][0]{ _id, stock, disponible }`,
-    { id: productoId }
-  )
-  if (producto && producto.stock !== null && producto.stock !== undefined) {
-    const nuevoStock = Math.max(0, producto.stock - (cantidad || 1))
-    await sanityClient
-      .patch(producto._id)
-      .set({
-        stock: nuevoStock,
-        disponible: nuevoStock > 0,
-        ...(nuevoStock <= 3 && nuevoStock > 0 && { ultimasPiezas: true }),
-      })
-      .commit()
-  }
-}
-
 async function alertarAdmin(resend, asunto, detalle) {
   try {
     await resend.emails.send({
@@ -74,13 +54,7 @@ export async function POST(request) {
     process.env.SUPABASE_SERVICE_KEY
   )
 
-  const sanityClient = createSanityClient({
-    projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-    dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
-    apiVersion: '2024-01-01',
-    token: process.env.SANITY_WRITE_TOKEN,
-    useCdn: false,
-  })
+  const sanityClient = getSanityWriteClient()
 
   const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -250,8 +224,11 @@ export async function POST(request) {
       ? (carritoItems || [])
       : (producto_id ? [{ producto_id, cantidad: 1 }] : [])
 
-    // Guardar pedido
-    const { data: pedido } = await supabase.from('pedidos').insert({
+    // Guardar pedido. Si ya existe un índice único en mp_payment_id (ver
+    // SQL_pendiente_indice_unico.sql) y dos notificaciones para el mismo pago
+    // llegaron casi al mismo tiempo, el segundo insert falla con 23505 en vez
+    // de crear un pedido duplicado — lo tratamos como éxito silencioso.
+    const { data: pedido, error: errorPedido } = await supabase.from('pedidos').insert({
       user_id: userId,
       total: pago.transaction_amount,
       estado: tipo_pedido === 'apartado' ? 'apartado' : 'pagado',
@@ -264,6 +241,14 @@ export async function POST(request) {
       anticipo_pagado: anticipo_pagado || null,
       monto_liquidacion: monto_liquidacion || null,
     }).select().single()
+
+    if (errorPedido) {
+      if (errorPedido.code === '23505') {
+        console.log(`Pedido para payment ${paymentId} ya existía (carrera evitada por índice único)`)
+        return NextResponse.json({ ok: true })
+      }
+      throw new Error(`Error al guardar el pedido: ${errorPedido.message}`)
+    }
 
     // Si esta compra liquida un apartado, cerrar el pedido original para
     // que no se pueda volver a liquidar (ver validación arriba).
@@ -290,31 +275,21 @@ export async function POST(request) {
       await descontarStock(sanityClient, producto_id, 1)
     }
 
-    // Descontar Hecacoins si se canjearon
+    // Descontar Hecacoins si se canjearon (ajustarHecacoins es seguro ante
+    // escrituras concurrentes — ver lib/hecacoins.js)
     if (hecacoins_canjeadas > 0) {
-      const { data: saldoActual } = await supabase
-        .from('hecacoins')
-        .select('id, saldo, total_canjeado')
-        .eq('user_id', userId)
-        .single()
+      await ajustarHecacoins(supabase, userId, {
+        saldoDelta: -hecacoins_canjeadas,
+        canjeadoDelta: hecacoins_canjeadas,
+      })
 
-      if (saldoActual) {
-        await supabase
-          .from('hecacoins')
-          .update({
-            saldo: Math.max(0, saldoActual.saldo - hecacoins_canjeadas),
-            total_canjeado: saldoActual.total_canjeado + hecacoins_canjeadas,
-          })
-          .eq('id', saldoActual.id)
-
-        await supabase.from('hecacoins_movimientos').insert({
-          user_id: userId,
-          pedido_id: pedido?.id,
-          tipo: 'canjeado',
-          monto: hecacoins_canjeadas,
-          descripcion: `Canje en pedido #${pedido?.id}`,
-        })
-      }
+      await supabase.from('hecacoins_movimientos').insert({
+        user_id: userId,
+        pedido_id: pedido?.id,
+        tipo: 'canjeado',
+        monto: hecacoins_canjeadas,
+        descripcion: `Canje en pedido #${pedido?.id}`,
+      })
     }
 
     // Acumular Hecacoins (3%) — solo en pedidos normales y liquidaciones
@@ -326,32 +301,11 @@ export async function POST(request) {
         const añoActual = new Date().getFullYear()
         const vencimiento = `${añoActual}-12-31`
 
-        const { data: saldoActual } = await supabase
-          .from('hecacoins')
-          .select('id, saldo, total_ganado')
-          .eq('user_id', userId)
-          .single()
-
-        if (saldoActual) {
-          await supabase
-            .from('hecacoins')
-            .update({
-              saldo: saldoActual.saldo + hecacoinsGanadas,
-              total_ganado: saldoActual.total_ganado + hecacoinsGanadas,
-              vencimiento,
-            })
-            .eq('id', saldoActual.id)
-        } else {
-          await supabase
-            .from('hecacoins')
-            .insert({
-              user_id: userId,
-              saldo: hecacoinsGanadas,
-              total_ganado: hecacoinsGanadas,
-              total_canjeado: 0,
-              vencimiento,
-            })
-        }
+        await ajustarHecacoins(supabase, userId, {
+          saldoDelta: hecacoinsGanadas,
+          ganadoDelta: hecacoinsGanadas,
+          vencimiento,
+        })
 
         await supabase.from('hecacoins_movimientos').insert({
           user_id: userId,

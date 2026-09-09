@@ -1,9 +1,10 @@
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { createClient as createSanityClient } from 'next-sanity'
 import { Resend } from 'resend'
 import { getProducto, getProductosPorIds, calcularPrecioFinal } from '@/lib/sanity'
+import { getSanityWriteClient, descontarStock } from '@/lib/sanityAdmin'
+import { ajustarHecacoins } from '@/lib/hecacoins'
 
 // Rate limit en memoria: 10 solicitudes por IP cada 60s.
 // Vive solo en la instancia serverless que lo procesa (no es un límite
@@ -125,23 +126,18 @@ export async function POST(request) {
     // (antes esto no hacía nada de eso: la compra "se completaba" pero no
     // quedaba ningún registro ni aviso).
     if (totalFinal === 0) {
-      const { data: saldoActual } = await supabase
-        .from('hecacoins')
-        .select('id, saldo, total_canjeado')
-        .eq('user_id', userId)
-        .single()
-
-      if (!saldoActual || saldoActual.saldo < descuentoHecacoins) {
-        return NextResponse.json({ error: 'Saldo de Hecacoins insuficiente.' }, { status: 400 })
-      }
-
-      await supabase
-        .from('hecacoins')
-        .update({
-          saldo: saldoActual.saldo - descuentoHecacoins,
-          total_canjeado: saldoActual.total_canjeado + descuentoHecacoins,
+      try {
+        await ajustarHecacoins(supabase, userId, {
+          saldoDelta: -descuentoHecacoins,
+          canjeadoDelta: descuentoHecacoins,
+          exigirSaldoSuficiente: true,
         })
-        .eq('id', saldoActual.id)
+      } catch (e) {
+        if (e.message === 'SALDO_INSUFICIENTE') {
+          return NextResponse.json({ error: 'Saldo de Hecacoins insuficiente.' }, { status: 400 })
+        }
+        throw e
+      }
 
       const itemsPedido = itemsValidados.map(i => ({ producto_id: i.productoId, cantidad: i.cantidad }))
 
@@ -174,27 +170,13 @@ export async function POST(request) {
       if (tipo_pedido === 'normal') {
         await supabase.from('carrito').delete().eq('user_id', userId)
 
-        const sanityClient = createSanityClient({
-          projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-          dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
-          apiVersion: '2024-01-01',
-          token: process.env.SANITY_WRITE_TOKEN,
-          useCdn: false,
-        })
+        const sanityClient = getSanityWriteClient()
         for (const item of itemsPedido) {
-          const real = await sanityClient.fetch(
-            `*[_type == "producto" && _id == $id][0]{ _id, stock }`,
-            { id: item.producto_id }
-          )
-          if (real && real.stock !== null && real.stock !== undefined) {
-            const nuevoStock = Math.max(0, real.stock - (item.cantidad || 1))
-            await sanityClient.patch(real._id).set({
-              stock: nuevoStock,
-              disponible: nuevoStock > 0,
-              ...(nuevoStock <= 3 && nuevoStock > 0 && { ultimasPiezas: true }),
-            }).commit()
-          }
+          await descontarStock(sanityClient, item.producto_id, item.cantidad || 1)
         }
+      } else if (tipo_pedido === 'liquidacion' && producto_id) {
+        const sanityClient = getSanityWriteClient()
+        await descontarStock(sanityClient, producto_id, 1)
       }
 
       try {
