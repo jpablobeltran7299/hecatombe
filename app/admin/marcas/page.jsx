@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { ADMINS } from '@/lib/constants'
 import { adminFetch } from '@/lib/adminFetch'
 import { getMarcas, urlFor } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 
-const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
 export default function AdminMarcas() {
   const { user, loading: authLoading } = useAuth()

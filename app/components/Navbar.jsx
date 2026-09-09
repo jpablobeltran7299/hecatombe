@@ -1,4 +1,5 @@
 'use client'
+import { ADMINS } from '@/lib/constants'
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
@@ -13,7 +14,6 @@ const LINKS = [
   { href: '/#faq', label: 'FAQ' },
 ]
 
-const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)

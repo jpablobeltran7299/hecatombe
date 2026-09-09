@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { ADMINS } from '@/lib/constants'
 import { adminFetch } from '@/lib/adminFetch'
 import { getTodosProductos, urlFor } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 
-const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
 // Componente fuera del padre para que cada fila maneje su propio input/estado de guardado
 function FilaStock({ producto, onGuardar }) {

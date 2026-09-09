@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { ADMINS } from '@/lib/constants'
 import { adminFetch } from '@/lib/adminFetch'
 import { getProducto, getTematicas, getLineas, getUniversos, getMarcas, urlFor } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 import ImagenesOrdenables from '../ImagenesOrdenables'
 
-const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
 export default function EditarProducto({ params }) {
   const { user, loading: authLoading } = useAuth()

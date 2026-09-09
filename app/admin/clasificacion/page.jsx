@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { adminFetch } from '@/lib/adminFetch'
 import { getTematicas, getLineas, getUniversos } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
-
-const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
+import { ADMINS } from '@/lib/constants'
 
 const ETIQUETAS_TIPO = {
   tematica: 'esta temática',
@@ -98,7 +98,7 @@ export default function AdminClasificacion() {
     setMensaje('')
 
     try {
-      const res = await fetch('/api/clasificacion', {
+      const res = await adminFetch('/api/clasificacion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tipo, nombre })
@@ -124,7 +124,7 @@ export default function AdminClasificacion() {
     setMensaje('')
 
     try {
-      const res = await fetch('/api/clasificacion', {
+      const res = await adminFetch('/api/clasificacion', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })

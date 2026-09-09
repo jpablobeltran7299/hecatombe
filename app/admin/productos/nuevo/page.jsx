@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { ADMINS } from '@/lib/constants'
 import { adminFetch } from '@/lib/adminFetch'
 import { getTematicas, getLineas, getUniversos, getMarcas } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 import ImagenesOrdenables from '../ImagenesOrdenables'
 
-const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
 export default function NuevoProducto() {
   const { user, loading: authLoading } = useAuth()

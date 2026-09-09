@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { ADMINS } from '@/lib/constants'
 import { useAuth } from '@/app/components/AuthProvider'
 
-const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
