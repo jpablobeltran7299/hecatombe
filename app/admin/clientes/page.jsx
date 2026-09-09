@@ -5,8 +5,9 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { getTodosProductos, urlFor } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
-
-const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
+import { ADMINS, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
+import ProductoThumb from '@/app/components/ProductoThumb'
+import BodegaProgress from '@/app/components/BodegaProgress'
 
 export default function AdminClientes() {
   const { user, loading: authLoading } = useAuth()
@@ -316,9 +317,12 @@ export default function AdminClientes() {
     p.nombre?.toLowerCase().includes(busquedaProducto.toLowerCase())
   ).slice(0, 6)
 
+  function getProductoInfo(productoId) {
+    return productos.find(x => x._id === productoId) || null
+  }
+
   function getNombreProducto(productoId) {
-    const p = productos.find(x => x._id === productoId)
-    return p?.nombre || `Producto ${productoId?.slice(-6)}`
+    return getProductoInfo(productoId)?.nombre || `Producto ${productoId?.slice(-6)}`
   }
 
   if (loading) return (
@@ -420,7 +424,8 @@ export default function AdminClientes() {
                 <h3 className="text-ink/50 text-xs font-black uppercase mb-3">Bodegatombe</h3>
                 <div className="bg-page rounded-xl p-4 mb-3">
                   <p className="text-blue-400 font-black text-2xl">${clienteSeleccionado.bodega?.total_acumulado?.toLocaleString('es-MX') || 0} MXN</p>
-                  <p className="text-ink/30 text-xs mt-1">de $1,200 para envío gratis</p>
+                  <p className="text-ink/30 text-xs mt-1 mb-3">de ${BODEGA_THRESHOLD_MXN.toLocaleString('es-MX')} para envío gratis</p>
+                  <BodegaProgress total={clienteSeleccionado.bodega?.total_acumulado || 0} showLabel={false} showMensaje={false} height={8} />
                 </div>
 
                 {pedidosBodega.length > 0 && (
@@ -428,13 +433,16 @@ export default function AdminClientes() {
                     <p className="text-ink/30 text-xs uppercase font-black mb-2">Productos guardados ({pedidosBodega.length})</p>
                     <div className="flex flex-col gap-2">
                       {pedidosBodega.map(pedido => (
-                        <div key={pedido.id} className="flex items-center justify-between bg-surface-alt rounded-lg px-3 py-2">
-                          <div>
-                            <p className="text-ink text-xs font-black">{getNombreProducto(pedido.producto_id)}</p>
-                            <p className="text-orange-500 text-xs">${pedido.total?.toLocaleString('es-MX')} MXN</p>
+                        <div key={pedido.id} className="flex items-center justify-between gap-3 bg-surface-alt rounded-lg px-3 py-2">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <ProductoThumb imagenes={getProductoInfo(pedido.producto_id)?.imagenes} nombre={getNombreProducto(pedido.producto_id)} size={32} />
+                            <div className="min-w-0">
+                              <p className="text-ink text-xs font-black truncate">{getNombreProducto(pedido.producto_id)}</p>
+                              <p className="text-orange-500 text-xs">${pedido.total?.toLocaleString('es-MX')} MXN</p>
+                            </div>
                           </div>
                           <button onClick={() => eliminarDeBodega(pedido.id)} disabled={guardando}
-                            className="text-ink/20 hover:text-red-400 transition text-xs disabled:opacity-30">
+                            className="text-ink/20 hover:text-red-400 transition text-xs disabled:opacity-30 flex-shrink-0">
                             🗑
                           </button>
                         </div>

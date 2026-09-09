@@ -5,8 +5,11 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/app/components/AuthProvider'
-
-const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
+import { ADMINS } from '@/lib/constants'
+import { resolverItemsPedidos } from '@/lib/pedidos'
+import EstadoBadge from '@/app/components/EstadoBadge'
+import PedidoItemsList from '@/app/components/PedidoItemsList'
+import HecacoinsEarnedNote from '@/app/components/HecacoinsEarnedNote'
 
 export default function AdminPedidos() {
   const { user, loading: authLoading } = useAuth()
@@ -29,9 +32,20 @@ export default function AdminPedidos() {
   async function cargarPedidos() {
     const { data } = await supabase
       .from('pedidos')
-      .select('id, created_at, total, estado, tipo_pedido, destino, bodega_estado, mp_payment_id, anticipo_pagado, monto_liquidacion, user_id')
+      .select('id, created_at, total, estado, tipo_pedido, destino, bodega_estado, mp_payment_id, anticipo_pagado, monto_liquidacion, user_id, items, producto_id')
       .order('created_at', { ascending: false })
-    setPedidos(data || [])
+
+    const pedidosData = data || []
+    const userIds = [...new Set(pedidosData.map(p => p.user_id).filter(Boolean))]
+    const { data: perfilesData } = userIds.length > 0
+      ? await supabase.from('perfiles').select('user_id, nombre, apellido, telefono').in('user_id', userIds)
+      : { data: [] }
+    const perfilesMap = {}
+    perfilesData?.forEach(p => { perfilesMap[p.user_id] = p })
+
+    const pedidosConCliente = pedidosData.map(p => ({ ...p, cliente: perfilesMap[p.user_id] || null }))
+    const pedidosResueltos = await resolverItemsPedidos(pedidosConCliente)
+    setPedidos(pedidosResueltos)
     setLoading(false)
   }
 
@@ -40,17 +54,6 @@ export default function AdminPedidos() {
     await supabase.from('pedidos').update({ estado: nuevoEstado }).eq('id', pedidoId)
     setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, estado: nuevoEstado } : p))
     setActualizando(null)
-  }
-
-  const getBadge = (estado) => {
-    switch (estado) {
-      case 'pagado': return 'bg-green-500/10 text-green-400 border border-green-500/30'
-      case 'apartado': return 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
-      case 'enviado': return 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
-      case 'entregado': return 'bg-green-500/10 text-green-400 border border-green-500/30'
-      case 'cancelado': return 'bg-red-500/10 text-red-400 border border-red-500/30'
-      default: return 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
-    }
   }
 
   const pedidosFiltrados = pedidos.filter(p => {
@@ -128,21 +131,31 @@ export default function AdminPedidos() {
 
         <div className="flex flex-col gap-3">
           {pedidosFiltrados.map(pedido => (
-            <div key={pedido.id} className="bg-surface border border-line rounded-2xl p-5 flex flex-wrap items-center gap-4">
+            <div key={pedido.id} className="bg-surface border border-line rounded-2xl p-5 flex flex-wrap items-start gap-4">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-1">
+                <div className="flex items-center gap-3 mb-1 flex-wrap">
                   <p className="text-ink font-black text-sm">Pedido #{pedido.id}</p>
-                  <span className={`text-xs font-black uppercase px-2 py-0.5 rounded-full ${getBadge(pedido.estado)}`}>
-                    {pedido.estado}
-                  </span>
+                  <EstadoBadge estado={pedido.estado} />
                   {pedido.tipo_pedido && pedido.tipo_pedido !== 'normal' && (
                     <span className="text-xs text-ink-muted uppercase font-black">{pedido.tipo_pedido}</span>
                   )}
                 </div>
-                <p className="text-ink-muted text-xs">{new Date(pedido.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                <p className="text-ink font-bold text-sm">
+                  {pedido.cliente?.nombre
+                    ? `${pedido.cliente.nombre} ${pedido.cliente.apellido || ''}`.trim()
+                    : 'Cliente sin registrar'}
+                  {pedido.cliente?.telefono && <span className="text-ink-muted font-normal"> · {pedido.cliente.telefono}</span>}
+                </p>
+                <p className="text-ink-muted text-xs mt-1">{new Date(pedido.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                 {pedido.mp_payment_id && (
                   <p className="text-ink-muted text-xs mt-1">MP: {pedido.mp_payment_id}</p>
                 )}
+                {pedido.lineas?.length > 0 && (
+                  <div className="mt-3">
+                    <PedidoItemsList lineas={pedido.lineas} size={40} />
+                  </div>
+                )}
+                <HecacoinsEarnedNote pedido={pedido} className="mt-2" />
               </div>
 
               <div className="text-right">

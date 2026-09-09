@@ -5,8 +5,9 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { getProductosPorIds } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
-
-const ADMINS = ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com']
+import { ADMINS, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
+import ProductoThumb from '@/app/components/ProductoThumb'
+import BodegaProgress from '@/app/components/BodegaProgress'
 
 export default function AdminBodega() {
   const { user, loading: authLoading } = useAuth()
@@ -64,7 +65,8 @@ export default function AdminBodega() {
       grupos[key].total_acumulado += pedido.total || 0
       grupos[key].pedidos.push({
         ...pedido,
-        nombreProducto: productosMap[pedido.producto_id]?.nombre || `Pedido #${pedido.id}`
+        nombreProducto: productosMap[pedido.producto_id]?.nombre || `Pedido #${pedido.id}`,
+        productoInfo: productosMap[pedido.producto_id] || null,
       })
     })
 
@@ -124,7 +126,7 @@ export default function AdminBodega() {
             <p className="text-ink-muted text-xs uppercase font-black mt-1">Total acumulado</p>
           </div>
           <div className="bg-surface border border-line rounded-2xl p-4 text-center">
-            <p className="text-orange-600 font-black text-2xl">{bodegas.filter(b => b.total_acumulado >= 1200).length}</p>
+            <p className="text-orange-600 font-black text-2xl">{bodegas.filter(b => b.total_acumulado >= BODEGA_THRESHOLD_MXN).length}</p>
             <p className="text-ink-muted text-xs uppercase font-black mt-1">Listos para envío gratis</p>
           </div>
         </div>
@@ -149,15 +151,12 @@ export default function AdminBodega() {
                 </div>
                 <div className="text-right">
                   <p className="text-orange-600 font-black text-xl">${bodega.total_acumulado?.toLocaleString('es-MX')} MXN</p>
-                  <p className="text-ink-muted text-xs">de $1,200</p>
+                  <p className="text-ink-muted text-xs">de ${BODEGA_THRESHOLD_MXN.toLocaleString('es-MX')}</p>
                 </div>
               </div>
 
-              <div className="w-full bg-surface-alt rounded-full h-2 mb-4">
-                <div
-                  className="bg-orange-500 h-2 rounded-full"
-                  style={{ width: `${Math.min(100, (bodega.total_acumulado / 1200) * 100)}%` }}
-                />
+              <div className="mb-4">
+                <BodegaProgress total={bodega.total_acumulado} showLabel={false} showMensaje={false} height={8} />
               </div>
 
               {bodega.pedidos.length > 0 && (
@@ -165,9 +164,12 @@ export default function AdminBodega() {
                   <p className="text-ink-muted text-xs uppercase font-black mb-2">{bodega.pedidos.length} producto(s) guardados</p>
                   <div className="flex flex-col gap-2">
                     {bodega.pedidos.map(p => (
-                      <div key={p.id} className="flex justify-between items-center text-xs bg-page rounded-lg px-3 py-2">
-                        <span className="text-ink">{p.nombreProducto}</span>
-                        <span className="text-orange-600 font-black">${p.total?.toLocaleString('es-MX')} MXN</span>
+                      <div key={p.id} className="flex justify-between items-center gap-3 text-xs bg-page rounded-lg px-3 py-2">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <ProductoThumb imagenes={p.productoInfo?.imagenes} nombre={p.nombreProducto} size={32} />
+                          <span className="text-ink truncate">{p.nombreProducto}</span>
+                        </div>
+                        <span className="text-orange-600 font-black flex-shrink-0">${p.total?.toLocaleString('es-MX')} MXN</span>
                       </div>
                     ))}
                   </div>

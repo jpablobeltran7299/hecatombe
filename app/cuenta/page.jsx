@@ -5,6 +5,12 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getProductosPorIds, urlFor } from '@/lib/sanity'
+import { resolverItemsPedidos } from '@/lib/pedidos'
+import { BODEGA_THRESHOLD_MXN } from '@/lib/constants'
+import EstadoBadge from '@/app/components/EstadoBadge'
+import PedidoItemsList from '@/app/components/PedidoItemsList'
+import BodegaProgress from '@/app/components/BodegaProgress'
+import HecacoinsEarnedNote from '@/app/components/HecacoinsEarnedNote'
 
 export default function CuentaPage() {
   const [user, setUser] = useState(null)
@@ -92,7 +98,8 @@ export default function CuentaPage() {
       .eq('user_id', userId)
       .not('destino', 'eq', 'bodega')
       .order('created_at', { ascending: false })
-    setPedidos(data || [])
+    const resueltos = await resolverItemsPedidos(data || [])
+    setPedidos(resueltos)
   }
 
   async function cargarBodega(userId) {
@@ -106,8 +113,9 @@ export default function CuentaPage() {
 
     const piezas = pedidosData || []
     const totalAcumulado = piezas.reduce((acc, p) => acc + (p.total || 0), 0)
+    const piezasResueltas = await resolverItemsPedidos(piezas)
     setBodega(piezas.length > 0 ? { total_acumulado: totalAcumulado } : null)
-    setPedidosBodega(piezas)
+    setPedidosBodega(piezasResueltas)
   }
 
   async function cargarHecacoins(userId) {
@@ -179,27 +187,8 @@ export default function CuentaPage() {
     router.push('/')
   }
 
-  const getBadgeEstado = (estado) => {
-    switch (estado) {
-      case 'pagado': return 'bg-green-500/10 text-green-400 border border-green-500/30'
-      case 'apartado': return 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
-      case 'liquidado': return 'bg-green-500/10 text-green-400 border border-green-500/30'
-      default: return 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
-    }
-  }
-
-  const getLabelEstado = (estado) => {
-    switch (estado) {
-      case 'pagado': return '✅ Pagado'
-      case 'apartado': return '🔒 Apartado'
-      case 'liquidado': return '✅ Liquidado'
-      default: return estado
-    }
-  }
-
   const totalBodega = bodega?.total_acumulado || 0
-  const faltaBodega = Math.max(0, 1200 - totalBodega)
-  const porcentajeBodega = Math.min(100, (totalBodega / 1200) * 100)
+  const faltaBodega = Math.max(0, BODEGA_THRESHOLD_MXN - totalBodega)
   const saldoHC = hecacoins?.saldo || 0
 
   if (loading) return (
@@ -356,9 +345,7 @@ export default function CuentaPage() {
                       <p className="text-ink/30 text-xs mt-1">{new Date(pedido.created_at).toLocaleDateString('es-MX')}</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`text-xs font-black uppercase px-3 py-1 rounded-full ${getBadgeEstado(pedido.estado)}`}>
-                        {getLabelEstado(pedido.estado)}
-                      </span>
+                      <EstadoBadge estado={pedido.estado} />
                       <span className="text-orange-600 font-black">${pedido.total?.toLocaleString('es-MX')} MXN</span>
                     </div>
                   </div>
@@ -401,9 +388,14 @@ export default function CuentaPage() {
                       </button>
                     </div>
                   )}
-                  {pedido.items?.length > 0 && (
+                  {pedido.lineas?.length > 0 && (
                     <div className="border-t border-line pt-4">
-                      <p className="text-ink/30 text-xs uppercase font-black">{pedido.items.length} producto(s)</p>
+                      <PedidoItemsList lineas={pedido.lineas} size={56} />
+                    </div>
+                  )}
+                  {(pedido.estado === 'pagado' || pedido.estado === 'liquidado') && (
+                    <div className="border-t border-line pt-3 mt-3">
+                      <HecacoinsEarnedNote pedido={pedido} />
                     </div>
                   )}
                 </div>
@@ -420,18 +412,9 @@ export default function CuentaPage() {
               <p className="text-ink/40 text-sm mb-6">Acumula $1,200 MXN en compras y obtén envío gratis a todo México.</p>
               {totalBodega > 0 ? (
                 <>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-ink/50 text-xs font-black uppercase">Acumulado</span>
-                    <span className="text-orange-600 font-black">${totalBodega.toLocaleString('es-MX')} / $1,200 MXN</span>
+                  <div className="mb-4">
+                    <BodegaProgress total={totalBodega} />
                   </div>
-                  <div className="w-full bg-surface-alt rounded-full h-3 mb-4">
-                    <div className="bg-orange-500 h-3 rounded-full transition-all duration-500" style={{ width: `${porcentajeBodega}%` }} />
-                  </div>
-                  {faltaBodega > 0 ? (
-                    <p className="text-ink/40 text-sm mb-6">Te faltan <span className="text-orange-600 font-black">${faltaBodega.toLocaleString('es-MX')} MXN</span> para envío gratis.</p>
-                  ) : (
-                    <p className="text-green-400 text-sm font-black mb-6">🎉 ¡Ya tienes envío gratis disponible!</p>
-                  )}
                   <button onClick={handleSolicitarEnvio} disabled={solicitandoEnvio}
                     className={`w-full font-black uppercase py-4 rounded-xl transition text-sm ${faltaBodega === 0 ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'border border-orange-500 text-orange-500 hover:bg-orange-500/10'}`}>
                     {solicitandoEnvio ? 'Procesando...' : faltaBodega === 0 ? '🚚 Solicitar envío gratis' : '🚚 Solicitar envío ahora'}
@@ -449,15 +432,13 @@ export default function CuentaPage() {
             </div>
             {pedidosBodega.length > 0 && (
               <div className="bg-surface border border-line rounded-2xl p-6">
-                <h2 className="text-lg font-black uppercase text-orange-600 mb-4">Productos guardados</h2>
-                <div className="flex flex-col gap-3">
+                <h2 className="text-lg font-black uppercase text-orange-600 mb-1">Productos guardados</h2>
+                <p className="text-ink/30 text-xs mb-4">Estos productos se envían juntos, gratis, al llegar a ${BODEGA_THRESHOLD_MXN.toLocaleString('es-MX')} MXN.</p>
+                <div className="flex flex-col gap-4">
                   {pedidosBodega.map(pedido => (
-                    <div key={pedido.id} className="flex items-center justify-between border-b border-ink/5 pb-3 last:border-0 last:pb-0">
-                      <div>
-                        <p className="text-ink text-sm font-black">Pedido #{pedido.id}</p>
-                        <p className="text-ink/30 text-xs">{new Date(pedido.created_at).toLocaleDateString('es-MX')}</p>
-                      </div>
-                      <span className="text-orange-600 font-black">${pedido.total?.toLocaleString('es-MX')} MXN</span>
+                    <div key={pedido.id} className="flex items-center justify-between gap-3 border-b border-ink/5 pb-4 last:border-0 last:pb-0">
+                      <PedidoItemsList lineas={pedido.lineas} size={48} />
+                      <span className="text-orange-600 font-black flex-shrink-0">${pedido.total?.toLocaleString('es-MX')} MXN</span>
                     </div>
                   ))}
                 </div>
