@@ -6,6 +6,7 @@ import BotonCarrito from '@/app/components/BotonCarrito'
 import BotonFavorito from '@/app/components/BotonFavorito'
 import BotonApartar from '@/app/components/BotonApartar'
 import BotonInteresPreventa from '@/app/components/BotonInteresPreventa'
+import { COSTO_ENVIO_MXN } from '@/lib/constants'
 
 export async function generateMetadata({ params }) {
   const { id } = await params
@@ -138,7 +139,7 @@ export default async function Producto({ params }) {
           <div className="grid grid-cols-2 gap-2 mb-6">
             {[
               { icon: '✅', text: 'Producto original' },
-              { icon: '📦', text: 'Envío a todo México' },
+              { icon: '📦', text: `Envío a todo México · $${COSTO_ENVIO_MXN} MXN si no guardas en Bodegatombe` },
               { icon: '🤝', text: 'Atención directa' },
               { icon: '🔒', text: 'Compra segura' },
             ].map(({ icon, text }) => (

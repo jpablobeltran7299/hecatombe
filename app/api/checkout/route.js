@@ -5,6 +5,7 @@ import { Resend } from 'resend'
 import { getProducto, getProductosPorIds, calcularPrecioFinal } from '@/lib/sanity'
 import { getSanityWriteClient, descontarStock } from '@/lib/sanityAdmin'
 import { ajustarHecacoins } from '@/lib/hecacoins'
+import { COSTO_ENVIO_MXN, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
 
 // Rate limit en memoria: 10 solicitudes por IP cada 60s.
 // Vive solo en la instancia serverless que lo procesa (no es un límite
@@ -112,6 +113,13 @@ export async function POST(request) {
     // Calcular total original (con precios ya validados contra Sanity)
     const totalOriginal = itemsValidados.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
 
+    // Costo de envío: se calcula aquí, nunca se confía en lo que mande el cliente.
+    // Solo aplica en compras normales que eligen envío directo (no bodega) y no
+    // alcanzan el monto de envío gratis.
+    const costoEnvio = (tipo_pedido || 'normal') === 'normal' && destino !== 'bodega' && totalOriginal < BODEGA_THRESHOLD_MXN
+      ? COSTO_ENVIO_MXN
+      : 0
+
     // Validar Hecacoins si se quieren canjear
     let descuentoHecacoins = 0
     if (hecacoins_a_canjear > 0) {
@@ -125,7 +133,7 @@ export async function POST(request) {
       descuentoHecacoins = Math.min(hecacoins_a_canjear, saldoDisponible, totalOriginal)
     }
 
-    const totalFinal = Math.max(0, totalOriginal - descuentoHecacoins)
+    const totalFinal = Math.max(0, totalOriginal - descuentoHecacoins) + costoEnvio
 
     // Si paga todo con Hecacoins — no pasa por MercadoPago, así que hay que
     // generar el pedido, descontar stock y mandar los correos aquí mismo
@@ -216,33 +224,31 @@ export async function POST(request) {
 
     const preference = new Preference(client)
 
-    // Items ajustados con descuento si aplica
-    const itemsMP = descuentoHecacoins > 0
-      ? [
-          ...itemsValidados.map(item => ({
-            id: item.productoId,
-            title: item.nombre,
-            quantity: item.cantidad,
-            unit_price: item.precio,
-            currency_id: 'MXN',
-            picture_url: item.imagen || '',
-          })),
-          {
-            id: 'hecacoins-descuento',
-            title: `Descuento Hecacoins`,
-            quantity: 1,
-            unit_price: -descuentoHecacoins,
-            currency_id: 'MXN',
-          }
-        ]
-      : itemsValidados.map(item => ({
-          id: item.productoId,
-          title: item.nombre,
-          quantity: item.cantidad,
-          unit_price: item.precio,
-          currency_id: 'MXN',
-          picture_url: item.imagen || '',
-        }))
+    // Items ajustados con descuento y envío si aplica
+    const itemsMP = [
+      ...itemsValidados.map(item => ({
+        id: item.productoId,
+        title: item.nombre,
+        quantity: item.cantidad,
+        unit_price: item.precio,
+        currency_id: 'MXN',
+        picture_url: item.imagen || '',
+      })),
+      ...(descuentoHecacoins > 0 ? [{
+        id: 'hecacoins-descuento',
+        title: `Descuento Hecacoins`,
+        quantity: 1,
+        unit_price: -descuentoHecacoins,
+        currency_id: 'MXN',
+      }] : []),
+      ...(costoEnvio > 0 ? [{
+        id: 'envio',
+        title: 'Servicio de envío',
+        quantity: 1,
+        unit_price: costoEnvio,
+        currency_id: 'MXN',
+      }] : []),
+    ]
 
     const response = await preference.create({
       body: {
@@ -263,6 +269,7 @@ export async function POST(request) {
           anticipo_pagado: anticipo_pagado || null,
           monto_liquidacion: tipo_pedido === 'liquidacion' ? montoLiquidacionReal : (monto_liquidacion || null),
           hecacoins_canjeadas: descuentoHecacoins,
+          costo_envio: costoEnvio,
         }),
         notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook`,
       }

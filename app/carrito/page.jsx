@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import AvisoEnvio from '../components/AvisoEnvio'
 
 export default function CarritoPage() {
   const [items, setItems] = useState([])
@@ -144,10 +145,11 @@ export default function CarritoPage() {
             </div>
 
             <div className="bg-surface border border-line rounded-2xl p-6">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-3">
                 <span className="text-ink-muted uppercase font-black text-sm">Total</span>
                 <span className="text-orange-600 font-black text-2xl">${total.toLocaleString('es-MX')} MXN</span>
               </div>
+              <AvisoEnvio className="mb-3" />
               {!user && (
                 <p className="text-ink-muted text-xs text-center mb-3">
                   Necesitas <Link href="/login" className="text-orange-600 hover:underline">iniciar sesión</Link> para proceder al pago

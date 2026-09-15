@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { COSTO_ENVIO_MXN } from '@/lib/constants'
 
 export default function CheckoutPage() {
   const [user, setUser] = useState(null)
@@ -107,6 +108,7 @@ export default function CheckoutPage() {
           tipo_pedido: tipoPedido,
           destino,
           hecacoins_a_canjear: hecacoinsACanjear,
+          costo_envio: costoEnvio,
           ...(modoApartar && {
             producto_id: itemApartar.productoId,
             anticipo_pagado: itemApartar.anticipo,
@@ -142,8 +144,9 @@ export default function CheckoutPage() {
     : items.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
 
   const descuentoHC = usarHecacoins && !modoApartar ? Math.min(hecacoins, totalBruto) : 0
-  const totalFinal = totalBruto - descuentoHC
   const envioGratis = totalBruto >= 1200
+  const costoEnvio = !modoApartar && modoEnvio === 'inmediato' && !envioGratis ? COSTO_ENVIO_MXN : 0
+  const totalFinal = totalBruto - descuentoHC + costoEnvio
 
   const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 transition"
   const labelClass = "text-ink-muted text-xs font-black uppercase tracking-widest mb-2 block"
@@ -183,7 +186,7 @@ export default function CheckoutPage() {
                     <div>
                       <p className="text-ink font-black uppercase text-sm">Envío inmediato</p>
                       <p className="text-ink-muted text-xs mt-1">
-                        {envioGratis ? '✅ ¡Envío gratis! Tu pedido supera $1,200 MXN' : 'Se coordina el envío al confirmar tu pago'}
+                        {envioGratis ? '✅ ¡Envío gratis! Tu pedido supera $1,200 MXN' : `Se coordina el envío al confirmar tu pago · $${COSTO_ENVIO_MXN} MXN`}
                       </p>
                     </div>
                   </button>
@@ -344,6 +347,12 @@ export default function CheckoutPage() {
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-orange-600 text-sm font-black">Hecacoins</span>
                     <span className="text-orange-600 text-sm font-black">-${descuentoHC.toLocaleString('es-MX')} MXN</span>
+                  </div>
+                )}
+                {costoEnvio > 0 && (
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-ink-muted text-sm">Envío</span>
+                    <span className="text-ink-muted text-sm">${costoEnvio.toLocaleString('es-MX')} MXN</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center">

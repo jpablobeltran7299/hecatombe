@@ -161,7 +161,7 @@ export async function POST(request) {
     }
 
     // Parsear external_reference
-    let userId, tipo_pedido, destino, producto_id, pedido_id_apartado, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas
+    let userId, tipo_pedido, destino, producto_id, pedido_id_apartado, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas, costo_envio
     try {
       const ref = JSON.parse(pago.external_reference)
       userId = ref.userId
@@ -172,10 +172,12 @@ export async function POST(request) {
       anticipo_pagado = ref.anticipo_pagado
       monto_liquidacion = ref.monto_liquidacion
       hecacoins_canjeadas = ref.hecacoins_canjeadas || 0
+      costo_envio = ref.costo_envio || 0
     } catch {
       userId = pago.external_reference
       tipo_pedido = 'normal'
       destino = 'directo'
+      costo_envio = 0
     }
 
     // Si es liquidación, verificar que el apartado original siga pendiente —
@@ -297,7 +299,8 @@ export async function POST(request) {
     // Acumular Hecacoins (3%) — solo en pedidos normales y liquidaciones
     const tiposConHecacoins = ['normal', 'liquidacion']
     if (tiposConHecacoins.includes(tipo_pedido)) {
-      const hecacoinsGanadas = Math.floor(pago.transaction_amount * 0.03)
+      // El costo de envío no genera Hecacoins, solo el valor de la mercancía.
+      const hecacoinsGanadas = Math.floor((pago.transaction_amount - costo_envio) * 0.03)
 
       if (hecacoinsGanadas > 0) {
         const añoActual = new Date().getFullYear()
@@ -366,6 +369,7 @@ export async function POST(request) {
                         }
                       </td></tr>
                       ${esApartado && monto_liquidacion ? `<tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Restante a liquidar: <span style="color:#fff;">$${monto_liquidacion?.toLocaleString('es-MX')} MXN</span></td></tr>` : ''}
+                      ${costo_envio > 0 ? `<tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Incluye envío: <span style="color:#fff;">$${costo_envio.toLocaleString('es-MX')} MXN</span></td></tr>` : ''}
                       ${!esBodega ? `<tr><td style="color:#aaa;font-size:13px;">Dirección de envío: ${direccion}</td></tr>` : ''}
                     </table>
                     <p style="color:#555;font-size:12px;margin:0;">¿Tienes dudas? Escríbenos por WhatsApp al <a href="https://wa.me/524427183787" style="color:#f97316;">524427183787</a></p>

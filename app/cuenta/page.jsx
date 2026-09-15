@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getProductosPorIds, urlFor } from '@/lib/sanity'
 import { resolverItemsPedidos } from '@/lib/pedidos'
-import { BODEGA_THRESHOLD_MXN } from '@/lib/constants'
+import { BODEGA_THRESHOLD_MXN, COSTO_ENVIO_MXN } from '@/lib/constants'
 import EstadoBadge from '@/app/components/EstadoBadge'
 import PedidoItemsList from '@/app/components/PedidoItemsList'
 import BodegaProgress from '@/app/components/BodegaProgress'
@@ -419,7 +419,7 @@ export default function CuentaPage() {
                     className={`w-full font-black uppercase py-4 rounded-xl transition text-sm ${faltaBodega === 0 ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'border border-orange-500 text-orange-500 hover:bg-orange-500/10'}`}>
                     {solicitandoEnvio ? 'Procesando...' : faltaBodega === 0 ? '🚚 Solicitar envío gratis' : '🚚 Solicitar envío ahora'}
                   </button>
-                  {faltaBodega > 0 && <p className="text-ink/20 text-xs text-center mt-2">Si solicitas envío antes de $1,200 se cobrará el costo de envío</p>}
+                  {faltaBodega > 0 && <p className="text-ink/20 text-xs text-center mt-2">Si solicitas envío antes de $1,200 se cobrarán ${COSTO_ENVIO_MXN} MXN de envío</p>}
                 </>
               ) : (
                 <div className="text-center py-8">
