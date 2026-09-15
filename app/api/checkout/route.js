@@ -135,9 +135,9 @@ export async function POST(request) {
     const totalOriginal = itemsValidados.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
 
     // Costo de envío: se calcula aquí, nunca se confía en lo que mande el cliente.
-    // Solo aplica en compras normales que eligen envío directo (no bodega) y no
-    // alcanzan el monto de envío gratis.
-    const costoEnvio = (tipo_pedido || 'normal') === 'normal' && destino !== 'bodega' && totalOriginal < BODEGA_THRESHOLD_MXN
+    // Aplica en compras normales y en liquidaciones de preventa que eligen
+    // envío directo (no bodega) y no alcanzan el monto de envío gratis.
+    const costoEnvio = ['normal', 'liquidacion'].includes(tipo_pedido || 'normal') && destino !== 'bodega' && totalOriginal < BODEGA_THRESHOLD_MXN
       ? COSTO_ENVIO_MXN
       : 0
 

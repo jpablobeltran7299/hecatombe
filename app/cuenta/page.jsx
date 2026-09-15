@@ -524,11 +524,24 @@ export default function CuentaPage() {
                         </div>
                       )}
 
-                      <button onClick={() => handleLiquidar(pedido, destinoLiquidacion[pedido.id] || 'directo')}
-                        disabled={liquidando === pedido.id || ((destinoLiquidacion[pedido.id] || 'directo') === 'directo' && (!direccionLiquidacion[pedido.id] || !confirmoLiquidacion[pedido.id]))}
-                        className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black uppercase py-2 rounded-lg text-sm transition">
-                        {liquidando === pedido.id ? 'Procesando...' : `💳 Liquidar $${pedido.monto_liquidacion?.toLocaleString('es-MX')} MXN`}
-                      </button>
+                      {(() => {
+                        const destinoSel = destinoLiquidacion[pedido.id] || 'directo'
+                        const costoEnvioLiquidacion = destinoSel !== 'bodega' && (pedido.monto_liquidacion || 0) < BODEGA_THRESHOLD_MXN
+                          ? COSTO_ENVIO_MXN : 0
+                        const totalLiquidar = (pedido.monto_liquidacion || 0) + costoEnvioLiquidacion
+                        return (
+                          <>
+                            {costoEnvioLiquidacion > 0 && (
+                              <p className="text-ink/30 text-xs mb-2">Incluye ${COSTO_ENVIO_MXN} MXN de envío</p>
+                            )}
+                            <button onClick={() => handleLiquidar(pedido, destinoSel)}
+                              disabled={liquidando === pedido.id || (destinoSel === 'directo' && (!direccionLiquidacion[pedido.id] || !confirmoLiquidacion[pedido.id]))}
+                              className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black uppercase py-2 rounded-lg text-sm transition">
+                              {liquidando === pedido.id ? 'Procesando...' : `💳 Liquidar $${totalLiquidar.toLocaleString('es-MX')} MXN`}
+                            </button>
+                          </>
+                        )
+                      })()}
                     </div>
                   )}
                   {pedido.lineas?.length > 0 && (
