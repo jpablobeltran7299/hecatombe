@@ -419,7 +419,12 @@ export default function CuentaPage() {
                     className={`w-full font-black uppercase py-4 rounded-xl transition text-sm ${faltaBodega === 0 ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'border border-orange-500 text-orange-500 hover:bg-orange-500/10'}`}>
                     {solicitandoEnvio ? 'Procesando...' : faltaBodega === 0 ? '🚚 Solicitar envío gratis' : '🚚 Solicitar envío ahora'}
                   </button>
-                  {faltaBodega > 0 && <p className="text-ink/20 text-xs text-center mt-2">Si solicitas envío antes de $1,200 se cobrarán ${COSTO_ENVIO_MXN} MXN de envío</p>}
+                  {faltaBodega > 0 && (
+                    <div className="text-ink/20 text-xs text-center mt-2">
+                      <p>🚚 Envío desde ${COSTO_ENVIO_MXN}</p>
+                      <p className="mt-1">📦 ¿Quieres ahorrártelo? Guarda tu pedido en <span className="font-black">Bodegatombe</span>, junta ${BODEGA_THRESHOLD_MXN.toLocaleString('es-MX')} en compras y tu envío sale <span className="font-black">GRATIS</span></p>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="text-center py-8">

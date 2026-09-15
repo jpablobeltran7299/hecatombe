@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { COSTO_ENVIO_MXN } from '@/lib/constants'
+import { COSTO_ENVIO_MXN, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
 
 export default function CheckoutPage() {
   const [user, setUser] = useState(null)
@@ -185,9 +185,14 @@ export default function CheckoutPage() {
                     <span className="text-2xl mt-0.5">🚚</span>
                     <div>
                       <p className="text-ink font-black uppercase text-sm">Envío inmediato</p>
-                      <p className="text-ink-muted text-xs mt-1">
-                        {envioGratis ? '✅ ¡Envío gratis! Tu pedido supera $1,200 MXN' : `Se coordina el envío al confirmar tu pago · $${COSTO_ENVIO_MXN} MXN`}
-                      </p>
+                      {envioGratis ? (
+                        <p className="text-ink-muted text-xs mt-1">✅ ¡Envío gratis! Tu pedido supera $1,200 MXN</p>
+                      ) : (
+                        <div className="text-ink-muted text-xs mt-1">
+                          <p>🚚 Envío desde ${COSTO_ENVIO_MXN}</p>
+                          <p className="mt-1">📦 ¿Quieres ahorrártelo? Guarda tu pedido en <span className="font-black">Bodegatombe</span>, junta ${BODEGA_THRESHOLD_MXN.toLocaleString('es-MX')} en compras y tu envío sale <span className="font-black">GRATIS</span></p>
+                        </div>
+                      )}
                     </div>
                   </button>
                   <button onClick={() => setModoEnvio('bodega')}

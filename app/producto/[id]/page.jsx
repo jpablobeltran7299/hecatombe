@@ -6,7 +6,7 @@ import BotonCarrito from '@/app/components/BotonCarrito'
 import BotonFavorito from '@/app/components/BotonFavorito'
 import BotonApartar from '@/app/components/BotonApartar'
 import BotonInteresPreventa from '@/app/components/BotonInteresPreventa'
-import { COSTO_ENVIO_MXN } from '@/lib/constants'
+import { COSTO_ENVIO_MXN, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
 
 export async function generateMetadata({ params }) {
   const { id } = await params
@@ -136,18 +136,30 @@ export default async function Producto({ params }) {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-2 mb-6">
+          <div className="grid grid-cols-3 gap-2 mb-3">
             {[
               { icon: '✅', text: 'Producto original' },
-              { icon: '📦', text: `Envío a todo México · $${COSTO_ENVIO_MXN} MXN si no guardas en Bodegatombe` },
               { icon: '🤝', text: 'Atención directa' },
               { icon: '🔒', text: 'Compra segura' },
-            ].map(({ icon, text }) => (
-              <div key={text} className="flex items-center gap-2 bg-surface border border-[#1f1f1f] rounded-lg px-3 py-2">
+            ].map(({ icon, text }, i) => (
+              <div key={i} className="flex items-center gap-2 bg-surface border border-[#1f1f1f] rounded-lg px-3 py-2">
                 <span className="text-sm">{icon}</span>
                 <span className="text-ink-muted text-xs font-bold">{text}</span>
               </div>
             ))}
+          </div>
+
+          <div className="flex flex-col gap-2 bg-surface border border-[#1f1f1f] rounded-lg px-3 py-3 mb-6">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">🚚</span>
+              <span className="text-ink-muted text-xs font-bold">Envío desde ${COSTO_ENVIO_MXN}</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-sm">📦</span>
+              <span className="text-ink-muted text-xs font-bold leading-relaxed">
+                ¿Quieres ahorrártelo? Guarda tu pedido en <span className="font-black">Bodegatombe</span>, junta ${BODEGA_THRESHOLD_MXN.toLocaleString('es-MX')} en compras y tu envío sale <span className="font-black">GRATIS</span>
+              </span>
+            </div>
           </div>
 
           {/* Botones según tipo */}
