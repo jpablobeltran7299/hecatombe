@@ -172,6 +172,35 @@ function Catalogo() {
 
   const filtrosActivos = marcasSel.length + tematicasSel.length + universosSel.length + lineasSel.length + tipoSel.length + (soloDisponibles ? 1 : 0)
 
+  // Cuenta productos que cumplen todos los filtros activos, excepto el de la faceta indicada
+  // (así el número entre paréntesis refleja los filtros ya aplicados, como precio)
+  const contarFaceta = (facetaExcluida, valor) => {
+    return productos.filter(p => {
+      if (busqueda) {
+        const q = busqueda.toLowerCase()
+        const coincide =
+          p.nombre?.toLowerCase().includes(q) ||
+          p.universo?.toLowerCase().includes(q) ||
+          p.tematica?.toLowerCase().includes(q) ||
+          p.marca?.toLowerCase().includes(q) ||
+          p.linea?.toLowerCase().includes(q)
+        if (!coincide) return false
+      }
+      if (facetaExcluida !== 'marca' && marcasSel.length && !marcasSel.includes(p.marca)) return false
+      if (facetaExcluida !== 'tematica' && tematicasSel.length && !tematicasSel.includes(p.tematica)) return false
+      if (facetaExcluida !== 'universo' && universosSel.length && !universosSel.includes(p.universo)) return false
+      if (facetaExcluida !== 'linea' && lineasSel.length && !lineasSel.includes(p.linea)) return false
+      if (tipoSel.length && !tipoSel.includes(p.tipo)) return false
+      if (soloDisponibles && !p.disponible) return false
+      if (p.precio && (p.precio < rangoMin || p.precio > rangoMax)) return false
+      if (facetaExcluida === 'marca') return p.marca === valor
+      if (facetaExcluida === 'tematica') return p.tematica === valor
+      if (facetaExcluida === 'universo') return p.universo === valor
+      if (facetaExcluida === 'linea') return p.linea === valor
+      return true
+    }).length
+  }
+
   const sidebar = (
     <div className="flex flex-col">
       {filtrosActivos > 0 && (
@@ -190,28 +219,28 @@ function Catalogo() {
         {marcas.map(m => (
           <Checkbox key={m._id} label={m.nombre} checked={marcasSel.includes(m.nombre)}
             onChange={() => toggleItem(m.nombre, marcasSel, setMarcasSel)}
-            count={productos.filter(p => p.marca === m.nombre).length} />
+            count={contarFaceta('marca', m.nombre)} />
         ))}
       </SeccionFiltro>
       <SeccionFiltro titulo="Temática" defaultOpen={false}>
         {tematicas.map(t => (
           <Checkbox key={t._id} label={t.nombre} checked={tematicasSel.includes(t.nombre)}
             onChange={() => toggleItem(t.nombre, tematicasSel, setTematicasSel)}
-            count={productos.filter(p => p.tematica === t.nombre).length} />
+            count={contarFaceta('tematica', t.nombre)} />
         ))}
       </SeccionFiltro>
       <SeccionFiltro titulo="Universo" defaultOpen={false}>
         {universos.map(u => (
           <Checkbox key={u._id} label={u.nombre} checked={universosSel.includes(u.nombre)}
             onChange={() => toggleItem(u.nombre, universosSel, setUniversosSel)}
-            count={productos.filter(p => p.universo === u.nombre).length} />
+            count={contarFaceta('universo', u.nombre)} />
         ))}
       </SeccionFiltro>
       <SeccionFiltro titulo="Tipo de artículo" defaultOpen={false}>
         {lineas.map(l => (
           <Checkbox key={l._id} label={l.nombre} checked={lineasSel.includes(l.nombre)}
             onChange={() => toggleItem(l.nombre, lineasSel, setLineasSel)}
-            count={productos.filter(p => p.linea === l.nombre).length} />
+            count={contarFaceta('linea', l.nombre)} />
         ))}
       </SeccionFiltro>
       <SeccionFiltro titulo="Precio" defaultOpen={false}>

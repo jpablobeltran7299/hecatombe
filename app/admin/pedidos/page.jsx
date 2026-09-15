@@ -17,6 +17,7 @@ export default function AdminPedidos() {
   const [pedidos, setPedidos] = useState([])
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
+  const [filtroProducto, setFiltroProducto] = useState('')
   const [actualizando, setActualizando] = useState(null)
   const router = useRouter()
 
@@ -56,10 +57,15 @@ export default function AdminPedidos() {
     setActualizando(null)
   }
 
+  const productosDisponibles = [...new Map(
+    pedidos.flatMap(p => (p.lineas || []).map(l => l.producto).filter(Boolean).map(prod => [prod._id, prod]))
+  ).values()].sort((a, b) => a.nombre?.localeCompare(b.nombre))
+
   const pedidosFiltrados = pedidos.filter(p => {
     const matchBusqueda = String(p.id).includes(busqueda) || p.mp_payment_id?.includes(busqueda)
     const matchEstado = filtroEstado === 'todos' || p.estado === filtroEstado
-    return matchBusqueda && matchEstado
+    const matchProducto = !filtroProducto || (p.lineas || []).some(l => l.producto_id === filtroProducto)
+    return matchBusqueda && matchEstado && matchProducto
   })
 
   const totalVentas = pedidos
@@ -127,7 +133,22 @@ export default function AdminPedidos() {
               {estado}
             </button>
           ))}
+          <select
+            value={filtroProducto}
+            onChange={e => setFiltroProducto(e.target.value)}
+            className="bg-surface border border-line-strong rounded-lg px-3 py-2 text-ink text-xs font-black uppercase focus:outline-none focus:border-orange-500">
+            <option value="">Todos los productos</option>
+            {productosDisponibles.map(prod => (
+              <option key={prod._id} value={prod._id}>{prod.nombre}</option>
+            ))}
+          </select>
         </div>
+
+        {filtroProducto && (
+          <p className="text-ink-muted text-xs uppercase font-black mb-4 -mt-2">
+            {pedidosFiltrados.length} pedido{pedidosFiltrados.length !== 1 ? 's' : ''} de "{productosDisponibles.find(p => p._id === filtroProducto)?.nombre}"
+          </p>
+        )}
 
         <div className="flex flex-col gap-3">
           {pedidosFiltrados.map(pedido => (
