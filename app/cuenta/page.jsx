@@ -39,6 +39,8 @@ export default function CuentaPage() {
   const DIRECCION_VACIA = { nombre: '', apellido: '', telefono: '', calle: '', colonia: '', ciudad: '', estado: '', cp: '', referencias: '' }
   const [liquidando, setLiquidando] = useState(null)
   const [destinoLiquidacion, setDestinoLiquidacion] = useState({})
+  const [direccionLiquidacion, setDireccionLiquidacion] = useState({})
+  const [confirmoLiquidacion, setConfirmoLiquidacion] = useState({})
   const [solicitandoEnvio, setSolicitandoEnvio] = useState(false)
   const router = useRouter()
 
@@ -196,6 +198,19 @@ export default function CuentaPage() {
   }
 
   async function handleLiquidar(pedido, destino) {
+    if (destino !== 'bodega') {
+      if (!direccionLiquidacion[pedido.id]) {
+        setMensaje('Elige una dirección de envío para liquidar este pedido.')
+        setTimeout(() => setMensaje(''), 3000)
+        return
+      }
+      if (!confirmoLiquidacion[pedido.id]) {
+        setMensaje('Confirma que la dirección es correcta antes de pagar.')
+        setTimeout(() => setMensaje(''), 3000)
+        return
+      }
+    }
+
     setLiquidando(pedido.id)
     try {
       const itemLiquidar = {
@@ -215,6 +230,7 @@ export default function CuentaPage() {
           userEmail: user.email,
           tipo_pedido: 'liquidacion',
           destino,
+          direccion_id: destino !== 'bodega' ? direccionLiquidacion[pedido.id] : null,
           producto_id: pedido.producto_id,
           pedido_id: pedido.id,
         }),
@@ -421,6 +437,7 @@ export default function CuentaPage() {
         {/* Tab: Pedidos */}
         {tab === 'pedidos' && (
           <div className="flex flex-col gap-4">
+            {mensaje && <p className="text-green-400 text-sm font-bold">{mensaje}</p>}
             {pedidos.length === 0 ? (
               <div className="bg-surface border border-line rounded-2xl p-12 text-center">
                 <p className="text-ink/40 mb-2">No tienes pedidos aún</p>
@@ -472,7 +489,43 @@ export default function CuentaPage() {
                         </button>
                       </div>
 
-                      <button onClick={() => handleLiquidar(pedido, destinoLiquidacion[pedido.id] || 'directo')} disabled={liquidando === pedido.id}
+                      {(destinoLiquidacion[pedido.id] || 'directo') === 'directo' && (
+                        <div className="mb-3">
+                          {direcciones.length === 0 ? (
+                            <div className="bg-page rounded-lg p-3 text-center">
+                              <p className="text-ink/40 text-xs mb-2">No tienes direcciones guardadas.</p>
+                              <button onClick={() => setTab('direcciones')} className="text-orange-600 hover:underline text-xs font-black uppercase">Agregar dirección</button>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex flex-col gap-2 mb-2">
+                                {direcciones.map(d => (
+                                  <button key={d.id}
+                                    onClick={() => {
+                                      setDireccionLiquidacion(prev => ({ ...prev, [pedido.id]: d.id }))
+                                      setConfirmoLiquidacion(prev => ({ ...prev, [pedido.id]: false }))
+                                    }}
+                                    className={`text-left p-3 rounded-lg border-2 transition ${direccionLiquidacion[pedido.id] === d.id ? 'border-orange-500 bg-orange-500/10' : 'border-line text-ink/40 hover:border-ink/30'}`}>
+                                    <p className="text-ink text-xs font-black">{d.nombre} {d.apellido} <span className="text-ink/30 font-normal">· {d.telefono}</span></p>
+                                    <p className="text-ink/40 text-xs mt-1">{d.calle}, {d.colonia}, {d.ciudad}, {d.estado} CP {d.cp}</p>
+                                  </button>
+                                ))}
+                              </div>
+                              {direccionLiquidacion[pedido.id] && (
+                                <label className="flex items-start gap-2 cursor-pointer">
+                                  <input type="checkbox" checked={!!confirmoLiquidacion[pedido.id]}
+                                    onChange={e => setConfirmoLiquidacion(prev => ({ ...prev, [pedido.id]: e.target.checked }))}
+                                    className="mt-0.5 w-4 h-4 accent-orange-500 flex-shrink-0" />
+                                  <span className="text-ink text-xs font-bold">Confirmo que esta es la dirección correcta y es donde quiero recibir mi pedido.</span>
+                                </label>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      <button onClick={() => handleLiquidar(pedido, destinoLiquidacion[pedido.id] || 'directo')}
+                        disabled={liquidando === pedido.id || ((destinoLiquidacion[pedido.id] || 'directo') === 'directo' && (!direccionLiquidacion[pedido.id] || !confirmoLiquidacion[pedido.id]))}
                         className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black uppercase py-2 rounded-lg text-sm transition">
                         {liquidando === pedido.id ? 'Procesando...' : `💳 Liquidar $${pedido.monto_liquidacion?.toLocaleString('es-MX')} MXN`}
                       </button>

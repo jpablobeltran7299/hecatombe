@@ -48,10 +48,10 @@ export async function POST(request) {
       hecacoins_a_canjear, destino
     } = await request.json()
 
-    // Se requiere una dirección guardada (y confirmada por el cliente en el
-    // checkout) para apartados y para compras normales con envío directo.
-    // Bodega y liquidación no la piden en este paso.
-    const requiereDireccion = tipo_pedido === 'apartado' || ((tipo_pedido || 'normal') === 'normal' && destino !== 'bodega')
+    // Se requiere una dirección guardada (y confirmada por el cliente) para
+    // apartados, liquidaciones y compras normales, siempre que no vayan a
+    // Bodegatombe (ahí no hace falta todavía).
+    const requiereDireccion = tipo_pedido === 'apartado' || (destino !== 'bodega' && ['normal', 'liquidacion'].includes(tipo_pedido || 'normal'))
     let direccionSnapshot = null
     if (requiereDireccion) {
       if (!direccion_id) {
