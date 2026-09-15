@@ -43,10 +43,31 @@ export async function POST(request) {
 
   try {
     const {
-      items, userId, userEmail, direccion,
+      items, userId, userEmail, direccion_id,
       tipo_pedido, producto_id, pedido_id, anticipo_pagado, monto_liquidacion,
       hecacoins_a_canjear, destino
     } = await request.json()
+
+    // Se requiere una dirección guardada (y confirmada por el cliente en el
+    // checkout) para apartados y para compras normales con envío directo.
+    // Bodega y liquidación no la piden en este paso.
+    const requiereDireccion = tipo_pedido === 'apartado' || ((tipo_pedido || 'normal') === 'normal' && destino !== 'bodega')
+    let direccionSnapshot = null
+    if (requiereDireccion) {
+      if (!direccion_id) {
+        return NextResponse.json({ error: 'Falta elegir una dirección de envío.' }, { status: 400 })
+      }
+      const { data: direccionReal } = await supabase
+        .from('direcciones')
+        .select('nombre, apellido, telefono, calle, colonia, ciudad, estado, cp, referencias')
+        .eq('id', direccion_id)
+        .eq('user_id', userId)
+        .single()
+      if (!direccionReal) {
+        return NextResponse.json({ error: 'La dirección seleccionada no es válida.' }, { status: 400 })
+      }
+      direccionSnapshot = direccionReal
+    }
 
     // Validar precios reales contra Sanity — nunca confiar en el precio que manda el cliente.
     // Para 'liquidacion' el monto correcto no vive en Sanity (puede haber cambiado desde que
@@ -167,6 +188,7 @@ export async function POST(request) {
         producto_id: producto_id || null,
         anticipo_pagado: anticipo_pagado || null,
         monto_liquidacion: tipo_pedido === 'liquidacion' ? montoLiquidacionReal : (monto_liquidacion || null),
+        direccion_snapshot: direccionSnapshot,
       }).select().single()
 
       await supabase.from('hecacoins_movimientos').insert({
@@ -270,6 +292,7 @@ export async function POST(request) {
           monto_liquidacion: tipo_pedido === 'liquidacion' ? montoLiquidacionReal : (monto_liquidacion || null),
           hecacoins_canjeadas: descuentoHecacoins,
           costo_envio: costoEnvio,
+          direccion_id: direccion_id || null,
         }),
         notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook`,
       }

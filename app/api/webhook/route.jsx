@@ -161,7 +161,7 @@ export async function POST(request) {
     }
 
     // Parsear external_reference
-    let userId, tipo_pedido, destino, producto_id, pedido_id_apartado, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas, costo_envio
+    let userId, tipo_pedido, destino, producto_id, pedido_id_apartado, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas, costo_envio, direccion_id
     try {
       const ref = JSON.parse(pago.external_reference)
       userId = ref.userId
@@ -173,11 +173,13 @@ export async function POST(request) {
       monto_liquidacion = ref.monto_liquidacion
       hecacoins_canjeadas = ref.hecacoins_canjeadas || 0
       costo_envio = ref.costo_envio || 0
+      direccion_id = ref.direccion_id || null
     } catch {
       userId = pago.external_reference
       tipo_pedido = 'normal'
       destino = 'directo'
       costo_envio = 0
+      direccion_id = null
     }
 
     // Si es liquidación, verificar que el apartado original siga pendiente —
@@ -210,13 +212,24 @@ export async function POST(request) {
 
     const { data: perfil } = await supabase
       .from('perfiles')
-      .select('nombre, apellido, telefono, calle, colonia, ciudad, estado, cp, referencias')
+      .select('nombre, apellido, telefono')
       .eq('user_id', userId)
       .single()
 
+    // Snapshot de la dirección elegida y confirmada por el cliente en el
+    // checkout — no se relee "perfiles" (que puede ya no coincidir con lo
+    // que el cliente vio y confirmó al pagar).
+    const { data: direccionElegida } = direccion_id
+      ? await supabase
+          .from('direcciones')
+          .select('nombre, apellido, telefono, calle, colonia, ciudad, estado, cp, referencias')
+          .eq('id', direccion_id)
+          .single()
+      : { data: null }
+
     const nombreCliente = perfil?.nombre ? `${perfil.nombre} ${perfil.apellido || ''}`.trim() : userEmail
-    const direccion = perfil
-      ? `${perfil.calle}, ${perfil.colonia}, ${perfil.ciudad}, ${perfil.estado} CP ${perfil.cp}${perfil.referencias ? ` — ${perfil.referencias}` : ''}`
+    const direccion = direccionElegida
+      ? `${direccionElegida.calle}, ${direccionElegida.colonia}, ${direccionElegida.ciudad}, ${direccionElegida.estado} CP ${direccionElegida.cp}${direccionElegida.referencias ? ` — ${direccionElegida.referencias}` : ''}`
       : 'No proporcionada'
 
     // Los "items" del pedido deben ser lo que realmente se pagó, no el carrito
@@ -242,6 +255,7 @@ export async function POST(request) {
       producto_id: producto_id || null,
       anticipo_pagado: anticipo_pagado || null,
       monto_liquidacion: monto_liquidacion || null,
+      direccion_snapshot: direccionElegida || null,
     }).select().single()
 
     if (errorPedido) {

@@ -20,6 +20,9 @@ export default function CheckoutPage() {
     calle: '', colonia: '', ciudad: '',
     estado: '', cp: '', referencias: ''
   })
+  const [direcciones, setDirecciones] = useState([])
+  const [direccionId, setDireccionId] = useState(null)
+  const [confirmoDireccion, setConfirmoDireccion] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
 
@@ -37,6 +40,14 @@ export default function CheckoutPage() {
         .eq('user_id', session.user.id)
         .single()
       if (perfilData) setDireccion(perfilData)
+
+      const { data: direccionesData } = await supabase
+        .from('direcciones')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: true })
+      setDirecciones(direccionesData || [])
+      if (direccionesData?.length === 1) setDireccionId(direccionesData[0].id)
 
       // Cargar saldo Hecacoins
       const { data: hc } = await supabase
@@ -69,10 +80,10 @@ export default function CheckoutPage() {
   async function handlePagar() {
     setError('')
 
-    if (modoEnvio === 'inmediato' || modoApartar) {
-      const requeridos = ['nombre', 'apellido', 'telefono', 'calle', 'colonia', 'ciudad', 'estado', 'cp']
-      const faltantes = requeridos.filter(k => !direccion[k]?.trim())
-      if (faltantes.length > 0) { setError('Por favor completa todos los campos obligatorios.'); return }
+    const requiereDireccion = modoEnvio === 'inmediato' || modoApartar
+    if (requiereDireccion) {
+      if (!direccionId) { setError('Elige una dirección de envío.'); return }
+      if (!confirmoDireccion) { setError('Confirma que la dirección es correcta antes de pagar.'); return }
     } else {
       if (!direccion.nombre?.trim() || !direccion.telefono?.trim()) {
         setError('Por favor ingresa tu nombre y teléfono.'); return
@@ -82,10 +93,14 @@ export default function CheckoutPage() {
     setProcesando(true)
 
     const { data: existente } = await supabase.from('perfiles').select('id').eq('user_id', user.id).single()
+    const datosContacto = { nombre: direccion.nombre, apellido: direccion.apellido, telefono: direccion.telefono }
     if (existente) {
-      await supabase.from('perfiles').update(direccion).eq('user_id', user.id)
+      await supabase.from('perfiles').update(datosContacto).eq('user_id', user.id)
     } else {
-      await supabase.from('perfiles').insert({ user_id: user.id, ...direccion })
+      await supabase.from('perfiles').insert({
+        user_id: user.id, ...datosContacto,
+        calle: '', colonia: '', ciudad: '', estado: '', cp: '', referencias: '',
+      })
     }
 
     try {
@@ -104,7 +119,7 @@ export default function CheckoutPage() {
           items: itemsAPagar,
           userId: user.id,
           userEmail: user.email,
-          direccion,
+          direccion_id: requiereDireccion ? direccionId : null,
           tipo_pedido: tipoPedido,
           destino,
           hecacoins_a_canjear: hecacoinsACanjear,
@@ -259,32 +274,39 @@ export default function CheckoutPage() {
             {(modoEnvio === 'inmediato' || modoApartar) && (
               <div className="bg-surface border border-line rounded-2xl p-6">
                 <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Dirección de envío</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <label className={labelClass}>Calle y número *</label>
-                    <input type="text" value={direccion.calle} onChange={e => setDireccion({ ...direccion, calle: e.target.value })} placeholder="Ej. Av. Constituyentes 123" className={inputClass} />
+
+                {direcciones.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-ink-muted text-sm mb-4">No tienes direcciones guardadas.</p>
+                    <a href="/cuenta?tab=direcciones" className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase px-6 py-3 rounded-xl transition inline-block text-sm">
+                      Agregar dirección
+                    </a>
                   </div>
-                  <div className="col-span-2">
-                    <label className={labelClass}>Colonia *</label>
-                    <input type="text" value={direccion.colonia} onChange={e => setDireccion({ ...direccion, colonia: e.target.value })} placeholder="Nombre de tu colonia" className={inputClass} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Ciudad *</label>
-                    <input type="text" value={direccion.ciudad} onChange={e => setDireccion({ ...direccion, ciudad: e.target.value })} placeholder="Tu ciudad" className={inputClass} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Estado *</label>
-                    <input type="text" value={direccion.estado} onChange={e => setDireccion({ ...direccion, estado: e.target.value })} placeholder="Tu estado" className={inputClass} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Código postal *</label>
-                    <input type="text" value={direccion.cp} onChange={e => setDireccion({ ...direccion, cp: e.target.value })} placeholder="CP" className={inputClass} />
-                  </div>
-                  <div className="col-span-2">
-                    <label className={labelClass}>Referencias <span className="text-ink-muted normal-case font-normal">(opcional)</span></label>
-                    <textarea value={direccion.referencias} onChange={e => setDireccion({ ...direccion, referencias: e.target.value })} placeholder="Ej. Casa azul, portón negro" rows={2} className={`${inputClass} resize-none`} />
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-3 mb-4">
+                      {direcciones.map(d => (
+                        <button key={d.id} onClick={() => { setDireccionId(d.id); setConfirmoDireccion(false) }}
+                          className={`text-left p-4 rounded-xl border-2 transition ${direccionId === d.id ? 'border-orange-500 bg-orange-500/10' : 'border-line hover:border-line-strong'}`}>
+                          <p className="text-ink font-black text-sm">{d.nombre} {d.apellido} <span className="text-ink-muted font-normal">· {d.telefono}</span></p>
+                          <p className="text-ink-muted text-xs mt-1">{d.calle}, {d.colonia}, {d.ciudad}, {d.estado} CP {d.cp}</p>
+                          {d.referencias && <p className="text-ink-muted text-xs mt-1">{d.referencias}</p>}
+                        </button>
+                      ))}
+                    </div>
+                    <a href="/cuenta?tab=direcciones" className="text-orange-600 hover:underline text-xs font-black uppercase">+ Agregar/editar direcciones</a>
+
+                    {direccionId && (
+                      <label className="flex items-start gap-3 mt-5 cursor-pointer">
+                        <input type="checkbox" checked={confirmoDireccion} onChange={e => setConfirmoDireccion(e.target.checked)}
+                          className="mt-0.5 w-4 h-4 accent-orange-500 flex-shrink-0" />
+                        <span className="text-ink text-sm font-bold">
+                          Confirmo que esta es la dirección correcta y es donde quiero recibir mi pedido.
+                        </span>
+                      </label>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -374,7 +396,7 @@ export default function CheckoutPage() {
 
               {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
-              <button onClick={handlePagar} disabled={procesando}
+              <button onClick={handlePagar} disabled={procesando || ((modoEnvio === 'inmediato' || modoApartar) && (!direccionId || !confirmoDireccion))}
                 className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black uppercase py-4 rounded-xl transition">
                 {procesando ? 'Procesando...' : totalFinal === 0 ? '🎉 Canjear con Hecacoins' : modoApartar ? '🔒 Pagar anticipo' : '💳 Ir a pagar'}
               </button>

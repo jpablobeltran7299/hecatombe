@@ -11,6 +11,7 @@ import EstadoBadge from '@/app/components/EstadoBadge'
 import PedidoItemsList from '@/app/components/PedidoItemsList'
 import BodegaProgress from '@/app/components/BodegaProgress'
 import HecacoinsEarnedNote from '@/app/components/HecacoinsEarnedNote'
+import FormDireccion from '@/app/components/FormDireccion'
 
 export default function CuentaPage() {
   const [user, setUser] = useState(null)
@@ -30,18 +31,29 @@ export default function CuentaPage() {
   })
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
+  const [direcciones, setDirecciones] = useState([])
+  const [editandoDireccion, setEditandoDireccion] = useState(null)
+  const [formDireccion, setFormDireccion] = useState(null)
+  const [guardandoDireccion, setGuardandoDireccion] = useState(false)
+  const MAX_DIRECCIONES = 3
+  const DIRECCION_VACIA = { nombre: '', apellido: '', telefono: '', calle: '', colonia: '', ciudad: '', estado: '', cp: '', referencias: '' }
   const [liquidando, setLiquidando] = useState(null)
   const [destinoLiquidacion, setDestinoLiquidacion] = useState({})
   const [solicitandoEnvio, setSolicitandoEnvio] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const tabParam = params.get('tab')
+    if (['perfil', 'direcciones', 'favoritos', 'pedidos', 'bodega', 'hecacoins'].includes(tabParam)) setTab(tabParam)
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) router.push('/login')
       else {
         setUser(session.user)
         cargarFavoritos(session.user.id)
         cargarPerfil(session.user.id)
+        cargarDirecciones(session.user.id)
         cargarPedidos(session.user.id)
         cargarBodega(session.user.id)
         cargarHecacoins(session.user.id)
@@ -72,6 +84,54 @@ export default function CuentaPage() {
     setMensaje('¡Datos guardados correctamente!')
     setGuardando(false)
     setTimeout(() => setMensaje(''), 3000)
+  }
+
+  async function cargarDirecciones(userId) {
+    const { data } = await supabase
+      .from('direcciones')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true })
+    setDirecciones(data || [])
+  }
+
+  function iniciarNuevaDireccion() {
+    setEditandoDireccion('nueva')
+    setFormDireccion({ ...DIRECCION_VACIA, nombre: perfil.nombre, apellido: perfil.apellido, telefono: perfil.telefono })
+  }
+
+  function iniciarEditarDireccion(direccion) {
+    setEditandoDireccion(direccion.id)
+    setFormDireccion({ ...direccion })
+  }
+
+  function cancelarEdicionDireccion() {
+    setEditandoDireccion(null)
+    setFormDireccion(null)
+  }
+
+  async function guardarDireccion() {
+    const requeridos = ['nombre', 'apellido', 'telefono', 'calle', 'colonia', 'ciudad', 'estado', 'cp']
+    if (requeridos.some(k => !formDireccion[k]?.trim())) {
+      setMensaje('Completa todos los campos obligatorios de la dirección.')
+      setTimeout(() => setMensaje(''), 3000)
+      return
+    }
+    setGuardandoDireccion(true)
+    const { id, user_id, created_at, ...datos } = formDireccion
+    if (editandoDireccion === 'nueva') {
+      await supabase.from('direcciones').insert({ user_id: user.id, ...datos })
+    } else {
+      await supabase.from('direcciones').update(datos).eq('id', editandoDireccion)
+    }
+    await cargarDirecciones(user.id)
+    setGuardandoDireccion(false)
+    cancelarEdicionDireccion()
+  }
+
+  async function eliminarDireccion(id) {
+    await supabase.from('direcciones').delete().eq('id', id)
+    setDirecciones(prev => prev.filter(d => d.id !== id))
   }
 
   async function cargarFavoritos(userId) {
@@ -214,6 +274,7 @@ export default function CuentaPage() {
         <div className="flex flex-wrap gap-2 mb-8 border-b border-line">
           {[
             { key: 'perfil', label: 'Perfil' },
+            { key: 'direcciones', label: `Direcciones (${direcciones.length})` },
             { key: 'favoritos', label: `Favoritos (${favoritos.length})` },
             { key: 'pedidos', label: `Pedidos (${pedidos.length})` },
             { key: 'bodega', label: `📦 Bodega${totalBodega > 0 ? ` $${totalBodega.toLocaleString('es-MX')}` : ''}` },
@@ -253,40 +314,69 @@ export default function CuentaPage() {
                 </div>
               </div>
             </div>
-            <div className="bg-surface border border-line rounded-2xl p-6">
-              <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Dirección de envío</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label className={labelClass}>Calle y número</label>
-                  <input type="text" value={perfil.calle} onChange={e => setPerfil({ ...perfil, calle: e.target.value })} placeholder="Ej. Av. Constituyentes 123" className={inputClass} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className={labelClass}>Colonia</label>
-                  <input type="text" value={perfil.colonia} onChange={e => setPerfil({ ...perfil, colonia: e.target.value })} placeholder="Nombre de tu colonia" className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>Ciudad</label>
-                  <input type="text" value={perfil.ciudad} onChange={e => setPerfil({ ...perfil, ciudad: e.target.value })} placeholder="Tu ciudad" className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>Estado</label>
-                  <input type="text" value={perfil.estado} onChange={e => setPerfil({ ...perfil, estado: e.target.value })} placeholder="Tu estado" className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>Código postal</label>
-                  <input type="text" value={perfil.cp} onChange={e => setPerfil({ ...perfil, cp: e.target.value })} placeholder="CP" className={inputClass} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className={labelClass}>Referencias <span className="text-ink/20 normal-case font-normal">(opcional)</span></label>
-                  <textarea value={perfil.referencias} onChange={e => setPerfil({ ...perfil, referencias: e.target.value })} placeholder="Ej. Casa azul, entre Calle 5 y Calle 6, portón negro" rows={2} className={`${inputClass} resize-none`} />
-                </div>
-              </div>
-            </div>
             {mensaje && <p className="text-green-400 text-sm font-bold">{mensaje}</p>}
             <button onClick={guardarPerfil} disabled={guardando}
               className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase py-3 rounded-xl transition w-full sm:w-auto sm:px-8">
               {guardando ? 'Guardando...' : 'Guardar datos'}
             </button>
+          </div>
+        )}
+
+        {/* Tab: Direcciones */}
+        {tab === 'direcciones' && (
+          <div className="flex flex-col gap-4">
+            {mensaje && <p className="text-green-400 text-sm font-bold">{mensaje}</p>}
+
+            {direcciones.map(d => (
+              <div key={d.id} className="bg-surface border border-line rounded-2xl p-6">
+                {editandoDireccion === d.id ? (
+                  <FormDireccion
+                    form={formDireccion} setForm={setFormDireccion}
+                    onGuardar={guardarDireccion} onCancelar={cancelarEdicionDireccion}
+                    guardando={guardandoDireccion} inputClass={inputClass} labelClass={labelClass}
+                  />
+                ) : (
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-ink font-black text-sm">{d.nombre} {d.apellido} <span className="text-ink/30 font-normal">· {d.telefono}</span></p>
+                      <p className="text-ink/50 text-sm mt-1">{d.calle}, {d.colonia}, {d.ciudad}, {d.estado} CP {d.cp}</p>
+                      {d.referencias && <p className="text-ink/30 text-xs mt-1">{d.referencias}</p>}
+                    </div>
+                    <div className="flex gap-3 flex-shrink-0">
+                      <button onClick={() => iniciarEditarDireccion(d)} className="text-orange-600 hover:underline text-xs font-black uppercase">Editar</button>
+                      <button onClick={() => eliminarDireccion(d.id)} className="text-ink/30 hover:text-red-400 text-xs font-black uppercase">Eliminar</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {editandoDireccion === 'nueva' && (
+              <div className="bg-surface border border-line rounded-2xl p-6">
+                <FormDireccion
+                  form={formDireccion} setForm={setFormDireccion}
+                  onGuardar={guardarDireccion} onCancelar={cancelarEdicionDireccion}
+                  guardando={guardandoDireccion} inputClass={inputClass} labelClass={labelClass}
+                />
+              </div>
+            )}
+
+            {direcciones.length === 0 && editandoDireccion !== 'nueva' && (
+              <div className="bg-surface border border-line rounded-2xl p-12 text-center">
+                <p className="text-ink/40 mb-2">No tienes direcciones guardadas</p>
+                <p className="text-ink/20 text-sm mb-6">Agrega una para elegirla rápido al pagar</p>
+              </div>
+            )}
+
+            {direcciones.length < MAX_DIRECCIONES && editandoDireccion === null && (
+              <button onClick={iniciarNuevaDireccion}
+                className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase py-3 rounded-xl transition w-full sm:w-auto sm:px-8">
+                + Agregar dirección
+              </button>
+            )}
+            {direcciones.length >= MAX_DIRECCIONES && (
+              <p className="text-ink/30 text-xs">Máximo {MAX_DIRECCIONES} direcciones guardadas. Elimina una para agregar otra.</p>
+            )}
           </div>
         )}
 
