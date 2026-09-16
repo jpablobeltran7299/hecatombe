@@ -6,7 +6,7 @@ import BotonCarrito from '@/app/components/BotonCarrito'
 import BotonFavorito from '@/app/components/BotonFavorito'
 import BotonApartar from '@/app/components/BotonApartar'
 import BotonInteresPreventa from '@/app/components/BotonInteresPreventa'
-import { COSTO_ENVIO_MXN, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
+import { BODEGA_THRESHOLD_MXN } from '@/lib/constants'
 
 export async function generateMetadata({ params }) {
   const { id } = await params
@@ -152,7 +152,7 @@ export default async function Producto({ params }) {
           <div className="flex flex-col gap-2 bg-surface border border-[#1f1f1f] rounded-lg px-3 py-3 mb-6">
             <div className="flex items-center gap-2">
               <span className="text-sm">🚚</span>
-              <span className="text-ink-muted text-xs font-bold">Envío desde ${COSTO_ENVIO_MXN}</span>
+              <span className="text-ink-muted text-xs font-bold">Elige tu paquetería, al mejor costo</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-sm">📦</span>
