@@ -19,13 +19,18 @@ export async function POST(request) {
   try {
     const { nombre, descripcion, precio, stock, marca, tematica, universo, linea,
       tipo, disponible, activo, destacado, ultimasPiezas, anticipo, precioLiquidacion,
-      fechaEstimada, imagenes, ordenDestacado } = await request.json()
+      fechaEstimada, imagenes, ordenDestacado, peso, alto, ancho, largo } = await request.json()
 
     if (precio !== '' && precio !== undefined && isNaN(parseFloat(precio))) {
       return NextResponse.json({ error: 'Precio inválido' }, { status: 400 })
     }
     if (stock !== '' && stock !== undefined && isNaN(parseInt(stock))) {
       return NextResponse.json({ error: 'Stock inválido' }, { status: 400 })
+    }
+    for (const [campo, valor] of Object.entries({ peso, alto, ancho, largo })) {
+      if (valor !== '' && valor !== undefined && isNaN(parseFloat(valor))) {
+        return NextResponse.json({ error: `${campo} inválido` }, { status: 400 })
+      }
     }
 
     const doc = {
@@ -40,6 +45,10 @@ export async function POST(request) {
       ...(precio !== '' && precio !== undefined && { precio: parseFloat(precio) }),
       ...(stock !== '' && stock !== undefined && { stock: parseInt(stock) }),
       ...(ordenDestacado !== '' && ordenDestacado !== undefined && { ordenDestacado: parseInt(ordenDestacado) }),
+      ...(peso !== '' && peso !== undefined && { peso: parseFloat(peso) }),
+      ...(alto !== '' && alto !== undefined && { alto: parseFloat(alto) }),
+      ...(ancho !== '' && ancho !== undefined && { ancho: parseFloat(ancho) }),
+      ...(largo !== '' && largo !== undefined && { largo: parseFloat(largo) }),
       ...(marca && { marca: { _type: 'reference', _ref: marca } }),
       ...(tematica && { tematica: { _type: 'reference', _ref: tematica } }),
       ...(universo && { universo: { _type: 'reference', _ref: universo } }),
@@ -71,13 +80,18 @@ export async function PUT(request) {
   try {
     const { id, nombre, descripcion, precio, stock, marca, tematica, universo, linea,
       tipo, disponible, activo, destacado, ultimasPiezas, anticipo, precioLiquidacion,
-      fechaEstimada, imagenes, ordenDestacado } = await request.json()
+      fechaEstimada, imagenes, ordenDestacado, peso, alto, ancho, largo } = await request.json()
 
     if (precio !== '' && precio !== undefined && isNaN(parseFloat(precio))) {
       return NextResponse.json({ error: 'Precio inválido' }, { status: 400 })
     }
     if (stock !== '' && stock !== undefined && isNaN(parseInt(stock))) {
       return NextResponse.json({ error: 'Stock inválido' }, { status: 400 })
+    }
+    for (const [campo, valor] of Object.entries({ peso, alto, ancho, largo })) {
+      if (valor !== '' && valor !== undefined && isNaN(parseFloat(valor))) {
+        return NextResponse.json({ error: `${campo} inválido` }, { status: 400 })
+      }
     }
 
     const campos = {
@@ -93,6 +107,10 @@ export async function PUT(request) {
     if (precio !== '' && precio !== undefined) campos.precio = parseFloat(precio)
     if (stock !== '' && stock !== undefined) campos.stock = parseInt(stock)
     if (ordenDestacado !== '' && ordenDestacado !== undefined) campos.ordenDestacado = parseInt(ordenDestacado)
+    if (peso !== '' && peso !== undefined) campos.peso = parseFloat(peso)
+    if (alto !== '' && alto !== undefined) campos.alto = parseFloat(alto)
+    if (ancho !== '' && ancho !== undefined) campos.ancho = parseFloat(ancho)
+    if (largo !== '' && largo !== undefined) campos.largo = parseFloat(largo)
     if (marca) campos.marca = { _type: 'reference', _ref: marca }
     if (tematica) campos.tematica = { _type: 'reference', _ref: tematica }
     if (universo) campos.universo = { _type: 'reference', _ref: universo }

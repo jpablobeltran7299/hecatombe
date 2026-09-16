@@ -5,6 +5,7 @@ import { Resend } from 'resend'
 import crypto from 'crypto'
 import { getSanityWriteClient, descontarStock } from '@/lib/sanityAdmin'
 import { ajustarHecacoins } from '@/lib/hecacoins'
+import { obtenerCotizacion } from '@/lib/soloenvios'
 
 export const dynamic = 'force-dynamic'
 
@@ -161,7 +162,7 @@ export async function POST(request) {
     }
 
     // Parsear external_reference
-    let userId, tipo_pedido, destino, producto_id, pedido_id_apartado, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas, costo_envio, direccion_id
+    let userId, tipo_pedido, destino, producto_id, pedido_id_apartado, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas, costo_envio, direccion_id, quotation_id, rate_id
     try {
       const ref = JSON.parse(pago.external_reference)
       userId = ref.userId
@@ -174,12 +175,16 @@ export async function POST(request) {
       hecacoins_canjeadas = ref.hecacoins_canjeadas || 0
       costo_envio = ref.costo_envio || 0
       direccion_id = ref.direccion_id || null
+      quotation_id = ref.quotation_id || null
+      rate_id = ref.rate_id || null
     } catch {
       userId = pago.external_reference
       tipo_pedido = 'normal'
       destino = 'directo'
       costo_envio = 0
       direccion_id = null
+      quotation_id = null
+      rate_id = null
     }
 
     // Si es liquidación, verificar que el apartado original siga pendiente —
@@ -227,6 +232,28 @@ export async function POST(request) {
           .single()
       : { data: null }
 
+    // Detalle de la tarifa de envío elegida — se vuelve a leer la cotización
+    // completa (proveedor, servicio, días) a partir de los IDs pequeños.
+    let envioCotizacion = null
+    if (quotation_id && rate_id) {
+      try {
+        const { tarifas } = await obtenerCotizacion(quotation_id)
+        const tarifaElegida = tarifas.find(t => t.id === rate_id)
+        if (tarifaElegida) {
+          envioCotizacion = {
+            quotation_id,
+            rate_id,
+            proveedor: tarifaElegida.provider_display_name,
+            servicio: tarifaElegida.provider_service_name,
+            total: parseFloat(tarifaElegida.total),
+            dias: tarifaElegida.days,
+          }
+        }
+      } catch (e) {
+        console.error('No se pudo releer la cotización de envío:', e)
+      }
+    }
+
     const nombreCliente = perfil?.nombre ? `${perfil.nombre} ${perfil.apellido || ''}`.trim() : userEmail
     const direccion = direccionElegida
       ? `${direccionElegida.calle}, ${direccionElegida.colonia}, ${direccionElegida.ciudad}, ${direccionElegida.estado} CP ${direccionElegida.cp}${direccionElegida.referencias ? ` — ${direccionElegida.referencias}` : ''}`
@@ -256,6 +283,7 @@ export async function POST(request) {
       anticipo_pagado: anticipo_pagado || null,
       monto_liquidacion: monto_liquidacion || null,
       direccion_snapshot: direccionElegida || null,
+      envio_cotizacion: envioCotizacion,
     }).select().single()
 
     if (errorPedido) {
@@ -383,7 +411,7 @@ export async function POST(request) {
                         }
                       </td></tr>
                       ${esApartado && monto_liquidacion ? `<tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Restante a liquidar: <span style="color:#fff;">$${monto_liquidacion?.toLocaleString('es-MX')} MXN</span></td></tr>` : ''}
-                      ${costo_envio > 0 ? `<tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Incluye envío: <span style="color:#fff;">$${costo_envio.toLocaleString('es-MX')} MXN</span></td></tr>` : ''}
+                      ${costo_envio > 0 ? `<tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Incluye envío${envioCotizacion ? ` (${envioCotizacion.proveedor})` : ''}: <span style="color:#fff;">$${costo_envio.toLocaleString('es-MX')} MXN</span></td></tr>` : ''}
                       ${!esBodega ? `<tr><td style="color:#aaa;font-size:13px;">Dirección de envío: ${direccion}</td></tr>` : ''}
                     </table>
                     <p style="color:#555;font-size:12px;margin:0;">¿Tienes dudas? Escríbenos por WhatsApp al <a href="https://wa.me/524427183787" style="color:#f97316;">524427183787</a></p>

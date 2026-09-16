@@ -5,6 +5,7 @@ import { Resend } from 'resend'
 import { getProducto, getProductosPorIds, calcularPrecioFinal } from '@/lib/sanity'
 import { getSanityWriteClient, descontarStock } from '@/lib/sanityAdmin'
 import { ajustarHecacoins } from '@/lib/hecacoins'
+import { obtenerCotizacion } from '@/lib/soloenvios'
 import { COSTO_ENVIO_MXN, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
 
 // Rate limit en memoria: 10 solicitudes por IP cada 60s.
@@ -45,7 +46,7 @@ export async function POST(request) {
     const {
       items, userId, userEmail, direccion_id,
       tipo_pedido, producto_id, pedido_id, anticipo_pagado, monto_liquidacion,
-      hecacoins_a_canjear, destino
+      hecacoins_a_canjear, destino, quotation_id, rate_id
     } = await request.json()
 
     // Se requiere una dirección guardada (y confirmada por el cliente) para
@@ -137,9 +138,34 @@ export async function POST(request) {
     // Costo de envío: se calcula aquí, nunca se confía en lo que mande el cliente.
     // Aplica en compras normales y en liquidaciones de preventa que eligen
     // envío directo (no bodega) y no alcanzan el monto de envío gratis.
-    const costoEnvio = ['normal', 'liquidacion'].includes(tipo_pedido || 'normal') && destino !== 'bodega' && totalOriginal < BODEGA_THRESHOLD_MXN
-      ? COSTO_ENVIO_MXN
-      : 0
+    const requiereEnvioPago = ['normal', 'liquidacion'].includes(tipo_pedido || 'normal') && destino !== 'bodega' && totalOriginal < BODEGA_THRESHOLD_MXN
+
+    let costoEnvio = 0
+    let envioCotizacion = null
+    if (requiereEnvioPago) {
+      if (quotation_id && rate_id) {
+        // Se vuelve a leer la cotización real y se verifica que la tarifa
+        // elegida siga ahí — nunca se confía en el monto que manda el cliente.
+        const { tarifas } = await obtenerCotizacion(quotation_id)
+        const tarifaElegida = tarifas.find(t => t.id === rate_id)
+        if (!tarifaElegida) {
+          return NextResponse.json({ error: 'La tarifa de envío elegida ya no es válida. Vuelve a cotizar.' }, { status: 400 })
+        }
+        costoEnvio = parseFloat(tarifaElegida.total)
+        envioCotizacion = {
+          quotation_id,
+          rate_id,
+          proveedor: tarifaElegida.provider_display_name,
+          servicio: tarifaElegida.provider_service_name,
+          total: costoEnvio,
+          dias: tarifaElegida.days,
+        }
+      } else {
+        // Fallback temporal: la liquidación de preventas aún no cotiza en
+        // tiempo real (pendiente), así que sigue usando el monto fijo.
+        costoEnvio = COSTO_ENVIO_MXN
+      }
+    }
 
     // Validar Hecacoins si se quieren canjear
     let descuentoHecacoins = 0
@@ -189,6 +215,7 @@ export async function POST(request) {
         anticipo_pagado: anticipo_pagado || null,
         monto_liquidacion: tipo_pedido === 'liquidacion' ? montoLiquidacionReal : (monto_liquidacion || null),
         direccion_snapshot: direccionSnapshot,
+        envio_cotizacion: envioCotizacion,
       }).select().single()
 
       await supabase.from('hecacoins_movimientos').insert({
@@ -293,6 +320,11 @@ export async function POST(request) {
           hecacoins_canjeadas: descuentoHecacoins,
           costo_envio: costoEnvio,
           direccion_id: direccion_id || null,
+          // Solo IDs pequeños — el webhook vuelve a leer la cotización
+          // completa (proveedor, servicio, días) para no arriesgar el
+          // límite de tamaño de external_reference de Mercado Pago.
+          quotation_id: envioCotizacion?.quotation_id || null,
+          rate_id: envioCotizacion?.rate_id || null,
         }),
         notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook`,
       }

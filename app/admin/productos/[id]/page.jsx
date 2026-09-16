@@ -42,6 +42,10 @@ export default function EditarProducto({ params }) {
     anticipo: '',
     precioLiquidacion: '',
     fechaEstimada: '',
+    peso: '',
+    alto: '',
+    ancho: '',
+    largo: '',
   })
 
   const router = useRouter()
@@ -101,6 +105,10 @@ export default function EditarProducto({ params }) {
         anticipo: producto.anticipo || '',
         precioLiquidacion: producto.precioLiquidacion || '',
         fechaEstimada: producto.fechaEstimada || '',
+        peso: producto.peso ?? '',
+        alto: producto.alto ?? '',
+        ancho: producto.ancho ?? '',
+        largo: producto.largo ?? '',
       })
     }
     setLoading(false)
@@ -223,6 +231,30 @@ export default function EditarProducto({ params }) {
                   <label className={labelClass}>Stock</label>
                   <input type="number" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} placeholder="Dejar vacío si no aplica" className={inputClass} />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Envío */}
+          <div className="bg-surface border border-line rounded-2xl p-6">
+            <h2 className="text-lg font-black uppercase text-orange-600 mb-2">Envío</h2>
+            <p className="text-ink-muted text-xs mb-6">Peso y dimensiones del paquete, necesarios para cotizar el envío.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <label className={labelClass}>Peso (kg)</label>
+                <input type="number" step="0.01" value={form.peso} onChange={e => setForm({ ...form, peso: e.target.value })} placeholder="0.35" className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Alto (cm)</label>
+                <input type="number" step="0.1" value={form.alto} onChange={e => setForm({ ...form, alto: e.target.value })} placeholder="0" className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Ancho (cm)</label>
+                <input type="number" step="0.1" value={form.ancho} onChange={e => setForm({ ...form, ancho: e.target.value })} placeholder="0" className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Largo (cm)</label>
+                <input type="number" step="0.1" value={form.largo} onChange={e => setForm({ ...form, largo: e.target.value })} placeholder="0" className={inputClass} />
               </div>
             </div>
           </div>

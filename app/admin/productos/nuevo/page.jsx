@@ -39,6 +39,12 @@ export default function NuevoProducto() {
     anticipo: '',
     precioLiquidacion: '',
     fechaEstimada: '',
+    // Medidas típicas de una caja de Funko Pop estándar — ajusta si el
+    // producto es distinto (peluche, caja grande, etc.)
+    peso: '0.2',
+    alto: '15',
+    ancho: '10',
+    largo: '10',
   })
 
   const router = useRouter()
@@ -154,6 +160,30 @@ export default function NuevoProducto() {
                   <label className={labelClass}>Stock inicial</label>
                   <input type="number" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} placeholder="Dejar vacío si no aplica" className={inputClass} />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Envío */}
+          <div className="bg-surface border border-line rounded-2xl p-6">
+            <h2 className="text-lg font-black uppercase text-orange-600 mb-2">Envío</h2>
+            <p className="text-ink-muted text-xs mb-6">Peso y dimensiones del paquete, necesarios para cotizar el envío. Ya vienen con la medida típica de una caja de Funko — cámbialos solo si este producto es distinto.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <label className={labelClass}>Peso (kg)</label>
+                <input type="number" step="0.01" value={form.peso} onChange={e => setForm({ ...form, peso: e.target.value })} placeholder="0.35" className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Alto (cm)</label>
+                <input type="number" step="0.1" value={form.alto} onChange={e => setForm({ ...form, alto: e.target.value })} placeholder="0" className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Ancho (cm)</label>
+                <input type="number" step="0.1" value={form.ancho} onChange={e => setForm({ ...form, ancho: e.target.value })} placeholder="0" className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Largo (cm)</label>
+                <input type="number" step="0.1" value={form.largo} onChange={e => setForm({ ...form, largo: e.target.value })} placeholder="0" className={inputClass} />
               </div>
             </div>
           </div>

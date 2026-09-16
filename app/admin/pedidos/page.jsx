@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/app/components/AuthProvider'
 import { ADMINS } from '@/lib/constants'
+import { adminFetch } from '@/lib/adminFetch'
 import { resolverItemsPedidos } from '@/lib/pedidos'
 import EstadoBadge from '@/app/components/EstadoBadge'
 import PedidoItemsList from '@/app/components/PedidoItemsList'
@@ -19,6 +20,8 @@ export default function AdminPedidos() {
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [filtroProducto, setFiltroProducto] = useState('')
   const [actualizando, setActualizando] = useState(null)
+  const [generandoGuia, setGenerandoGuia] = useState(null)
+  const [errorGuia, setErrorGuia] = useState({})
   const router = useRouter()
 
   useEffect(() => {
@@ -33,7 +36,7 @@ export default function AdminPedidos() {
   async function cargarPedidos() {
     const { data } = await supabase
       .from('pedidos')
-      .select('id, created_at, total, estado, tipo_pedido, destino, bodega_estado, mp_payment_id, anticipo_pagado, monto_liquidacion, user_id, items, producto_id')
+      .select('id, created_at, total, estado, tipo_pedido, destino, bodega_estado, mp_payment_id, anticipo_pagado, monto_liquidacion, user_id, items, producto_id, envio_cotizacion, guia')
       .order('created_at', { ascending: false })
 
     const pedidosData = data || []
@@ -55,6 +58,23 @@ export default function AdminPedidos() {
     await supabase.from('pedidos').update({ estado: nuevoEstado }).eq('id', pedidoId)
     setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, estado: nuevoEstado } : p))
     setActualizando(null)
+  }
+
+  async function handleGenerarGuia(pedidoId) {
+    setGenerandoGuia(pedidoId)
+    setErrorGuia(prev => ({ ...prev, [pedidoId]: '' }))
+    const res = await adminFetch('/api/admin/generar-envio', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pedido_id: pedidoId }),
+    })
+    const data = await res.json()
+    if (data.ok) {
+      setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, guia: data.guia } : p))
+    } else {
+      setErrorGuia(prev => ({ ...prev, [pedidoId]: data.error || 'Error al generar la guía.' }))
+    }
+    setGenerandoGuia(null)
   }
 
   const productosDisponibles = [...new Map(
@@ -177,6 +197,28 @@ export default function AdminPedidos() {
                   </div>
                 )}
                 <HecacoinsEarnedNote pedido={pedido} className="mt-2" />
+
+                {pedido.destino !== 'bodega' && ['pagado', 'liquidado', 'enviado'].includes(pedido.estado) && (
+                  <div className="mt-3">
+                    {pedido.guia?.trackingNumber ? (
+                      <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                        <p className="text-green-400 text-xs font-black uppercase">📦 Guía generada · {pedido.guia.proveedor}</p>
+                        <p className="text-ink-muted text-xs mt-1">Rastreo: {pedido.guia.trackingNumber}</p>
+                        {pedido.guia.labelUrl && (
+                          <a href={pedido.guia.labelUrl} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:underline text-xs font-black uppercase mt-1 inline-block">Descargar guía →</a>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <button onClick={() => handleGenerarGuia(pedido.id)} disabled={generandoGuia === pedido.id}
+                          className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black font-black uppercase text-xs px-4 py-2 rounded-lg transition">
+                          {generandoGuia === pedido.id ? 'Generando guía...' : '📦 Generar guía de envío'}
+                        </button>
+                        {errorGuia[pedido.id] && <p className="text-red-400 text-xs mt-2">{errorGuia[pedido.id]}</p>}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="text-right">
