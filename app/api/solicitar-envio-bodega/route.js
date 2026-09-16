@@ -52,6 +52,7 @@ export async function POST(request) {
       await supabase.from('pedidos')
         .update({ bodega_estado: 'solicitado', bodega_tipo_solicitud: 'gratis', direccion_snapshot: direccion })
         .in('id', pedidoIds)
+        .eq('bodega_estado', 'guardando')
 
       try {
         await resend.emails.send({
