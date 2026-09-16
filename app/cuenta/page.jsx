@@ -43,6 +43,10 @@ export default function CuentaPage() {
   const [confirmoLiquidacion, setConfirmoLiquidacion] = useState({})
   const [cotizacionLiquidacion, setCotizacionLiquidacion] = useState({})
   const [solicitandoEnvio, setSolicitandoEnvio] = useState(false)
+  const [direccionBodega, setDireccionBodega] = useState(null)
+  const [cotizacionBodega, setCotizacionBodega] = useState(null)
+  const [tarifaBodega, setTarifaBodega] = useState(null)
+  const [mostrarSolicitudBodega, setMostrarSolicitudBodega] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -275,10 +279,64 @@ export default function CuentaPage() {
     setLiquidando(null)
   }
 
+  async function elegirDireccionBodega(direccionId) {
+    setDireccionBodega(direccionId)
+    setTarifaBodega(null)
+    setCotizacionBodega({ cotizando: true })
+    const res = await fetch('/api/cotizar-envio-bodega', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, direccionId }),
+    })
+    const data = await res.json()
+    setCotizacionBodega({ cotizando: false, ...data })
+  }
+
   async function handleSolicitarEnvio() {
+    if (!direccionBodega) {
+      setMensaje('Elige una dirección de envío.')
+      setTimeout(() => setMensaje(''), 3000)
+      return
+    }
+    if (!cotizacionBodega?.envioGratis && !tarifaBodega) {
+      setMensaje('Elige una paquetería para adelantar tu envío.')
+      setTimeout(() => setMensaje(''), 3000)
+      return
+    }
+
     setSolicitandoEnvio(true)
-    const msg = `Hola, quiero solicitar el envío de mis productos en Bodegatombe. Mi correo es ${user?.email}. Total acumulado: $${bodega?.total_acumulado?.toLocaleString('es-MX')} MXN`
-    window.open(`https://wa.me/524427183787?text=${encodeURIComponent(msg)}`, '_blank')
+    try {
+      const res = await fetch('/api/solicitar-envio-bodega', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          userEmail: user.email,
+          direccionId: direccionBodega,
+          quotation_id: cotizacionBodega?.envioGratis ? null : cotizacionBodega?.quotationId,
+          rate_id: cotizacionBodega?.envioGratis ? null : tarifaBodega,
+        }),
+      })
+      const data = await res.json()
+      if (data.init_point) {
+        window.location.href = data.init_point
+      } else if (data.ok) {
+        setMensaje('✅ Solicitud enviada — te avisaremos cuando tu envío esté en camino.')
+        setMostrarSolicitudBodega(false)
+        setDireccionBodega(null)
+        setCotizacionBodega(null)
+        setTarifaBodega(null)
+        cargarBodega(user.id)
+        setTimeout(() => setMensaje(''), 4000)
+      } else {
+        setMensaje(data.error || 'No se pudo solicitar el envío.')
+        setTimeout(() => setMensaje(''), 4000)
+      }
+    } catch (err) {
+      console.error(err)
+      setMensaje('No se pudo solicitar el envío. Intenta de nuevo.')
+      setTimeout(() => setMensaje(''), 4000)
+    }
     setSolicitandoEnvio(false)
   }
 
@@ -620,19 +678,75 @@ export default function CuentaPage() {
             <div className="bg-surface border border-line rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-600 mb-2">Bodegatombe</h2>
               <p className="text-ink/40 text-sm mb-6">Acumula $1,200 MXN en compras y obtén envío gratis a todo México.</p>
+              {mensaje && <p className="text-green-400 text-sm font-bold mb-4">{mensaje}</p>}
               {totalBodega > 0 ? (
                 <>
                   <div className="mb-4">
                     <BodegaProgress total={totalBodega} />
                   </div>
-                  <button onClick={handleSolicitarEnvio} disabled={solicitandoEnvio}
-                    className={`w-full font-black uppercase py-4 rounded-xl transition text-sm ${faltaBodega === 0 ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'border border-orange-500 text-orange-500 hover:bg-orange-500/10'}`}>
-                    {solicitandoEnvio ? 'Procesando...' : faltaBodega === 0 ? '🚚 Solicitar envío gratis' : '🚚 Solicitar envío ahora'}
-                  </button>
-                  {faltaBodega > 0 && (
-                    <div className="text-ink/20 text-xs text-center mt-2">
-                      <p>🚚 Envío desde ${COSTO_ENVIO_MXN}</p>
-                      <p className="mt-1">📦 ¿Quieres ahorrártelo? Guarda tu pedido en <span className="font-black">Bodegatombe</span>, junta ${BODEGA_THRESHOLD_MXN.toLocaleString('es-MX')} en compras y tu envío sale <span className="font-black">GRATIS</span></p>
+
+                  {!mostrarSolicitudBodega ? (
+                    <>
+                      <button onClick={() => setMostrarSolicitudBodega(true)}
+                        className={`w-full font-black uppercase py-4 rounded-xl transition text-sm ${faltaBodega === 0 ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'border border-orange-500 text-orange-500 hover:bg-orange-500/10'}`}>
+                        {faltaBodega === 0 ? '🚚 Solicitar envío gratis' : '🚚 Solicitar envío ahora'}
+                      </button>
+                      {faltaBodega > 0 && (
+                        <div className="text-ink/20 text-xs text-center mt-2">
+                          <p>🚚 Envío desde ${COSTO_ENVIO_MXN}</p>
+                          <p className="mt-1">📦 ¿Quieres ahorrártelo? Guarda tu pedido en <span className="font-black">Bodegatombe</span>, junta ${BODEGA_THRESHOLD_MXN.toLocaleString('es-MX')} en compras y tu envío sale <span className="font-black">GRATIS</span></p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {direcciones.length === 0 ? (
+                        <div className="bg-page rounded-lg p-3 text-center">
+                          <p className="text-ink/40 text-xs mb-2">No tienes direcciones guardadas.</p>
+                          <button onClick={() => setTab('direcciones')} className="text-orange-600 hover:underline text-xs font-black uppercase">Agregar dirección</button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          {direcciones.map(d => (
+                            <button key={d.id} onClick={() => elegirDireccionBodega(d.id)}
+                              className={`text-left p-3 rounded-lg border-2 transition ${direccionBodega === d.id ? 'border-orange-500 bg-orange-500/10' : 'border-line text-ink/40 hover:border-ink/30'}`}>
+                              <p className="text-ink text-xs font-black">{d.nombre} {d.apellido} <span className="text-ink/30 font-normal">· {d.telefono}</span></p>
+                              <p className="text-ink/40 text-xs mt-1">{d.calle}, {d.colonia}, {d.ciudad}, {d.estado} CP {d.cp}</p>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {cotizacionBodega?.cotizando && <p className="text-ink/40 text-xs">Cotizando envío...</p>}
+                      {cotizacionBodega?.error && <p className="text-red-400 text-xs">{cotizacionBodega.error}</p>}
+
+                      {cotizacionBodega?.envioGratis && (
+                        <p className="text-green-400 text-xs font-bold">✅ ¡Tu envío es gratis! Hecatombe elegirá la paquetería y te avisaremos cuando esté en camino.</p>
+                      )}
+
+                      {cotizacionBodega?.tarifas?.length > 0 && (
+                        <div className="flex flex-col gap-2">
+                          <p className="text-ink/40 text-xs">Aún te faltan ${cotizacionBodega.falta?.toLocaleString('es-MX')} MXN para envío gratis — puedes pagar la tarifa real para adelantarlo:</p>
+                          {cotizacionBodega.tarifas.map(t => (
+                            <button key={t.rateId} onClick={() => setTarifaBodega(t.rateId)}
+                              className={`flex items-center justify-between gap-2 text-left p-2 rounded-lg border-2 transition ${tarifaBodega === t.rateId ? 'border-orange-500 bg-orange-500/10' : 'border-line text-ink/40 hover:border-ink/30'}`}>
+                              <p className="text-ink text-xs font-black">{t.proveedor} <span className="text-ink/30 font-normal">· {t.servicio}</span></p>
+                              <span className="text-orange-600 font-black text-xs whitespace-nowrap">${t.total.toLocaleString('es-MX')}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 mt-2">
+                        <button onClick={handleSolicitarEnvio} disabled={solicitandoEnvio}
+                          className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black uppercase py-3 rounded-xl transition text-sm">
+                          {solicitandoEnvio ? 'Procesando...' : cotizacionBodega?.tarifas?.length > 0 ? `💳 Pagar $${(cotizacionBodega.tarifas.find(t => t.rateId === tarifaBodega)?.total || 0).toLocaleString('es-MX')} y solicitar` : 'Confirmar solicitud'}
+                        </button>
+                        <button onClick={() => { setMostrarSolicitudBodega(false); setDireccionBodega(null); setCotizacionBodega(null); setTarifaBodega(null) }}
+                          className="text-ink/40 hover:text-ink font-black uppercase py-3 px-4 rounded-xl transition text-sm">
+                          Cancelar
+                        </button>
+                      </div>
                     </div>
                   )}
                 </>

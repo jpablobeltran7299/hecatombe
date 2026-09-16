@@ -162,7 +162,7 @@ export async function POST(request) {
     }
 
     // Parsear external_reference
-    let userId, tipo_pedido, destino, producto_id, pedido_id_apartado, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas, costo_envio, direccion_id, quotation_id, rate_id
+    let userId, tipo_pedido, destino, producto_id, pedido_id_apartado, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas, costo_envio, direccion_id, quotation_id, rate_id, pedido_ids_bodega, envio_proveedor, envio_servicio, envio_dias
     try {
       const ref = JSON.parse(pago.external_reference)
       userId = ref.userId
@@ -177,6 +177,10 @@ export async function POST(request) {
       direccion_id = ref.direccion_id || null
       quotation_id = ref.quotation_id || null
       rate_id = ref.rate_id || null
+      pedido_ids_bodega = ref.pedido_ids || null
+      envio_proveedor = ref.proveedor || null
+      envio_servicio = ref.servicio || null
+      envio_dias = ref.dias ?? null
     } catch {
       userId = pago.external_reference
       tipo_pedido = 'normal'
@@ -185,6 +189,57 @@ export async function POST(request) {
       direccion_id = null
       quotation_id = null
       rate_id = null
+      pedido_ids_bodega = null
+      envio_proveedor = null
+      envio_servicio = null
+      envio_dias = null
+    }
+
+    // Envío anticipado de Bodegatombe: no es un pedido nuevo, es el pago de
+    // envío de varios pedidos ya existentes que siguen guardados — se
+    // maneja aparte y no pasa por el resto de la lógica (stock, Hecacoins, etc).
+    if (tipo_pedido === 'envio_bodega') {
+      const { data: yaProcesado } = await supabase
+        .from('pedidos')
+        .select('id')
+        .eq('bodega_envio_mp_payment_id', String(paymentId))
+        .limit(1)
+
+      if (yaProcesado && yaProcesado.length > 0) {
+        return NextResponse.json({ ok: true })
+      }
+
+      const { data: direccionElegida } = await supabase
+        .from('direcciones')
+        .select('nombre, apellido, telefono, calle, colonia, ciudad, estado, cp, referencias')
+        .eq('id', direccion_id)
+        .single()
+
+      await supabase.from('pedidos')
+        .update({
+          bodega_estado: 'solicitado',
+          bodega_tipo_solicitud: 'pagado',
+          bodega_envio_mp_payment_id: String(paymentId),
+          direccion_snapshot: direccionElegida || null,
+          envio_cotizacion: { quotation_id, rate_id, total: costo_envio, proveedor: envio_proveedor, servicio: envio_servicio, dias: envio_dias },
+        })
+        .in('id', pedido_ids_bodega || [])
+        .eq('user_id', userId)
+        .eq('destino', 'bodega')
+        .eq('bodega_estado', 'guardando')
+
+      try {
+        await resend.emails.send({
+          from: 'Hecatombe Sistema <noreply@hecatombe.com.mx>',
+          to: 'hecatombe.9194@gmail.com',
+          subject: `📦 Envío de Bodegatombe pagado — $${costo_envio.toLocaleString('es-MX')} MXN`,
+          html: `<p>Cliente pagó por adelantar su envío de Bodegatombe.<br>Pedidos: ${(pedido_ids_bodega || []).join(', ')}<br>Envío pagado: $${costo_envio.toLocaleString('es-MX')} MXN<br><br>Entra a /admin/bodega para generar la guía con la tarifa ya elegida.</p>`,
+        })
+      } catch (e) {
+        console.error('Error enviando aviso de envío de bodega pagado:', e)
+      }
+
+      return NextResponse.json({ ok: true })
     }
 
     // Si es liquidación, verificar que el apartado original siga pendiente —

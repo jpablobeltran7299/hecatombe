@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requireAdmin } from '@/lib/adminAuth'
 import { getProductosPorIds } from '@/lib/sanity'
 import { crearEnvio } from '@/lib/soloenvios'
-import { PAQUETE_POR_DEFECTO } from '@/lib/constants'
+import { armarParcels } from '@/lib/paquetes'
 
 export async function POST(request) {
   const auth = await requireAdmin(request)
@@ -57,17 +57,7 @@ export async function POST(request) {
     const productosMap = {}
     productos.forEach(p => { productosMap[p._id] = p })
 
-    const parcels = []
-    for (const item of itemsPedido) {
-      const producto = productosMap[item.producto_id]
-      const medida = {
-        weight: producto?.peso || PAQUETE_POR_DEFECTO.peso,
-        length: producto?.largo || PAQUETE_POR_DEFECTO.largo,
-        width: producto?.ancho || PAQUETE_POR_DEFECTO.ancho,
-        height: producto?.alto || PAQUETE_POR_DEFECTO.alto,
-      }
-      for (let i = 0; i < (item.cantidad || 1); i++) parcels.push(medida)
-    }
+    const parcels = armarParcels(itemsPedido, productosMap)
 
     const envio = await crearEnvio({
       rateId: pedido.envio_cotizacion.rate_id,
