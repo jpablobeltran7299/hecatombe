@@ -22,6 +22,7 @@ export default function AdminPedidos() {
   const [actualizando, setActualizando] = useState(null)
   const [generandoGuia, setGenerandoGuia] = useState(null)
   const [errorGuia, setErrorGuia] = useState({})
+  const [saldoEnvios, setSaldoEnvios] = useState(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -31,7 +32,14 @@ export default function AdminPedidos() {
       return
     }
     cargarPedidos()
+    cargarSaldoEnvios()
   }, [authLoading, user])
+
+  async function cargarSaldoEnvios() {
+    const res = await adminFetch('/api/admin/saldo-envios')
+    const data = await res.json()
+    if (!data.error) setSaldoEnvios(data)
+  }
 
   async function cargarPedidos() {
     const { data } = await supabase
@@ -71,6 +79,7 @@ export default function AdminPedidos() {
     const data = await res.json()
     if (data.ok) {
       setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, guia: data.guia } : p))
+      cargarSaldoEnvios()
     } else {
       setErrorGuia(prev => ({ ...prev, [pedidoId]: data.error || 'Error al generar la guía.' }))
     }
@@ -135,6 +144,20 @@ export default function AdminPedidos() {
         <div className="bg-surface border border-line rounded-xl px-6 py-4 mb-6 flex items-center justify-between">
           <p className="text-ink-muted text-sm font-black uppercase">Total en ventas confirmadas</p>
           <p className="text-orange-600 font-black text-2xl">${totalVentas.toLocaleString('es-MX')} MXN</p>
+        </div>
+
+        <div className={`border rounded-xl px-6 py-4 mb-6 flex items-center justify-between ${
+          saldoEnvios && saldoEnvios.balance < 200 ? 'bg-red-500/10 border-red-500/30' : 'bg-surface border-line'
+        }`}>
+          <p className="text-ink-muted text-sm font-black uppercase">Saldo en Solo Envíos</p>
+          {saldoEnvios ? (
+            <p className={`font-black text-2xl ${saldoEnvios.balance < 200 ? 'text-red-400' : 'text-orange-600'}`}>
+              ${saldoEnvios.balance.toLocaleString('es-MX')} {saldoEnvios.currency}
+              {saldoEnvios.balance < 200 && <span className="text-xs uppercase ml-2">⚠️ Bajo — recarga pronto</span>}
+            </p>
+          ) : (
+            <p className="text-ink-muted text-sm">Cargando...</p>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-3 mb-6">
