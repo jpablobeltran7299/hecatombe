@@ -41,6 +41,7 @@ export default function CuentaPage() {
   const [destinoLiquidacion, setDestinoLiquidacion] = useState({})
   const [direccionLiquidacion, setDireccionLiquidacion] = useState({})
   const [confirmoLiquidacion, setConfirmoLiquidacion] = useState({})
+  const [cotizacionLiquidacion, setCotizacionLiquidacion] = useState({})
   const [solicitandoEnvio, setSolicitandoEnvio] = useState(false)
   const router = useRouter()
 
@@ -197,10 +198,39 @@ export default function CuentaPage() {
     setMovimientos(mov || [])
   }
 
+  async function cotizarLiquidacion(pedido, direccionId) {
+    setCotizacionLiquidacion(prev => ({ ...prev, [pedido.id]: { cotizando: true, tarifas: [], tarifaId: null, error: '' } }))
+    try {
+      const res = await fetch('/api/cotizar-envio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          direccionId,
+          items: [{ productoId: pedido.producto_id, cantidad: 1 }],
+        }),
+      })
+      const data = await res.json()
+      if (data.tarifas?.length > 0) {
+        setCotizacionLiquidacion(prev => ({ ...prev, [pedido.id]: { cotizando: false, tarifas: data.tarifas, quotationId: data.quotationId, tarifaId: null, error: '' } }))
+      } else {
+        setCotizacionLiquidacion(prev => ({ ...prev, [pedido.id]: { cotizando: false, tarifas: [], tarifaId: null, error: data.error || 'No encontramos paqueterías disponibles para esa dirección.' } }))
+      }
+    } catch {
+      setCotizacionLiquidacion(prev => ({ ...prev, [pedido.id]: { cotizando: false, tarifas: [], tarifaId: null, error: 'No se pudo cotizar el envío. Intenta de nuevo.' } }))
+    }
+  }
+
   async function handleLiquidar(pedido, destino) {
+    const cotizacion = cotizacionLiquidacion[pedido.id]
     if (destino !== 'bodega') {
       if (!direccionLiquidacion[pedido.id]) {
         setMensaje('Elige una dirección de envío para liquidar este pedido.')
+        setTimeout(() => setMensaje(''), 3000)
+        return
+      }
+      if (!cotizacion?.tarifaId) {
+        setMensaje('Elige una paquetería para tu envío.')
         setTimeout(() => setMensaje(''), 3000)
         return
       }
@@ -231,6 +261,8 @@ export default function CuentaPage() {
           tipo_pedido: 'liquidacion',
           destino,
           direccion_id: destino !== 'bodega' ? direccionLiquidacion[pedido.id] : null,
+          quotation_id: destino !== 'bodega' ? cotizacion?.quotationId : null,
+          rate_id: destino !== 'bodega' ? cotizacion?.tarifaId : null,
           producto_id: pedido.producto_id,
           pedido_id: pedido.id,
         }),
@@ -504,6 +536,7 @@ export default function CuentaPage() {
                                     onClick={() => {
                                       setDireccionLiquidacion(prev => ({ ...prev, [pedido.id]: d.id }))
                                       setConfirmoLiquidacion(prev => ({ ...prev, [pedido.id]: false }))
+                                      cotizarLiquidacion(pedido, d.id)
                                     }}
                                     className={`text-left p-3 rounded-lg border-2 transition ${direccionLiquidacion[pedido.id] === d.id ? 'border-orange-500 bg-orange-500/10' : 'border-line text-ink/40 hover:border-ink/30'}`}>
                                     <p className="text-ink text-xs font-black">{d.nombre} {d.apellido} <span className="text-ink/30 font-normal">· {d.telefono}</span></p>
@@ -511,6 +544,26 @@ export default function CuentaPage() {
                                   </button>
                                 ))}
                               </div>
+
+                              {direccionLiquidacion[pedido.id] && (
+                                <div className="mb-3">
+                                  {cotizacionLiquidacion[pedido.id]?.cotizando && <p className="text-ink/40 text-xs">Cotizando envío...</p>}
+                                  {cotizacionLiquidacion[pedido.id]?.error && <p className="text-red-400 text-xs">{cotizacionLiquidacion[pedido.id].error}</p>}
+                                  {cotizacionLiquidacion[pedido.id]?.tarifas?.length > 0 && (
+                                    <div className="flex flex-col gap-2">
+                                      {cotizacionLiquidacion[pedido.id].tarifas.map(t => (
+                                        <button key={t.rateId}
+                                          onClick={() => setCotizacionLiquidacion(prev => ({ ...prev, [pedido.id]: { ...prev[pedido.id], tarifaId: t.rateId } }))}
+                                          className={`flex items-center justify-between gap-2 text-left p-2 rounded-lg border-2 transition ${cotizacionLiquidacion[pedido.id]?.tarifaId === t.rateId ? 'border-orange-500 bg-orange-500/10' : 'border-line text-ink/40 hover:border-ink/30'}`}>
+                                          <p className="text-ink text-xs font-black">{t.proveedor} <span className="text-ink/30 font-normal">· {t.servicio}</span></p>
+                                          <span className="text-orange-600 font-black text-xs whitespace-nowrap">${t.total.toLocaleString('es-MX')}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
                               {direccionLiquidacion[pedido.id] && (
                                 <label className="flex items-start gap-2 cursor-pointer">
                                   <input type="checkbox" checked={!!confirmoLiquidacion[pedido.id]}
@@ -526,16 +579,17 @@ export default function CuentaPage() {
 
                       {(() => {
                         const destinoSel = destinoLiquidacion[pedido.id] || 'directo'
-                        const costoEnvioLiquidacion = destinoSel !== 'bodega' && (pedido.monto_liquidacion || 0) < BODEGA_THRESHOLD_MXN
-                          ? COSTO_ENVIO_MXN : 0
+                        const cotizacion = cotizacionLiquidacion[pedido.id]
+                        const tarifaSel = cotizacion?.tarifas?.find(t => t.rateId === cotizacion.tarifaId)
+                        const costoEnvioLiquidacion = destinoSel !== 'bodega' ? (tarifaSel?.total || 0) : 0
                         const totalLiquidar = (pedido.monto_liquidacion || 0) + costoEnvioLiquidacion
                         return (
                           <>
                             {costoEnvioLiquidacion > 0 && (
-                              <p className="text-ink/30 text-xs mb-2">Incluye ${COSTO_ENVIO_MXN} MXN de envío</p>
+                              <p className="text-ink/30 text-xs mb-2">Incluye ${costoEnvioLiquidacion.toLocaleString('es-MX')} MXN de envío ({tarifaSel.proveedor})</p>
                             )}
                             <button onClick={() => handleLiquidar(pedido, destinoSel)}
-                              disabled={liquidando === pedido.id || (destinoSel === 'directo' && (!direccionLiquidacion[pedido.id] || !confirmoLiquidacion[pedido.id]))}
+                              disabled={liquidando === pedido.id || (destinoSel === 'directo' && (!direccionLiquidacion[pedido.id] || !confirmoLiquidacion[pedido.id] || !cotizacion?.tarifaId))}
                               className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black uppercase py-2 rounded-lg text-sm transition">
                               {liquidando === pedido.id ? 'Procesando...' : `💳 Liquidar $${totalLiquidar.toLocaleString('es-MX')} MXN`}
                             </button>
