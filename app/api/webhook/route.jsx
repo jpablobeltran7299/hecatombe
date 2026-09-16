@@ -8,6 +8,7 @@ import { ajustarHecacoins } from '@/lib/hecacoins'
 import { obtenerCotizacion } from '@/lib/soloenvios'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 function validarFirmaMercadoPago(request, dataId) {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET
@@ -215,7 +216,7 @@ export async function POST(request) {
         .eq('id', direccion_id)
         .single()
 
-      await supabase.from('pedidos')
+      const { data: pedidosActualizados } = await supabase.from('pedidos')
         .update({
           bodega_estado: 'solicitado',
           bodega_tipo_solicitud: 'pagado',
@@ -227,6 +228,13 @@ export async function POST(request) {
         .eq('user_id', userId)
         .eq('destino', 'bodega')
         .eq('bodega_estado', 'guardando')
+        .select('id')
+
+      // Si no se actualizó ningún pedido, otra notificación concurrente ya
+      // los procesó primero — no hay nada nuevo que avisar.
+      if (!pedidosActualizados || pedidosActualizados.length === 0) {
+        return NextResponse.json({ ok: true })
+      }
 
       try {
         await resend.emails.send({

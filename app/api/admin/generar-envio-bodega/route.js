@@ -6,6 +6,8 @@ import { extraerLineas } from '@/lib/pedidos'
 import { crearEnvio, obtenerCotizacion } from '@/lib/soloenvios'
 import { armarParcels } from '@/lib/paquetes'
 
+export const maxDuration = 60
+
 // Genera la guía real combinada para todos los pedidos "solicitados" de
 // bodega de un cliente. Si ya traían una tarifa elegida (envío pagado por
 // el cliente para adelantarlo), se usa esa. Si no (envío gratis), hay que

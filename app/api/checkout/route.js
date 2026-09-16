@@ -8,6 +8,8 @@ import { ajustarHecacoins } from '@/lib/hecacoins'
 import { obtenerCotizacion } from '@/lib/soloenvios'
 import { COSTO_ENVIO_MXN, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
 
+export const maxDuration = 60
+
 // Rate limit en memoria: 10 solicitudes por IP cada 60s.
 // Vive solo en la instancia serverless que lo procesa (no es un límite
 // global distribuido) — mitiga abuso/spam básico sin depender de Redis.
@@ -75,6 +77,7 @@ export async function POST(request) {
     // se apartó); vive en pedidos.monto_liquidacion en Supabase, atado al pedido_id exacto.
     let itemsValidados = items
     let montoLiquidacionReal = null
+    let valorTotalOrdenLiquidacion = null
 
     if (tipo_pedido === 'apartado') {
       const item = items[0]
@@ -99,7 +102,7 @@ export async function POST(request) {
 
       const { data: pedidoApartado } = await supabase
         .from('pedidos')
-        .select('id, user_id, producto_id, estado, tipo_pedido, monto_liquidacion')
+        .select('id, user_id, producto_id, estado, tipo_pedido, monto_liquidacion, anticipo_pagado')
         .eq('id', pedido_id)
         .single()
 
@@ -114,6 +117,10 @@ export async function POST(request) {
       }
 
       montoLiquidacionReal = pedidoApartado.monto_liquidacion
+      // El valor completo de la pieza (anticipo + liquidación) es lo que
+      // decide si aplica envío gratis — no el saldo restante, que puede ser
+      // chico aunque la pieza completa valga mucho más de $1,200.
+      valorTotalOrdenLiquidacion = (pedidoApartado.anticipo_pagado || 0) + montoLiquidacionReal
       itemsValidados = [{ ...items[0], precio: montoLiquidacionReal }]
     } else {
       const ids = items.map(i => i.productoId)
@@ -138,7 +145,10 @@ export async function POST(request) {
     // Costo de envío: se calcula aquí, nunca se confía en lo que mande el cliente.
     // Aplica en compras normales y en liquidaciones de preventa que eligen
     // envío directo (no bodega) y no alcanzan el monto de envío gratis.
-    const requiereEnvioPago = ['normal', 'liquidacion'].includes(tipo_pedido || 'normal') && destino !== 'bodega' && totalOriginal < BODEGA_THRESHOLD_MXN
+    // Para liquidación, el umbral se compara contra el valor completo de la
+    // pieza (anticipo + liquidación), no contra el saldo restante.
+    const valorParaUmbralEnvio = tipo_pedido === 'liquidacion' ? valorTotalOrdenLiquidacion : totalOriginal
+    const requiereEnvioPago = ['normal', 'liquidacion'].includes(tipo_pedido || 'normal') && destino !== 'bodega' && valorParaUmbralEnvio < BODEGA_THRESHOLD_MXN
 
     let costoEnvio = 0
     let envioCotizacion = null

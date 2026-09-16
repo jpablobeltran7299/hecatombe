@@ -6,6 +6,8 @@ import { extraerLineas } from '@/lib/pedidos'
 import { cotizarEnvio } from '@/lib/soloenvios'
 import { armarParcels, formatearTarifas } from '@/lib/paquetes'
 
+export const maxDuration = 60
+
 // Cotiza (sin persistir nada todavía) el envío combinado de un grupo de
 // pedidos de Bodegatombe ya "solicitados" — para que Hecatombe elija la
 // paquetería que más le convenga antes de generar la guía.

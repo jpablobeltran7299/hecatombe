@@ -5,6 +5,8 @@ import { Resend } from 'resend'
 import { obtenerCotizacion } from '@/lib/soloenvios'
 import { BODEGA_THRESHOLD_MXN } from '@/lib/constants'
 
+export const maxDuration = 60
+
 export async function POST(request) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,

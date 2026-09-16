@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireAdmin } from '@/lib/adminAuth'
 import { getProductosPorIds } from '@/lib/sanity'
-import { crearEnvio } from '@/lib/soloenvios'
+import { crearEnvio, obtenerCotizacion } from '@/lib/soloenvios'
 import { armarParcels } from '@/lib/paquetes'
+
+export const maxDuration = 60
 
 export async function POST(request) {
   const auth = await requireAdmin(request)
@@ -15,7 +17,7 @@ export async function POST(request) {
   )
 
   try {
-    const { pedido_id } = await request.json()
+    const { pedido_id, quotation_id, rate_id } = await request.json()
     if (!pedido_id) {
       return NextResponse.json({ error: 'Falta pedido_id.' }, { status: 400 })
     }
@@ -35,11 +37,23 @@ export async function POST(request) {
     if (pedido.guia?.trackingNumber) {
       return NextResponse.json({ error: 'Este pedido ya tiene una guía generada.' }, { status: 400 })
     }
-    if (!pedido.envio_cotizacion?.rate_id) {
-      return NextResponse.json({ error: 'Este pedido no tiene una cotización de envío guardada — no se puede generar la guía automáticamente.' }, { status: 400 })
-    }
     if (!pedido.direccion_snapshot) {
       return NextResponse.json({ error: 'Este pedido no tiene una dirección de envío guardada.' }, { status: 400 })
+    }
+
+    // Pedidos con envío gratis (superaron el monto de Bodegatombe) nunca
+    // guardan una cotización al pagar — hay que cotizar aquí y que el
+    // admin elija, igual que en Bodegatombe.
+    const rateIdFinal = rate_id || pedido.envio_cotizacion?.rate_id
+    const quotationIdFinal = quotation_id || pedido.envio_cotizacion?.quotation_id
+    if (!rateIdFinal || !quotationIdFinal) {
+      return NextResponse.json({ error: 'Este pedido no tiene una cotización de envío — cotiza primero para elegir una paquetería.' }, { status: 400 })
+    }
+
+    const { tarifas } = await obtenerCotizacion(quotationIdFinal)
+    const tarifaElegida = tarifas.find(t => t.id === rateIdFinal)
+    if (!tarifaElegida) {
+      return NextResponse.json({ error: 'La tarifa elegida ya no es válida. Vuelve a cotizar.' }, { status: 400 })
     }
 
     const { data: { user } } = await supabase.auth.admin.getUserById(pedido.user_id)
@@ -60,7 +74,7 @@ export async function POST(request) {
     const parcels = armarParcels(itemsPedido, productosMap)
 
     const envio = await crearEnvio({
-      rateId: pedido.envio_cotizacion.rate_id,
+      rateId: rateIdFinal,
       direccionDestino: { ...pedido.direccion_snapshot, email: user.email },
       parcels,
     })
@@ -76,11 +90,19 @@ export async function POST(request) {
       trackingNumber: envio.trackingNumber,
       trackingUrl: envio.trackingUrl,
       labelUrl: envio.labelUrl,
-      proveedor: pedido.envio_cotizacion.proveedor,
+      proveedor: tarifaElegida.provider_display_name,
       generado_en: new Date().toISOString(),
     }
+    const envioCotizacion = {
+      quotation_id: quotationIdFinal,
+      rate_id: rateIdFinal,
+      proveedor: tarifaElegida.provider_display_name,
+      servicio: tarifaElegida.provider_service_name,
+      total: parseFloat(tarifaElegida.total),
+      dias: tarifaElegida.days,
+    }
 
-    await supabase.from('pedidos').update({ guia }).eq('id', pedido_id)
+    await supabase.from('pedidos').update({ guia, envio_cotizacion: envioCotizacion }).eq('id', pedido_id)
 
     return NextResponse.json({ ok: true, guia })
   } catch (error) {

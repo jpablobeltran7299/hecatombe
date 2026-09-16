@@ -227,13 +227,14 @@ export default function CuentaPage() {
 
   async function handleLiquidar(pedido, destino) {
     const cotizacion = cotizacionLiquidacion[pedido.id]
+    const envioGratisLiquidacion = ((pedido.anticipo_pagado || 0) + (pedido.monto_liquidacion || 0)) >= BODEGA_THRESHOLD_MXN
     if (destino !== 'bodega') {
       if (!direccionLiquidacion[pedido.id]) {
         setMensaje('Elige una dirección de envío para liquidar este pedido.')
         setTimeout(() => setMensaje(''), 3000)
         return
       }
-      if (!cotizacion?.tarifaId) {
+      if (!envioGratisLiquidacion && !cotizacion?.tarifaId) {
         setMensaje('Elige una paquetería para tu envío.')
         setTimeout(() => setMensaje(''), 3000)
         return
@@ -594,7 +595,8 @@ export default function CuentaPage() {
                                     onClick={() => {
                                       setDireccionLiquidacion(prev => ({ ...prev, [pedido.id]: d.id }))
                                       setConfirmoLiquidacion(prev => ({ ...prev, [pedido.id]: false }))
-                                      cotizarLiquidacion(pedido, d.id)
+                                      const valorTotalPedido = (pedido.anticipo_pagado || 0) + (pedido.monto_liquidacion || 0)
+                                      if (valorTotalPedido < BODEGA_THRESHOLD_MXN) cotizarLiquidacion(pedido, d.id)
                                     }}
                                     className={`text-left p-3 rounded-lg border-2 transition ${direccionLiquidacion[pedido.id] === d.id ? 'border-orange-500 bg-orange-500/10' : 'border-line text-ink/40 hover:border-ink/30'}`}>
                                     <p className="text-ink text-xs font-black">{d.nombre} {d.apellido} <span className="text-ink/30 font-normal">· {d.telefono}</span></p>
@@ -603,7 +605,11 @@ export default function CuentaPage() {
                                 ))}
                               </div>
 
-                              {direccionLiquidacion[pedido.id] && (
+                              {direccionLiquidacion[pedido.id] && ((pedido.anticipo_pagado || 0) + (pedido.monto_liquidacion || 0) >= BODEGA_THRESHOLD_MXN) && (
+                                <p className="text-green-400 text-xs font-bold mb-3">✅ ¡Envío gratis! Este pedido supera $1,200 MXN</p>
+                              )}
+
+                              {direccionLiquidacion[pedido.id] && ((pedido.anticipo_pagado || 0) + (pedido.monto_liquidacion || 0) < BODEGA_THRESHOLD_MXN) && (
                                 <div className="mb-3">
                                   {cotizacionLiquidacion[pedido.id]?.cotizando && <p className="text-ink/40 text-xs">Cotizando envío...</p>}
                                   {cotizacionLiquidacion[pedido.id]?.error && <p className="text-red-400 text-xs">{cotizacionLiquidacion[pedido.id].error}</p>}
@@ -638,16 +644,18 @@ export default function CuentaPage() {
                       {(() => {
                         const destinoSel = destinoLiquidacion[pedido.id] || 'directo'
                         const cotizacion = cotizacionLiquidacion[pedido.id]
+                        const envioGratisLiquidacion = ((pedido.anticipo_pagado || 0) + (pedido.monto_liquidacion || 0)) >= BODEGA_THRESHOLD_MXN
                         const tarifaSel = cotizacion?.tarifas?.find(t => t.rateId === cotizacion.tarifaId)
-                        const costoEnvioLiquidacion = destinoSel !== 'bodega' ? (tarifaSel?.total || 0) : 0
+                        const costoEnvioLiquidacion = destinoSel !== 'bodega' && !envioGratisLiquidacion ? (tarifaSel?.total || 0) : 0
                         const totalLiquidar = (pedido.monto_liquidacion || 0) + costoEnvioLiquidacion
+                        const requiereTarifa = destinoSel === 'directo' && !envioGratisLiquidacion
                         return (
                           <>
                             {costoEnvioLiquidacion > 0 && (
                               <p className="text-ink/30 text-xs mb-2">Incluye ${costoEnvioLiquidacion.toLocaleString('es-MX')} MXN de envío ({tarifaSel.proveedor})</p>
                             )}
                             <button onClick={() => handleLiquidar(pedido, destinoSel)}
-                              disabled={liquidando === pedido.id || (destinoSel === 'directo' && (!direccionLiquidacion[pedido.id] || !confirmoLiquidacion[pedido.id] || !cotizacion?.tarifaId))}
+                              disabled={liquidando === pedido.id || (destinoSel === 'directo' && (!direccionLiquidacion[pedido.id] || !confirmoLiquidacion[pedido.id] || (requiereTarifa && !cotizacion?.tarifaId)))}
                               className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black uppercase py-2 rounded-lg text-sm transition">
                               {liquidando === pedido.id ? 'Procesando...' : `💳 Liquidar $${totalLiquidar.toLocaleString('es-MX')} MXN`}
                             </button>

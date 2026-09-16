@@ -23,6 +23,9 @@ export default function AdminPedidos() {
   const [generandoGuia, setGenerandoGuia] = useState(null)
   const [errorGuia, setErrorGuia] = useState({})
   const [saldoEnvios, setSaldoEnvios] = useState(null)
+  const [cotizandoGuia, setCotizandoGuia] = useState(null)
+  const [tarifasPedido, setTarifasPedido] = useState({})
+  const [tarifaSelPedido, setTarifaSelPedido] = useState({})
   const router = useRouter()
 
   useEffect(() => {
@@ -68,13 +71,34 @@ export default function AdminPedidos() {
     setActualizando(null)
   }
 
+  async function handleCotizarPedido(pedidoId) {
+    setCotizandoGuia(pedidoId)
+    setErrorGuia(prev => ({ ...prev, [pedidoId]: '' }))
+    const res = await adminFetch('/api/admin/cotizar-envio-pedido', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pedido_id: pedidoId }),
+    })
+    const data = await res.json()
+    if (data.tarifas) {
+      setTarifasPedido(prev => ({ ...prev, [pedidoId]: { quotationId: data.quotationId, opciones: data.tarifas } }))
+    } else {
+      setErrorGuia(prev => ({ ...prev, [pedidoId]: data.error || 'No se pudo cotizar.' }))
+    }
+    setCotizandoGuia(null)
+  }
+
   async function handleGenerarGuia(pedidoId) {
     setGenerandoGuia(pedidoId)
     setErrorGuia(prev => ({ ...prev, [pedidoId]: '' }))
     const res = await adminFetch('/api/admin/generar-envio', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pedido_id: pedidoId }),
+      body: JSON.stringify({
+        pedido_id: pedidoId,
+        quotation_id: tarifasPedido[pedidoId]?.quotationId || null,
+        rate_id: tarifaSelPedido[pedidoId] || null,
+      }),
     })
     const data = await res.json()
     if (data.ok) {
@@ -231,11 +255,38 @@ export default function AdminPedidos() {
                           <a href={pedido.guia.labelUrl} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:underline text-xs font-black uppercase mt-1 inline-block">Descargar guía →</a>
                         )}
                       </div>
-                    ) : (
+                    ) : pedido.envio_cotizacion?.rate_id ? (
                       <>
+                        <p className="text-ink-muted text-xs mb-2">Tarifa: {pedido.envio_cotizacion.proveedor} · {pedido.envio_cotizacion.servicio} — ${pedido.envio_cotizacion.total?.toLocaleString('es-MX')} MXN</p>
                         <button onClick={() => handleGenerarGuia(pedido.id)} disabled={generandoGuia === pedido.id}
                           className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black font-black uppercase text-xs px-4 py-2 rounded-lg transition">
                           {generandoGuia === pedido.id ? 'Generando guía...' : '📦 Generar guía de envío'}
+                        </button>
+                        {errorGuia[pedido.id] && <p className="text-red-400 text-xs mt-2">{errorGuia[pedido.id]}</p>}
+                      </>
+                    ) : tarifasPedido[pedido.id]?.opciones ? (
+                      <>
+                        <p className="text-ink-muted text-xs mb-2">Este pedido tuvo envío gratis — elige la paquetería:</p>
+                        <div className="flex flex-col gap-2 mb-3 max-w-md">
+                          {tarifasPedido[pedido.id].opciones.map(t => (
+                            <button key={t.rateId} onClick={() => setTarifaSelPedido(prev => ({ ...prev, [pedido.id]: t.rateId }))}
+                              className={`flex items-center justify-between gap-2 text-left p-2 rounded-lg border-2 transition ${tarifaSelPedido[pedido.id] === t.rateId ? 'border-orange-500 bg-orange-500/10' : 'border-line text-ink-muted hover:border-line-strong'}`}>
+                              <p className="text-ink text-xs font-black">{t.proveedor} <span className="text-ink-muted font-normal">· {t.servicio}</span></p>
+                              <span className="text-orange-600 font-black text-xs whitespace-nowrap">${t.total.toLocaleString('es-MX')} · {t.dias}d</span>
+                            </button>
+                          ))}
+                        </div>
+                        <button onClick={() => handleGenerarGuia(pedido.id)} disabled={!tarifaSelPedido[pedido.id] || generandoGuia === pedido.id}
+                          className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black font-black uppercase text-xs px-4 py-2 rounded-lg transition">
+                          {generandoGuia === pedido.id ? 'Generando guía...' : '📦 Generar guía de envío'}
+                        </button>
+                        {errorGuia[pedido.id] && <p className="text-red-400 text-xs mt-2">{errorGuia[pedido.id]}</p>}
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => handleCotizarPedido(pedido.id)} disabled={cotizandoGuia === pedido.id}
+                          className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black font-black uppercase text-xs px-4 py-2 rounded-lg transition">
+                          {cotizandoGuia === pedido.id ? 'Cotizando...' : '💲 Cotizar envío'}
                         </button>
                         {errorGuia[pedido.id] && <p className="text-red-400 text-xs mt-2">{errorGuia[pedido.id]}</p>}
                       </>
