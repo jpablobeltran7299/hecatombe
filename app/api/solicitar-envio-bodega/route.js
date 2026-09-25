@@ -83,6 +83,32 @@ export async function POST(request) {
     }
     const costoEnvio = parseFloat(tarifaElegida.total)
 
+    // external_reference muy largo hace que Mercado Pago rechace el pago en
+    // checkout sin dar motivo (confirmado en producción) — el detalle
+    // completo se guarda en Supabase y a MP solo se le manda el id.
+    const { data: checkoutPendiente, error: errorCheckoutPendiente } = await supabase
+      .from('checkout_pendientes')
+      .insert({
+        payload: {
+          tipo_pedido: 'envio_bodega',
+          userId,
+          direccion_id: direccionId,
+          pedido_ids: pedidoIds,
+          quotation_id,
+          rate_id,
+          costo_envio: costoEnvio,
+          proveedor: tarifaElegida.provider_display_name,
+          servicio: tarifaElegida.provider_service_name,
+          dias: tarifaElegida.days,
+        }
+      })
+      .select('id')
+      .single()
+
+    if (errorCheckoutPendiente) {
+      throw new Error(`Error al guardar el checkout pendiente: ${errorCheckoutPendiente.message}`)
+    }
+
     const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN })
     const preference = new Preference(client)
     const response = await preference.create({
@@ -101,18 +127,7 @@ export async function POST(request) {
           pending: `${process.env.NEXT_PUBLIC_SITE_URL}/cuenta?tab=bodega&estado=pendiente`,
         },
         auto_return: 'approved',
-        external_reference: JSON.stringify({
-          tipo_pedido: 'envio_bodega',
-          userId,
-          direccion_id: direccionId,
-          pedido_ids: pedidoIds,
-          quotation_id,
-          rate_id,
-          costo_envio: costoEnvio,
-          proveedor: tarifaElegida.provider_display_name,
-          servicio: tarifaElegida.provider_service_name,
-          dias: tarifaElegida.days,
-        }),
+        external_reference: String(checkoutPendiente.id),
         notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook`,
       },
     })

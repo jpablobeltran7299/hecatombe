@@ -162,10 +162,24 @@ export async function POST(request) {
       return NextResponse.json({ ok: true })
     }
 
-    // Parsear external_reference
+    // El external_reference ahora es solo el id del registro en
+    // checkout_pendientes con el detalle completo (ver app/api/checkout/route.js
+    // y app/api/solicitar-envio-bodega/route.js — mandarle a MP un
+    // external_reference largo hacía que rechazara el pago sin dar motivo).
+    // Se deja el parseo de JSON viejo como fallback para pagos ya en tránsito
+    // al momento de este cambio.
     let userId, tipo_pedido, destino, producto_id, pedido_id_apartado, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas, costo_envio, direccion_id, quotation_id, rate_id, pedido_ids_bodega, envio_proveedor, envio_servicio, envio_dias
+    let ref = null
+    if (/^\d+$/.test(String(pago.external_reference || ''))) {
+      const { data: checkoutPendiente } = await supabase
+        .from('checkout_pendientes')
+        .select('payload')
+        .eq('id', pago.external_reference)
+        .single()
+      ref = checkoutPendiente?.payload || null
+    }
     try {
-      const ref = JSON.parse(pago.external_reference)
+      if (!ref) ref = JSON.parse(pago.external_reference)
       userId = ref.userId
       tipo_pedido = ref.tipo_pedido || 'normal'
       destino = ref.destino || 'directo'

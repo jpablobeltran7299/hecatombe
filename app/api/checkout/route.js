@@ -309,17 +309,16 @@ export async function POST(request) {
       }] : []),
     ]
 
-    const response = await preference.create({
-      body: {
-        items: itemsMP,
-        payer: { email: userEmail },
-        back_urls: {
-          success: `${process.env.NEXT_PUBLIC_SITE_URL}/carrito?estado=exitoso`,
-          failure: `${process.env.NEXT_PUBLIC_SITE_URL}/carrito?estado=fallido`,
-          pending: `${process.env.NEXT_PUBLIC_SITE_URL}/carrito?estado=pendiente`,
-        },
-        auto_return: 'approved',
-        external_reference: JSON.stringify({
+    // Mercado Pago rechaza el pago en checkout (sin dar motivo) cuando
+    // external_reference es muy largo — no está documentado un límite exacto,
+    // pero se confirmó en producción que un JSON con todos estos campos
+    // (~300 caracteres) rompe el pago mientras uno corto (~200) sí funciona.
+    // Por eso el detalle completo se guarda en Supabase y a MP solo se le
+    // manda el id de ese registro — el webhook lo vuelve a leer de ahí.
+    const { data: checkoutPendiente, error: errorCheckoutPendiente } = await supabase
+      .from('checkout_pendientes')
+      .insert({
+        payload: {
           userId,
           tipo_pedido: tipo_pedido || 'normal',
           destino: destino || 'directo',
@@ -330,12 +329,28 @@ export async function POST(request) {
           hecacoins_canjeadas: descuentoHecacoins,
           costo_envio: costoEnvio,
           direccion_id: direccion_id || null,
-          // Solo IDs pequeños — el webhook vuelve a leer la cotización
-          // completa (proveedor, servicio, días) para no arriesgar el
-          // límite de tamaño de external_reference de Mercado Pago.
           quotation_id: envioCotizacion?.quotation_id || null,
           rate_id: envioCotizacion?.rate_id || null,
-        }),
+        }
+      })
+      .select('id')
+      .single()
+
+    if (errorCheckoutPendiente) {
+      throw new Error(`Error al guardar el checkout pendiente: ${errorCheckoutPendiente.message}`)
+    }
+
+    const response = await preference.create({
+      body: {
+        items: itemsMP,
+        payer: { email: userEmail },
+        back_urls: {
+          success: `${process.env.NEXT_PUBLIC_SITE_URL}/carrito?estado=exitoso`,
+          failure: `${process.env.NEXT_PUBLIC_SITE_URL}/carrito?estado=fallido`,
+          pending: `${process.env.NEXT_PUBLIC_SITE_URL}/carrito?estado=pendiente`,
+        },
+        auto_return: 'approved',
+        external_reference: String(checkoutPendiente.id),
         notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook`,
       }
     })
