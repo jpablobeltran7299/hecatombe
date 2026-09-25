@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getProductosPorIds, urlFor } from '@/lib/sanity'
 import { resolverItemsPedidos } from '@/lib/pedidos'
-import { BODEGA_THRESHOLD_MXN } from '@/lib/constants'
+import { BODEGA_THRESHOLD_MXN, COSTO_ENVIO_MXN } from '@/lib/constants'
 import EstadoBadge from '@/app/components/EstadoBadge'
 import PedidoItemsList from '@/app/components/PedidoItemsList'
 import BodegaProgress from '@/app/components/BodegaProgress'
@@ -701,7 +701,7 @@ export default function CuentaPage() {
                       </button>
                       {faltaBodega > 0 && (
                         <div className="text-ink/20 text-xs text-center mt-2">
-                          <p>🚚 Elige tu paquetería, al mejor costo</p>
+                          <p>🚚 Envío ${COSTO_ENVIO_MXN.toLocaleString('es-MX')} MXN</p>
                           <p className="mt-1">📦 ¿Quieres ahorrártelo? Guarda tu pedido en <span className="font-black">Bodegatombe</span>, junta ${BODEGA_THRESHOLD_MXN.toLocaleString('es-MX')} en compras y tu envío sale <span className="font-black">GRATIS</span></p>
                         </div>
                       )}

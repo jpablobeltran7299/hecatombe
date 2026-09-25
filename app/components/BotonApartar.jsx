@@ -22,6 +22,7 @@ export default function BotonApartar({ productoId, nombre, anticipo, precioLiqui
       productoId,
       nombre,
       precio: anticipo,
+      anticipo,
       precioLiquidacion,
       precioTotal,
       imagen,
