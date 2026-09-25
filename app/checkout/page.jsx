@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { BODEGA_THRESHOLD_MXN } from '@/lib/constants'
+import { BODEGA_THRESHOLD_MXN, COSTO_ENVIO_MXN } from '@/lib/constants'
 
 export default function CheckoutPage() {
   const [user, setUser] = useState(null)
@@ -23,11 +23,6 @@ export default function CheckoutPage() {
   const [direcciones, setDirecciones] = useState([])
   const [direccionId, setDireccionId] = useState(null)
   const [confirmoDireccion, setConfirmoDireccion] = useState(false)
-  const [tarifas, setTarifas] = useState([])
-  const [quotationId, setQuotationId] = useState(null)
-  const [tarifaId, setTarifaId] = useState(null)
-  const [cotizando, setCotizando] = useState(false)
-  const [errorCotizacion, setErrorCotizacion] = useState('')
   const [error, setError] = useState('')
   const router = useRouter()
 
@@ -82,44 +77,12 @@ export default function CheckoutPage() {
     }
   }, [])
 
-  useEffect(() => {
-    setTarifas([])
-    setTarifaId(null)
-    setQuotationId(null)
-    setErrorCotizacion('')
-
-    const totalActual = modoApartar ? 0 : items.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
-    const debeCotizar = !modoApartar && modoEnvio === 'inmediato' && direccionId && totalActual < 1200 && items.length > 0
-
-    if (!debeCotizar || !user) return
-
-    setCotizando(true)
-    fetch('/api/cotizar-envio', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user.id, direccionId, items }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.tarifas?.length > 0) {
-          setTarifas(data.tarifas)
-          setQuotationId(data.quotationId)
-        } else {
-          setErrorCotizacion(data.error || 'No encontramos paqueterías disponibles para esa dirección.')
-        }
-      })
-      .catch(() => setErrorCotizacion('No se pudo cotizar el envío. Intenta de nuevo.'))
-      .finally(() => setCotizando(false))
-  }, [direccionId, modoEnvio, user])
-
   async function handlePagar() {
     setError('')
 
     const requiereDireccion = modoEnvio === 'inmediato' || modoApartar
-    const requiereTarifa = !modoApartar && modoEnvio === 'inmediato' && !envioGratis
     if (requiereDireccion) {
       if (!direccionId) { setError('Elige una dirección de envío.'); return }
-      if (requiereTarifa && !tarifaId) { setError('Elige una paquetería para tu envío.'); return }
       if (!confirmoDireccion) { setError('Confirma que la dirección es correcta antes de pagar.'); return }
     } else {
       if (!direccion.nombre?.trim() || !direccion.telefono?.trim()) {
@@ -160,8 +123,8 @@ export default function CheckoutPage() {
           tipo_pedido: tipoPedido,
           destino,
           hecacoins_a_canjear: hecacoinsACanjear,
-          quotation_id: requiereTarifa ? quotationId : null,
-          rate_id: requiereTarifa ? tarifaId : null,
+          quotation_id: null,
+          rate_id: null,
           ...(modoApartar && {
             producto_id: itemApartar.productoId,
             anticipo_pagado: itemApartar.anticipo,
@@ -198,8 +161,7 @@ export default function CheckoutPage() {
 
   const descuentoHC = usarHecacoins && !modoApartar ? Math.min(hecacoins, totalBruto) : 0
   const envioGratis = totalBruto >= 1200
-  const tarifaSeleccionada = tarifas.find(t => t.rateId === tarifaId) || null
-  const costoEnvio = !modoApartar && modoEnvio === 'inmediato' && !envioGratis ? (tarifaSeleccionada?.total || 0) : 0
+  const costoEnvio = !modoApartar && modoEnvio === 'inmediato' && !envioGratis ? COSTO_ENVIO_MXN : 0
   const totalFinal = totalBruto - descuentoHC + costoEnvio
 
   const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 transition"
@@ -243,7 +205,7 @@ export default function CheckoutPage() {
                         <p className="text-ink-muted text-xs mt-1">✅ ¡Envío gratis! Tu pedido supera $1,200 MXN</p>
                       ) : (
                         <div className="text-ink-muted text-xs mt-1">
-                          <p>🚚 Cotizamos tu envío según tu dirección</p>
+                          <p>🚚 Envío ${COSTO_ENVIO_MXN.toLocaleString('es-MX')} MXN</p>
                           <p className="mt-1">📦 ¿Quieres ahorrártelo? Guarda tu pedido en <span className="font-black">Bodegatombe</span>, junta ${BODEGA_THRESHOLD_MXN.toLocaleString('es-MX')} en compras y tu envío sale <span className="font-black">GRATIS</span></p>
                         </div>
                       )}
@@ -349,28 +311,6 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* Paquetería */}
-            {!modoApartar && modoEnvio === 'inmediato' && !envioGratis && direccionId && (
-              <div className="bg-surface border border-line rounded-2xl p-6">
-                <h2 className="text-lg font-black uppercase text-orange-600 mb-6">Elige tu paquetería</h2>
-                {cotizando && <p className="text-ink-muted text-sm">Cotizando envío...</p>}
-                {!cotizando && errorCotizacion && <p className="text-red-400 text-sm">{errorCotizacion}</p>}
-                {!cotizando && tarifas.length > 0 && (
-                  <div className="flex flex-col gap-3">
-                    {tarifas.map(t => (
-                      <button key={t.rateId} onClick={() => setTarifaId(t.rateId)}
-                        className={`flex items-center justify-between gap-3 text-left p-4 rounded-xl border-2 transition ${tarifaId === t.rateId ? 'border-orange-500 bg-orange-500/10' : 'border-line hover:border-line-strong'}`}>
-                        <div>
-                          <p className="text-ink font-black text-sm">{t.proveedor} <span className="text-ink-muted font-normal">· {t.servicio}</span></p>
-                          <p className="text-ink-muted text-xs mt-1">{t.dias ? `${t.dias} día${t.dias !== 1 ? 's' : ''} aprox.` : 'Tiempo de entrega variable'}</p>
-                        </div>
-                        <span className="text-orange-600 font-black text-sm whitespace-nowrap">${t.total.toLocaleString('es-MX')} MXN</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Resumen */}
@@ -440,7 +380,7 @@ export default function CheckoutPage() {
                 )}
                 {costoEnvio > 0 && (
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-ink-muted text-sm">Envío{tarifaSeleccionada ? ` (${tarifaSeleccionada.proveedor})` : ''}</span>
+                    <span className="text-ink-muted text-sm">Envío</span>
                     <span className="text-ink-muted text-sm">${costoEnvio.toLocaleString('es-MX')} MXN</span>
                   </div>
                 )}
@@ -458,7 +398,7 @@ export default function CheckoutPage() {
 
               {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
-              <button onClick={handlePagar} disabled={procesando || ((modoEnvio === 'inmediato' || modoApartar) && (!direccionId || !confirmoDireccion)) || (!modoApartar && modoEnvio === 'inmediato' && !envioGratis && !tarifaId)}
+              <button onClick={handlePagar} disabled={procesando || ((modoEnvio === 'inmediato' || modoApartar) && (!direccionId || !confirmoDireccion))}
                 className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black uppercase py-4 rounded-xl transition">
                 {procesando ? 'Procesando...' : totalFinal === 0 ? '🎉 Canjear con Hecacoins' : modoApartar ? '🔒 Pagar anticipo' : '💳 Ir a pagar'}
               </button>
