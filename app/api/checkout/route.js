@@ -5,6 +5,10 @@ import { Resend } from 'resend'
 import { getProducto, getProductosPorIds, calcularPrecioFinal } from '@/lib/sanity'
 import { getSanityWriteClient, descontarStock } from '@/lib/sanityAdmin'
 import { ajustarHecacoins } from '@/lib/hecacoins'
+import { obtenerCotizacion } from '@/lib/soloenvios'
+import { COSTO_ENVIO_MXN, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
+
+export const maxDuration = 60
 
 // Rate limit en memoria: 10 solicitudes por IP cada 60s.
 // Vive solo en la instancia serverless que lo procesa (no es un límite
@@ -42,16 +46,38 @@ export async function POST(request) {
 
   try {
     const {
-      items, userId, userEmail, direccion,
+      items, userId, userEmail, direccion_id,
       tipo_pedido, producto_id, pedido_id, anticipo_pagado, monto_liquidacion,
-      hecacoins_a_canjear, destino
+      hecacoins_a_canjear, destino, quotation_id, rate_id
     } = await request.json()
+
+    // Se requiere una dirección guardada (y confirmada por el cliente) para
+    // apartados, liquidaciones y compras normales, siempre que no vayan a
+    // Bodegatombe (ahí no hace falta todavía).
+    const requiereDireccion = tipo_pedido === 'apartado' || (destino !== 'bodega' && ['normal', 'liquidacion'].includes(tipo_pedido || 'normal'))
+    let direccionSnapshot = null
+    if (requiereDireccion) {
+      if (!direccion_id) {
+        return NextResponse.json({ error: 'Falta elegir una dirección de envío.' }, { status: 400 })
+      }
+      const { data: direccionReal } = await supabase
+        .from('direcciones')
+        .select('nombre, apellido, telefono, calle, colonia, ciudad, estado, cp, referencias')
+        .eq('id', direccion_id)
+        .eq('user_id', userId)
+        .single()
+      if (!direccionReal) {
+        return NextResponse.json({ error: 'La dirección seleccionada no es válida.' }, { status: 400 })
+      }
+      direccionSnapshot = direccionReal
+    }
 
     // Validar precios reales contra Sanity — nunca confiar en el precio que manda el cliente.
     // Para 'liquidacion' el monto correcto no vive en Sanity (puede haber cambiado desde que
     // se apartó); vive en pedidos.monto_liquidacion en Supabase, atado al pedido_id exacto.
     let itemsValidados = items
     let montoLiquidacionReal = null
+    let valorTotalOrdenLiquidacion = null
 
     if (tipo_pedido === 'apartado') {
       const item = items[0]
@@ -76,7 +102,7 @@ export async function POST(request) {
 
       const { data: pedidoApartado } = await supabase
         .from('pedidos')
-        .select('id, user_id, producto_id, estado, tipo_pedido, monto_liquidacion')
+        .select('id, user_id, producto_id, estado, tipo_pedido, monto_liquidacion, anticipo_pagado')
         .eq('id', pedido_id)
         .single()
 
@@ -91,6 +117,10 @@ export async function POST(request) {
       }
 
       montoLiquidacionReal = pedidoApartado.monto_liquidacion
+      // El valor completo de la pieza (anticipo + liquidación) es lo que
+      // decide si aplica envío gratis — no el saldo restante, que puede ser
+      // chico aunque la pieza completa valga mucho más de $1,200.
+      valorTotalOrdenLiquidacion = (pedidoApartado.anticipo_pagado || 0) + montoLiquidacionReal
       itemsValidados = [{ ...items[0], precio: montoLiquidacionReal }]
     } else {
       const ids = items.map(i => i.productoId)
@@ -112,6 +142,41 @@ export async function POST(request) {
     // Calcular total original (con precios ya validados contra Sanity)
     const totalOriginal = itemsValidados.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
 
+    // Costo de envío: se calcula aquí, nunca se confía en lo que mande el cliente.
+    // Aplica en compras normales y en liquidaciones de preventa que eligen
+    // envío directo (no bodega) y no alcanzan el monto de envío gratis.
+    // Para liquidación, el umbral se compara contra el valor completo de la
+    // pieza (anticipo + liquidación), no contra el saldo restante.
+    const valorParaUmbralEnvio = tipo_pedido === 'liquidacion' ? valorTotalOrdenLiquidacion : totalOriginal
+    const requiereEnvioPago = ['normal', 'liquidacion'].includes(tipo_pedido || 'normal') && destino !== 'bodega' && valorParaUmbralEnvio < BODEGA_THRESHOLD_MXN
+
+    let costoEnvio = 0
+    let envioCotizacion = null
+    if (requiereEnvioPago) {
+      if (quotation_id && rate_id) {
+        // Se vuelve a leer la cotización real y se verifica que la tarifa
+        // elegida siga ahí — nunca se confía en el monto que manda el cliente.
+        const { tarifas } = await obtenerCotizacion(quotation_id)
+        const tarifaElegida = tarifas.find(t => t.id === rate_id)
+        if (!tarifaElegida) {
+          return NextResponse.json({ error: 'La tarifa de envío elegida ya no es válida. Vuelve a cotizar.' }, { status: 400 })
+        }
+        costoEnvio = parseFloat(tarifaElegida.total)
+        envioCotizacion = {
+          quotation_id,
+          rate_id,
+          proveedor: tarifaElegida.provider_display_name,
+          servicio: tarifaElegida.provider_service_name,
+          total: costoEnvio,
+          dias: tarifaElegida.days,
+        }
+      } else {
+        // Fallback temporal: la liquidación de preventas aún no cotiza en
+        // tiempo real (pendiente), así que sigue usando el monto fijo.
+        costoEnvio = COSTO_ENVIO_MXN
+      }
+    }
+
     // Validar Hecacoins si se quieren canjear
     let descuentoHecacoins = 0
     if (hecacoins_a_canjear > 0) {
@@ -125,7 +190,7 @@ export async function POST(request) {
       descuentoHecacoins = Math.min(hecacoins_a_canjear, saldoDisponible, totalOriginal)
     }
 
-    const totalFinal = Math.max(0, totalOriginal - descuentoHecacoins)
+    const totalFinal = Math.max(0, totalOriginal - descuentoHecacoins) + costoEnvio
 
     // Si paga todo con Hecacoins — no pasa por MercadoPago, así que hay que
     // generar el pedido, descontar stock y mandar los correos aquí mismo
@@ -159,6 +224,8 @@ export async function POST(request) {
         producto_id: producto_id || null,
         anticipo_pagado: anticipo_pagado || null,
         monto_liquidacion: tipo_pedido === 'liquidacion' ? montoLiquidacionReal : (monto_liquidacion || null),
+        direccion_snapshot: direccionSnapshot,
+        envio_cotizacion: envioCotizacion,
       }).select().single()
 
       await supabase.from('hecacoins_movimientos').insert({
@@ -216,33 +283,62 @@ export async function POST(request) {
 
     const preference = new Preference(client)
 
-    // Items ajustados con descuento si aplica
-    const itemsMP = descuentoHecacoins > 0
-      ? [
-          ...itemsValidados.map(item => ({
-            id: item.productoId,
-            title: item.nombre,
-            quantity: item.cantidad,
-            unit_price: item.precio,
-            currency_id: 'MXN',
-            picture_url: item.imagen || '',
-          })),
-          {
-            id: 'hecacoins-descuento',
-            title: `Descuento Hecacoins`,
-            quantity: 1,
-            unit_price: -descuentoHecacoins,
-            currency_id: 'MXN',
-          }
-        ]
-      : itemsValidados.map(item => ({
-          id: item.productoId,
-          title: item.nombre,
-          quantity: item.cantidad,
-          unit_price: item.precio,
-          currency_id: 'MXN',
-          picture_url: item.imagen || '',
-        }))
+    // Items ajustados con descuento y envío si aplica
+    const itemsMP = [
+      ...itemsValidados.map(item => ({
+        id: item.productoId,
+        title: item.nombre,
+        quantity: item.cantidad,
+        unit_price: item.precio,
+        currency_id: 'MXN',
+        picture_url: item.imagen || '',
+      })),
+      ...(descuentoHecacoins > 0 ? [{
+        id: 'hecacoins-descuento',
+        title: `Descuento Hecacoins`,
+        quantity: 1,
+        unit_price: -descuentoHecacoins,
+        currency_id: 'MXN',
+      }] : []),
+      ...(costoEnvio > 0 ? [{
+        id: 'envio',
+        title: 'Servicio de envío',
+        quantity: 1,
+        unit_price: costoEnvio,
+        currency_id: 'MXN',
+      }] : []),
+    ]
+
+    // Mercado Pago rechaza el pago en checkout (sin dar motivo) cuando
+    // external_reference es muy largo — no está documentado un límite exacto,
+    // pero se confirmó en producción que un JSON con todos estos campos
+    // (~300 caracteres) rompe el pago mientras uno corto (~200) sí funciona.
+    // Por eso el detalle completo se guarda en Supabase y a MP solo se le
+    // manda el id de ese registro — el webhook lo vuelve a leer de ahí.
+    const { data: checkoutPendiente, error: errorCheckoutPendiente } = await supabase
+      .from('checkout_pendientes')
+      .insert({
+        payload: {
+          userId,
+          tipo_pedido: tipo_pedido || 'normal',
+          destino: destino || 'directo',
+          producto_id: producto_id || null,
+          pedido_id: tipo_pedido === 'liquidacion' ? pedido_id : null,
+          anticipo_pagado: anticipo_pagado || null,
+          monto_liquidacion: tipo_pedido === 'liquidacion' ? montoLiquidacionReal : (monto_liquidacion || null),
+          hecacoins_canjeadas: descuentoHecacoins,
+          costo_envio: costoEnvio,
+          direccion_id: direccion_id || null,
+          quotation_id: envioCotizacion?.quotation_id || null,
+          rate_id: envioCotizacion?.rate_id || null,
+        }
+      })
+      .select('id')
+      .single()
+
+    if (errorCheckoutPendiente) {
+      throw new Error(`Error al guardar el checkout pendiente: ${errorCheckoutPendiente.message}`)
+    }
 
     const response = await preference.create({
       body: {
@@ -254,16 +350,7 @@ export async function POST(request) {
           pending: `${process.env.NEXT_PUBLIC_SITE_URL}/carrito?estado=pendiente`,
         },
         auto_return: 'approved',
-        external_reference: JSON.stringify({
-          userId,
-          tipo_pedido: tipo_pedido || 'normal',
-          destino: destino || 'directo',
-          producto_id: producto_id || null,
-          pedido_id: tipo_pedido === 'liquidacion' ? pedido_id : null,
-          anticipo_pagado: anticipo_pagado || null,
-          monto_liquidacion: tipo_pedido === 'liquidacion' ? montoLiquidacionReal : (monto_liquidacion || null),
-          hecacoins_canjeadas: descuentoHecacoins,
-        }),
+        external_reference: String(checkoutPendiente.id),
         notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook`,
       }
     })
