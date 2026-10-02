@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { List } from 'react-window'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { adminFetch } from '@/lib/adminFetch'
@@ -12,6 +13,33 @@ import ProductoThumb from '@/app/components/ProductoThumb'
 import BodegaProgress from '@/app/components/BodegaProgress'
 import EstadoBadge from '@/app/components/EstadoBadge'
 import PedidoItemsList from '@/app/components/PedidoItemsList'
+
+function ClienteRow({ index, style, clientesFiltrados, clienteSeleccionado, seleccionarCliente }) {
+  const cliente = clientesFiltrados[index]
+  return (
+    <div style={style} className="pb-3 pr-1">
+      <button key={cliente.user_id}
+        onClick={() => seleccionarCliente(cliente)}
+        className={`w-full text-left bg-surface border rounded-2xl p-4 transition ${
+          clienteSeleccionado?.user_id === cliente.user_id
+            ? 'border-orange-500 bg-orange-500/5'
+            : 'border-line hover:border-ink/30'
+        }`}>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-ink font-black text-sm">
+            {cliente.nombre || 'Sin nombre'} {cliente.apellido || ''}
+          </p>
+          <span className="text-orange-500 font-black text-xs">{cliente.pedidos.count} pedidos</span>
+        </div>
+        <div className="flex gap-4 text-xs text-ink/30">
+          <span>🪙 {cliente.hecacoins?.saldo?.toLocaleString('es-MX') || 0} HC</span>
+          <span>📦 ${cliente.bodega?.total_acumulado?.toLocaleString('es-MX') || 0} bodega</span>
+          <span>💰 ${cliente.pedidos.total?.toLocaleString('es-MX') || 0} total</span>
+        </div>
+      </button>
+    </div>
+  )
+}
 
 export default function AdminClientes() {
   const { user, loading: authLoading } = useAuth()
@@ -34,6 +62,9 @@ export default function AdminClientes() {
   const [historialFecha, setHistorialFecha] = useState('')
   const [historialImagenUrl, setHistorialImagenUrl] = useState(null)
   const [subiendoImagenHistorial, setSubiendoImagenHistorial] = useState(false)
+  const [tabActivo, setTabActivo] = useState('pedidos')
+  const [accionHecacoins, setAccionHecacoins] = useState(null)
+  const [mostrarAgregarBodega, setMostrarAgregarBodega] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -138,6 +169,9 @@ export default function AdminClientes() {
     setHistorialPrecio('')
     setHistorialFecha('')
     setHistorialImagenUrl(null)
+    setTabActivo('pedidos')
+    setAccionHecacoins(null)
+    setMostrarAgregarBodega(false)
     await cargarPedidosBodega(cliente.user_id)
     await cargarPedidosCliente(cliente.user_id)
     await cargarHistorial(cliente.user_id)
@@ -380,29 +414,16 @@ export default function AdminClientes() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          <div className="flex flex-col gap-3 max-h-screen overflow-y-auto">
-            {clientesFiltrados.map(cliente => (
-              <button key={cliente.user_id}
-                onClick={() => seleccionarCliente(cliente)}
-                className={`text-left bg-surface border rounded-2xl p-4 transition ${
-                  clienteSeleccionado?.user_id === cliente.user_id
-                    ? 'border-orange-500 bg-orange-500/5'
-                    : 'border-line hover:border-ink/30'
-                }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-ink font-black text-sm">
-                    {cliente.nombre || 'Sin nombre'} {cliente.apellido || ''}
-                  </p>
-                  <span className="text-orange-500 font-black text-xs">{cliente.pedidos.count} pedidos</span>
-                </div>
-                <div className="flex gap-4 text-xs text-ink/30">
-                  <span>🪙 {cliente.hecacoins?.saldo?.toLocaleString('es-MX') || 0} HC</span>
-                  <span>📦 ${cliente.bodega?.total_acumulado?.toLocaleString('es-MX') || 0} bodega</span>
-                  <span>💰 ${cliente.pedidos.total?.toLocaleString('es-MX') || 0} total</span>
-                </div>
-              </button>
-            ))}
-            {clientesFiltrados.length === 0 && (
+          <div className="max-h-screen overflow-hidden">
+            {clientesFiltrados.length > 0 ? (
+              <List
+                rowComponent={ClienteRow}
+                rowCount={clientesFiltrados.length}
+                rowHeight={92}
+                defaultHeight={800}
+                rowProps={{ clientesFiltrados, clienteSeleccionado, seleccionarCliente }}
+              />
+            ) : (
               <p className="text-ink/30 text-center py-8">No hay clientes registrados</p>
             )}
           </div>
@@ -422,9 +443,27 @@ export default function AdminClientes() {
                 </h2>
                 <p className="text-ink/30 text-xs mb-6">{clienteSeleccionado.telefono || 'Sin teléfono'}</p>
 
-                <h3 className="text-ink/50 text-xs font-black uppercase mb-3">Pedidos ({pedidosCliente.length})</h3>
-                {pedidosCliente.length > 0 ? (
-                  <div className="flex flex-col gap-3 mb-6">
+                <div className="flex gap-1 border-b border-line mb-6 -mt-2">
+                  {[
+                    { id: 'pedidos', label: `Pedidos (${pedidosCliente.length})` },
+                    { id: 'hecacoins', label: 'Hecacoins' },
+                    { id: 'bodega', label: 'Bodega' },
+                    { id: 'historial', label: 'Historial' },
+                  ].map(tab => (
+                    <button key={tab.id} onClick={() => setTabActivo(tab.id)}
+                      className={`px-3 py-2 text-xs font-black uppercase transition border-b-2 -mb-px ${
+                        tabActivo === tab.id
+                          ? 'border-orange-500 text-orange-500'
+                          : 'border-transparent text-ink/30 hover:text-ink/60'
+                      }`}>
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {tabActivo === 'pedidos' && (
+                pedidosCliente.length > 0 ? (
+                  <div className="flex flex-col gap-3">
                     {pedidosCliente.map(pedido => (
                       <div key={pedido.id} className="bg-page rounded-xl p-4">
                         <div className="flex items-center justify-between gap-2 mb-2">
@@ -437,96 +476,148 @@ export default function AdminClientes() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-ink/20 text-xs mb-6">Este cliente aún no tiene pedidos</p>
+                  <p className="text-ink/20 text-xs">Este cliente aún no tiene pedidos</p>
+                )
                 )}
 
-                <h3 className="text-ink/50 text-xs font-black uppercase mb-3">Hecacoins</h3>
-                <div className="bg-page rounded-xl p-4 mb-3">
-                  <p className="text-orange-500 font-black text-2xl">{clienteSeleccionado.hecacoins?.saldo?.toLocaleString('es-MX') || 0} HC</p>
-                  <p className="text-ink/30 text-xs mt-1">Ganado total: {clienteSeleccionado.hecacoins?.total_ganado?.toLocaleString('es-MX') || 0} HC</p>
-                </div>
-
-                <p className="text-ink/30 text-xs mb-1">Agregar Hecacoins</p>
-                <div className="flex gap-2 mb-3">
-                  <input type="number" value={hecacoinsNuevas} onChange={e => setHecacoinsNuevas(e.target.value)}
-                    placeholder="Cantidad a agregar"
-                    className="flex-1 bg-page border border-line-strong rounded-lg px-3 py-2 text-ink text-sm focus:outline-none focus:border-orange-500" />
-                  <button onClick={asignarHecacoins} disabled={guardando || !hecacoinsNuevas}
-                    className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black font-black uppercase text-xs px-4 py-2 rounded-lg transition">
-                    + Agregar
-                  </button>
-                </div>
-
-                <p className="text-ink/30 text-xs mb-1">Quitar Hecacoins</p>
-                <div className="flex gap-2 mb-6">
-                  <input type="number" value={hecacoinsRestar} onChange={e => setHecacoinsRestar(e.target.value)}
-                    placeholder="Cantidad a quitar"
-                    className="flex-1 bg-page border border-line-strong rounded-lg px-3 py-2 text-ink text-sm focus:outline-none focus:border-red-500" />
-                  <button onClick={restarHecacoins} disabled={guardando || !hecacoinsRestar}
-                    className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-black uppercase text-xs px-4 py-2 rounded-lg transition">
-                    - Quitar
-                  </button>
-                </div>
-
-                <h3 className="text-ink/50 text-xs font-black uppercase mb-3">Bodegatombe</h3>
-                <div className="bg-page rounded-xl p-4 mb-3">
-                  <p className="text-blue-400 font-black text-2xl">${clienteSeleccionado.bodega?.total_acumulado?.toLocaleString('es-MX') || 0} MXN</p>
-                  <p className="text-ink/30 text-xs mt-1 mb-3">de ${BODEGA_THRESHOLD_MXN.toLocaleString('es-MX')} para envío gratis</p>
-                  <BodegaProgress total={clienteSeleccionado.bodega?.total_acumulado || 0} showLabel={false} showMensaje={false} height={8} />
-                </div>
-
-                {pedidosBodega.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-ink/30 text-xs uppercase font-black mb-2">Productos guardados ({pedidosBodega.length})</p>
-                    <div className="flex flex-col gap-2">
-                      {pedidosBodega.map(pedido => (
-                        <div key={pedido.id} className="flex items-center justify-between gap-3 bg-surface-alt rounded-lg px-3 py-2">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <ProductoThumb imagenes={getProductoInfo(pedido.producto_id)?.imagenes} nombre={getNombreProducto(pedido.producto_id)} size={32} />
-                            <div className="min-w-0">
-                              <p className="text-ink text-xs font-black truncate">{getNombreProducto(pedido.producto_id)}</p>
-                              <p className="text-orange-500 text-xs">${pedido.total?.toLocaleString('es-MX')} MXN</p>
-                            </div>
-                          </div>
-                          <button onClick={() => eliminarDeBodega(pedido.id)} disabled={guardando}
-                            className="text-ink/20 hover:text-red-400 transition text-xs disabled:opacity-30 flex-shrink-0">
-                            🗑
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                {tabActivo === 'hecacoins' && (
+                <div>
+                  <div className="bg-page rounded-xl p-4 mb-3">
+                    <p className="text-orange-500 font-black text-2xl">{clienteSeleccionado.hecacoins?.saldo?.toLocaleString('es-MX') || 0} HC</p>
+                    <p className="text-ink/30 text-xs mt-1">Ganado total: {clienteSeleccionado.hecacoins?.total_ganado?.toLocaleString('es-MX') || 0} HC</p>
                   </div>
-                )}
 
-                <p className="text-ink/30 text-xs mb-1">Agregar producto a bodega</p>
-                <div className="relative">
-                  <input type="text" value={busquedaProducto} onChange={e => setBusquedaProducto(e.target.value)}
-                    placeholder="Buscar producto..."
-                    className="w-full bg-page border border-line-strong rounded-lg px-3 py-2 text-ink text-sm focus:outline-none focus:border-orange-500 placeholder-ink/20" />
-                  {productosFiltrados.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 bg-surface-alt border border-line rounded-xl mt-1 z-10 overflow-hidden">
-                      {productosFiltrados.map(p => (
-                        <button key={p._id} onClick={() => agregarProductoBodega(p)} disabled={guardando}
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-ink/5 transition text-left border-b border-ink/5 last:border-0">
-                          {p.imagenes?.[0] ? (
-                            <img src={urlFor(p.imagenes[0]).width(40).height(40).url()} alt={p.nombre}
-                              className="w-8 h-8 object-contain rounded bg-white flex-shrink-0" />
-                          ) : (
-                            <div className="w-8 h-8 bg-surface-alt rounded flex-shrink-0" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-ink text-xs font-black truncate">{p.nombre}</p>
-                            <p className="text-orange-500 text-xs">${p.precio?.toLocaleString('es-MX') || '—'} MXN</p>
-                          </div>
-                          <span className="text-orange-500 text-xs font-black flex-shrink-0">+ Agregar</span>
+                  {accionHecacoins === 'agregar' && (
+                    <div className="mb-3">
+                      <p className="text-ink/30 text-xs mb-1">Agregar Hecacoins</p>
+                      <div className="flex gap-2">
+                        <input type="number" value={hecacoinsNuevas} onChange={e => setHecacoinsNuevas(e.target.value)}
+                          placeholder="Cantidad a agregar" autoFocus
+                          className="flex-1 bg-page border border-line-strong rounded-lg px-3 py-2 text-ink text-sm focus:outline-none focus:border-orange-500" />
+                        <button onClick={asignarHecacoins} disabled={guardando || !hecacoinsNuevas}
+                          className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black font-black uppercase text-xs px-4 py-2 rounded-lg transition">
+                          + Agregar
                         </button>
-                      ))}
+                        <button onClick={() => { setAccionHecacoins(null); setHecacoinsNuevas('') }}
+                          className="text-ink/30 hover:text-ink text-xs font-black uppercase px-3 py-2">
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {accionHecacoins === 'quitar' && (
+                    <div className="mb-3">
+                      <p className="text-ink/30 text-xs mb-1">Quitar Hecacoins</p>
+                      <div className="flex gap-2">
+                        <input type="number" value={hecacoinsRestar} onChange={e => setHecacoinsRestar(e.target.value)}
+                          placeholder="Cantidad a quitar" autoFocus
+                          className="flex-1 bg-page border border-line-strong rounded-lg px-3 py-2 text-ink text-sm focus:outline-none focus:border-red-500" />
+                        <button onClick={restarHecacoins} disabled={guardando || !hecacoinsRestar}
+                          className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-black uppercase text-xs px-4 py-2 rounded-lg transition">
+                          - Quitar
+                        </button>
+                        <button onClick={() => { setAccionHecacoins(null); setHecacoinsRestar('') }}
+                          className="text-ink/30 hover:text-ink text-xs font-black uppercase px-3 py-2">
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {!accionHecacoins && (
+                    <div className="flex gap-2">
+                      <button onClick={() => setAccionHecacoins('agregar')}
+                        className="flex-1 border border-line hover:border-orange-500 text-ink/40 hover:text-orange-500 text-xs font-black uppercase px-4 py-2 rounded-lg transition">
+                        + Agregar
+                      </button>
+                      <button onClick={() => setAccionHecacoins('quitar')}
+                        className="flex-1 border border-line hover:border-red-400 text-ink/40 hover:text-red-400 text-xs font-black uppercase px-4 py-2 rounded-lg transition">
+                        - Quitar
+                      </button>
                     </div>
                   )}
                 </div>
-                <p className="text-ink/20 text-xs mt-1">Escribe al menos 2 letras para buscar</p>
+                )}
 
-                <h3 className="text-ink/50 text-xs font-black uppercase mb-3 mt-6">Historial de compras</h3>
+                {tabActivo === 'bodega' && (
+                <div>
+                  <div className="bg-page rounded-xl p-4 mb-3">
+                    <p className="text-blue-400 font-black text-2xl">${clienteSeleccionado.bodega?.total_acumulado?.toLocaleString('es-MX') || 0} MXN</p>
+                    <p className="text-ink/30 text-xs mt-1 mb-3">de ${BODEGA_THRESHOLD_MXN.toLocaleString('es-MX')} para envío gratis</p>
+                    <BodegaProgress total={clienteSeleccionado.bodega?.total_acumulado || 0} showLabel={false} showMensaje={false} height={8} />
+                  </div>
+
+                  {pedidosBodega.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-ink/30 text-xs uppercase font-black mb-2">Productos guardados ({pedidosBodega.length})</p>
+                      <div className="flex flex-col gap-2">
+                        {pedidosBodega.map(pedido => (
+                          <div key={pedido.id} className="flex items-center justify-between gap-3 bg-surface-alt rounded-lg px-3 py-2">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <ProductoThumb imagenes={getProductoInfo(pedido.producto_id)?.imagenes} nombre={getNombreProducto(pedido.producto_id)} size={32} />
+                              <div className="min-w-0">
+                                <p className="text-ink text-xs font-black truncate">{getNombreProducto(pedido.producto_id)}</p>
+                                <p className="text-orange-500 text-xs">${pedido.total?.toLocaleString('es-MX')} MXN</p>
+                              </div>
+                            </div>
+                            <button onClick={() => eliminarDeBodega(pedido.id)} disabled={guardando}
+                              className="text-ink/20 hover:text-red-400 transition text-xs disabled:opacity-30 flex-shrink-0">
+                              🗑
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {mostrarAgregarBodega ? (
+                    <div>
+                      <p className="text-ink/30 text-xs mb-1">Agregar producto a bodega</p>
+                      <div className="relative">
+                        <input type="text" value={busquedaProducto} onChange={e => setBusquedaProducto(e.target.value)}
+                          placeholder="Buscar producto..." autoFocus
+                          className="w-full bg-page border border-line-strong rounded-lg px-3 py-2 text-ink text-sm focus:outline-none focus:border-orange-500 placeholder-ink/20" />
+                        {productosFiltrados.length > 0 && (
+                          <div className="absolute top-full left-0 right-0 bg-surface-alt border border-line rounded-xl mt-1 z-10 overflow-hidden">
+                            {productosFiltrados.map(p => (
+                              <button key={p._id} onClick={() => agregarProductoBodega(p)} disabled={guardando}
+                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-ink/5 transition text-left border-b border-ink/5 last:border-0">
+                                {p.imagenes?.[0] ? (
+                                  <img src={urlFor(p.imagenes[0]).width(40).height(40).url()} alt={p.nombre}
+                                    className="w-8 h-8 object-contain rounded bg-white flex-shrink-0" />
+                                ) : (
+                                  <div className="w-8 h-8 bg-surface-alt rounded flex-shrink-0" />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-ink text-xs font-black truncate">{p.nombre}</p>
+                                  <p className="text-orange-500 text-xs">${p.precio?.toLocaleString('es-MX') || '—'} MXN</p>
+                                </div>
+                                <span className="text-orange-500 text-xs font-black flex-shrink-0">+ Agregar</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-ink/20 text-xs">Escribe al menos 2 letras para buscar</p>
+                        <button onClick={() => { setMostrarAgregarBodega(false); setBusquedaProducto('') }}
+                          className="text-ink/30 hover:text-ink text-xs font-black uppercase">
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={() => setMostrarAgregarBodega(true)}
+                      className="w-full border border-line hover:border-orange-500 text-ink/40 hover:text-orange-500 text-xs font-black uppercase px-4 py-2 rounded-lg transition">
+                      + Agregar producto a bodega
+                    </button>
+                  )}
+                </div>
+                )}
+
+                {tabActivo === 'historial' && (
+                <div>
                 {historial.length > 0 ? (
                   <div className="flex flex-col gap-2 mb-3">
                     {historial.map(h => (
@@ -596,6 +687,8 @@ export default function AdminClientes() {
                     className="w-full border border-line hover:border-orange-500 text-ink/40 hover:text-orange-500 text-xs font-black uppercase px-4 py-2 rounded-lg transition">
                     + Agregar al historial
                   </button>
+                )}
+                </div>
                 )}
               </div>
 
