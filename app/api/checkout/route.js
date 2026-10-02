@@ -7,6 +7,7 @@ import { getSanityWriteClient, descontarStock } from '@/lib/sanityAdmin'
 import { ajustarHecacoins } from '@/lib/hecacoins'
 import { obtenerCotizacion } from '@/lib/soloenvios'
 import { COSTO_ENVIO_MXN, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
+import { alertarAdmin } from '@/lib/alertas'
 
 export const maxDuration = 60
 
@@ -363,6 +364,16 @@ export async function POST(request) {
     })
   } catch (error) {
     console.error('Error MP:', error)
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      await alertarAdmin(
+        resend,
+        '🚨 Error en /api/checkout — un cliente no pudo pagar',
+        `Error: ${error.message}\n\nUn cliente intentó pagar y el checkout falló antes de llegar a Mercado Pago (no se le cobró nada). Revisar logs de Vercel para más contexto.\nHora: ${new Date().toISOString()}`
+      )
+    } catch (e) {
+      console.error('No se pudo alertar al admin del error de checkout:', e)
+    }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

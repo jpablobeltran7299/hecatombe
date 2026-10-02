@@ -6,6 +6,7 @@ import crypto from 'crypto'
 import { getSanityWriteClient, descontarStock } from '@/lib/sanityAdmin'
 import { ajustarHecacoins } from '@/lib/hecacoins'
 import { obtenerCotizacion } from '@/lib/soloenvios'
+import { alertarAdmin } from '@/lib/alertas'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -31,19 +32,6 @@ function validarFirmaMercadoPago(request, dataId) {
   const hash = crypto.createHmac('sha256', secret).update(manifest).digest('hex')
 
   return hash === v1
-}
-
-async function alertarAdmin(resend, asunto, detalle) {
-  try {
-    await resend.emails.send({
-      from: 'Hecatombe Sistema <noreply@hecatombe.com.mx>',
-      to: 'hecatombe.9194@gmail.com',
-      subject: asunto,
-      html: `<pre style="font-family:monospace;white-space:pre-wrap;">${detalle}</pre>`,
-    })
-  } catch (e) {
-    console.error('No se pudo enviar alerta al admin:', e)
-  }
 }
 
 export async function POST(request) {
@@ -384,67 +372,92 @@ export async function POST(request) {
       await supabase.from('carrito').delete().eq('user_id', userId)
     }
 
+    // Cada paso de aquí en adelante ya tiene el pedido creado y pagado de por
+    // medio — si uno falla, los demás deben seguir corriendo igual (y avisar
+    // con detalle exacto de qué quedó pendiente) en vez de que una excepción
+    // tire todo el handler a un 500 que MP reintenta, pero que el dedupe de
+    // arriba (mp_payment_id ya existe) corta antes de volver a intentar nada.
+
     // Descontar stock en Sanity
-    if (tipo_pedido === 'normal') {
-      const itemsVendidos = carritoItems || []
-      for (const item of itemsVendidos) {
-        await descontarStock(sanityClient, item.producto_id, item.cantidad || 1)
+    try {
+      if (tipo_pedido === 'normal') {
+        const itemsVendidos = carritoItems || []
+        for (const item of itemsVendidos) {
+          await descontarStock(sanityClient, item.producto_id, item.cantidad || 1)
+        }
+      } else if (tipo_pedido === 'apartado' && producto_id) {
+        // El stock de una preventa son las piezas conseguidas con el proveedor —
+        // el apartado es lo que reclama una de esas piezas, no la liquidación
+        // (que es solo el pago final de una pieza ya reclamada; no se vuelve a
+        // descontar para no restar dos veces la misma unidad).
+        await descontarStock(sanityClient, producto_id, 1)
       }
-    } else if (tipo_pedido === 'apartado' && producto_id) {
-      // El stock de una preventa son las piezas conseguidas con el proveedor —
-      // el apartado es lo que reclama una de esas piezas, no la liquidación
-      // (que es solo el pago final de una pieza ya reclamada; no se vuelve a
-      // descontar para no restar dos veces la misma unidad).
-      await descontarStock(sanityClient, producto_id, 1)
+    } catch (e) {
+      console.error(`Error descontando stock para pedido #${pedido?.id}:`, e)
+      await alertarAdmin(
+        resend,
+        `⚠️ No se descontó stock — pedido #${pedido?.id}`,
+        `Payment ID: ${paymentId}\nPedido: #${pedido?.id}\nError: ${e.message}\n\nRevisar y descontar stock manualmente en Sanity si corresponde.`
+      )
     }
 
     // Descontar Hecacoins si se canjearon (ajustarHecacoins es seguro ante
     // escrituras concurrentes — ver lib/hecacoins.js)
-    if (hecacoins_canjeadas > 0) {
-      await ajustarHecacoins(supabase, userId, {
-        saldoDelta: -hecacoins_canjeadas,
-        canjeadoDelta: hecacoins_canjeadas,
-      })
-
-      await supabase.from('hecacoins_movimientos').insert({
-        user_id: userId,
-        pedido_id: pedido?.id,
-        tipo: 'canjeado',
-        monto: hecacoins_canjeadas,
-        descripcion: `Canje en pedido #${pedido?.id}`,
-      })
-    }
-
-    // Acumular Hecacoins (3%) — solo en pedidos normales y liquidaciones
-    const tiposConHecacoins = ['normal', 'liquidacion']
-    if (tiposConHecacoins.includes(tipo_pedido)) {
-      // El costo de envío no genera Hecacoins, solo el valor de la mercancía.
-      const hecacoinsGanadas = Math.floor((pago.transaction_amount - costo_envio) * 0.03)
-
-      if (hecacoinsGanadas > 0) {
-        const añoActual = new Date().getFullYear()
-        const vencimiento = `${añoActual}-12-31`
-
+    try {
+      if (hecacoins_canjeadas > 0) {
         await ajustarHecacoins(supabase, userId, {
-          saldoDelta: hecacoinsGanadas,
-          ganadoDelta: hecacoinsGanadas,
-          vencimiento,
+          saldoDelta: -hecacoins_canjeadas,
+          canjeadoDelta: hecacoins_canjeadas,
         })
 
         await supabase.from('hecacoins_movimientos').insert({
           user_id: userId,
           pedido_id: pedido?.id,
-          tipo: 'ganado',
-          monto: hecacoinsGanadas,
-          descripcion: `Compra pedido #${pedido?.id}`,
+          tipo: 'canjeado',
+          monto: hecacoins_canjeadas,
+          descripcion: `Canje en pedido #${pedido?.id}`,
         })
       }
+
+      // Acumular Hecacoins (3%) — solo en pedidos normales y liquidaciones
+      const tiposConHecacoins = ['normal', 'liquidacion']
+      if (tiposConHecacoins.includes(tipo_pedido)) {
+        // El costo de envío no genera Hecacoins, solo el valor de la mercancía.
+        const hecacoinsGanadas = Math.floor((pago.transaction_amount - costo_envio) * 0.03)
+
+        if (hecacoinsGanadas > 0) {
+          const añoActual = new Date().getFullYear()
+          const vencimiento = `${añoActual}-12-31`
+
+          await ajustarHecacoins(supabase, userId, {
+            saldoDelta: hecacoinsGanadas,
+            ganadoDelta: hecacoinsGanadas,
+            vencimiento,
+          })
+
+          await supabase.from('hecacoins_movimientos').insert({
+            user_id: userId,
+            pedido_id: pedido?.id,
+            tipo: 'ganado',
+            monto: hecacoinsGanadas,
+            descripcion: `Compra pedido #${pedido?.id}`,
+          })
+        }
+      }
+    } catch (e) {
+      console.error(`Error ajustando Hecacoins para pedido #${pedido?.id}:`, e)
+      await alertarAdmin(
+        resend,
+        `⚠️ No se generaron/descontaron Hecacoins — pedido #${pedido?.id}`,
+        `Payment ID: ${paymentId}\nUsuario: ${userId}\nPedido: #${pedido?.id}\nMonto: $${pago.transaction_amount}\nCosto envío: $${costo_envio}\nHecacoins a canjear: ${hecacoins_canjeadas}\nError: ${e.message}\n\nRevisar y ajustar Hecacoins manualmente si corresponde.`
+      )
     }
 
     // Emails
     const esApartado = tipo_pedido === 'apartado'
     const esBodega = destino === 'bodega'
 
+    try {
     await resend.emails.send({
       from: 'Hecatombe Coleccionables <noreply@hecatombe.com.mx>',
       to: userEmail,
@@ -561,6 +574,14 @@ export async function POST(request) {
         </html>
       `
     })
+    } catch (e) {
+      console.error(`Error enviando emails de confirmación para pedido #${pedido?.id}:`, e)
+      await alertarAdmin(
+        resend,
+        `⚠️ Pedido #${pedido?.id} procesado pero no se enviaron los correos de confirmación`,
+        `Payment ID: ${paymentId}\nCliente: ${userEmail}\nPedido: #${pedido?.id}\nMonto: $${pago.transaction_amount}\nError: ${e.message}\n\nEl pedido, stock y Hecacoins ya se procesaron — solo falló el envío de los correos. Avisar al cliente manualmente si hace falta.`
+      )
+    }
 
     return NextResponse.json({ ok: true })
   } catch (error) {
