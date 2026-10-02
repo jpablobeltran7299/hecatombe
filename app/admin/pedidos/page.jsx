@@ -12,6 +12,11 @@ import EstadoBadge from '@/app/components/EstadoBadge'
 import PedidoItemsList from '@/app/components/PedidoItemsList'
 import HecacoinsEarnedNote from '@/app/components/HecacoinsEarnedNote'
 
+// Cotización automática deshabilitada por ahora: en la práctica siempre se
+// genera la guía directo en Solo Envíos y se pega aquí con "Ya generé la
+// guía en Solo Envíos". No se borra por si se vuelve a usar más adelante.
+const MOSTRAR_COTIZAR_ENVIO = false
+
 export default function AdminPedidos() {
   const { user, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
@@ -331,7 +336,7 @@ export default function AdminPedidos() {
                         </button>
                         {errorGuia[pedido.id] && <p className="text-red-400 text-xs mt-2">{errorGuia[pedido.id]}</p>}
                       </>
-                    ) : (
+                    ) : MOSTRAR_COTIZAR_ENVIO ? (
                       <>
                         <button onClick={() => handleCotizarPedido(pedido.id)} disabled={cotizandoGuia === pedido.id}
                           className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black font-black uppercase text-xs px-4 py-2 rounded-lg transition">
@@ -339,7 +344,7 @@ export default function AdminPedidos() {
                         </button>
                         {errorGuia[pedido.id] && <p className="text-red-400 text-xs mt-2">{errorGuia[pedido.id]}</p>}
                       </>
-                    )}
+                    ) : null}
 
                     {!pedido.guia?.trackingNumber && (
                       <div className="mt-2">
