@@ -604,6 +604,7 @@ export async function POST(request) {
                       <tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Nombre: <span style="color:#fff;">${nombreCliente}</span></td></tr>
                       <tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Email: <span style="color:#fff;">${userEmail}</span></td></tr>
                       <tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Teléfono: <span style="color:#fff;">${perfil?.telefono || 'No proporcionado'}</span></td></tr>
+                      <tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Modalidad de envío: <span style="color:${esBodega ? '#60a5fa' : '#4ade80'};font-weight:900;">${esBodega ? '📦 Guardar en Bodegatombe' : '🚚 Envío inmediato'}</span></td></tr>
                       ${!esBodega ? `<tr><td style="color:#aaa;font-size:13px;">Dirección: <span style="color:#fff;">${direccion}</span></td></tr>` : ''}
                     </table>
                     <table style="background:#1a1a1a;border-radius:10px;padding:20px;width:100%;" cellpadding="0" cellspacing="0">
