@@ -161,7 +161,7 @@ export default function CuentaPage() {
   async function cargarPedidos(userId) {
     const { data } = await supabase
       .from('pedidos')
-      .select('id, created_at, total, estado, items, tipo_pedido, producto_id, anticipo_pagado, monto_liquidacion')
+      .select('id, created_at, total, estado, items, tipo_pedido, producto_id, anticipo_pagado, monto_liquidacion, guia')
       .eq('user_id', userId)
       .not('destino', 'eq', 'bodega')
       .order('created_at', { ascending: false })
@@ -669,7 +669,17 @@ export default function CuentaPage() {
                       <PedidoItemsList lineas={pedido.lineas} size={56} />
                     </div>
                   )}
-                  {(pedido.estado === 'pagado' || pedido.estado === 'liquidado') && (
+                  {pedido.guia?.trackingNumber && (
+                    <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 mt-4">
+                      <p className="text-purple-400 text-xs font-black uppercase mb-2">🚚 Pedido enviado · {pedido.guia.proveedor}</p>
+                      <p className="text-ink/50 text-xs">Número de guía: <span className="text-ink">{pedido.guia.trackingNumber}</span></p>
+                      {pedido.guia.trackingUrl && (
+                        <a href={pedido.guia.trackingUrl} target="_blank" rel="noopener noreferrer"
+                          className="text-orange-600 hover:underline text-xs font-black uppercase mt-2 inline-block">Rastrear mi pedido →</a>
+                      )}
+                    </div>
+                  )}
+                  {['pagado', 'liquidado', 'enviado', 'entregado'].includes(pedido.estado) && (
                     <div className="border-t border-line pt-3 mt-3">
                       <HecacoinsEarnedNote pedido={pedido} />
                     </div>

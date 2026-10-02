@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { Resend } from 'resend'
 import { requireAdmin } from '@/lib/adminAuth'
 import { getProductosPorIds } from '@/lib/sanity'
 import { crearEnvio, obtenerCotizacion } from '@/lib/soloenvios'
 import { armarParcels } from '@/lib/paquetes'
+import { alertarAdmin } from '@/lib/alertas'
+import { plantillaEnvioGenerado, BCC_MONITOREO_CLIENTES } from '@/lib/emailTemplates'
 
 export const maxDuration = 60
 
@@ -102,11 +105,62 @@ export async function POST(request) {
       dias: tarifaElegida.days,
     }
 
-    await supabase.from('pedidos').update({ guia, envio_cotizacion: envioCotizacion }).eq('id', pedido_id)
+    await supabase.from('pedidos').update({ guia, envio_cotizacion: envioCotizacion, estado: 'enviado' }).eq('id', pedido_id)
+
+    // Avisarle al cliente que su pedido ya salió — antes este paso generaba
+    // la guía real con la paquetería pero no le avisaba a nadie.
+    try {
+      const { data: perfil } = await supabase
+        .from('perfiles')
+        .select('nombre, apellido')
+        .eq('user_id', pedido.user_id)
+        .single()
+      const nombreCliente = perfil?.nombre ? `${perfil.nombre} ${perfil.apellido || ''}`.trim() : user.email
+
+      const direccion = pedido.direccion_snapshot
+        ? `${pedido.direccion_snapshot.calle}, ${pedido.direccion_snapshot.colonia}, ${pedido.direccion_snapshot.ciudad}, ${pedido.direccion_snapshot.estado} CP ${pedido.direccion_snapshot.cp}`
+        : 'No proporcionada'
+
+      const itemsParaCorreo = itemsPedido.map(i => ({
+        title: productosMap[i.producto_id]?.nombre || i.nombre || 'Producto',
+        quantity: i.cantidad || 1,
+        unitPrice: productosMap[i.producto_id]?.precio || i.precio || 0,
+        pictureUrl: i.imagen || null,
+      }))
+
+      const { asunto, html } = plantillaEnvioGenerado({
+        nombreCliente,
+        pedidoId: pedido_id,
+        proveedor: guia.proveedor,
+        trackingNumber: guia.trackingNumber,
+        trackingUrl: guia.trackingUrl,
+        direccion,
+        items: itemsParaCorreo,
+      })
+
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      await resend.emails.send({
+        from: 'Hecatombe Coleccionables <noreply@hecatombe.com.mx>',
+        to: user.email,
+        bcc: BCC_MONITOREO_CLIENTES,
+        subject: asunto,
+        html,
+      })
+    } catch (e) {
+      console.error(`Error enviando correo de guía generada para pedido #${pedido_id}:`, e)
+      await alertarAdmin(
+        `⚠️ Guía generada pero no se avisó al cliente — pedido #${pedido_id}`,
+        `La guía sí se generó correctamente (tracking: ${guia.trackingNumber}), pero falló el correo de aviso al cliente.\nError: ${e.message}\n\nAvisarle manualmente si hace falta.`
+      )
+    }
 
     return NextResponse.json({ ok: true, guia })
   } catch (error) {
     console.error('Error generando guía de envío:', error)
+    await alertarAdmin(
+      '🚨 Error en /api/admin/generar-envio',
+      `Error: ${error.message}\n\nRevisar logs de Vercel para más contexto.\nHora: ${new Date().toISOString()}`
+    )
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
