@@ -20,6 +20,9 @@ export default function AdminBodega() {
   const [tarifaSel, setTarifaSel] = useState({})
   const [generando, setGenerando] = useState(null)
   const [errorSolicitud, setErrorSolicitud] = useState({})
+  const [mostrarGuiaManual, setMostrarGuiaManual] = useState({})
+  const [formGuiaManual, setFormGuiaManual] = useState({})
+  const [guardandoGuiaManual, setGuardandoGuiaManual] = useState(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -131,6 +134,34 @@ export default function AdminBodega() {
       setErrorSolicitud(prev => ({ ...prev, [userId]: 'Error de red al generar la guía. Verifica en Solo Envíos antes de reintentar.' }))
     }
     setGenerando(null)
+  }
+
+  async function handleRegistrarGuiaManual(userId) {
+    const form = formGuiaManual[userId] || {}
+    if (!form.trackingNumber?.trim() || !form.proveedor?.trim()) {
+      setErrorSolicitud(prev => ({ ...prev, [userId]: 'Falta el número de guía o la paquetería.' }))
+      return
+    }
+    setGuardandoGuiaManual(userId)
+    setErrorSolicitud(prev => ({ ...prev, [userId]: '' }))
+    try {
+      const res = await adminFetch('/api/admin/registrar-guia-manual-bodega', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, ...form }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setMostrarGuiaManual(prev => ({ ...prev, [userId]: false }))
+        setFormGuiaManual(prev => ({ ...prev, [userId]: {} }))
+        cargarBodegas()
+      } else {
+        setErrorSolicitud(prev => ({ ...prev, [userId]: data.error || 'Error al registrar la guía.' }))
+      }
+    } catch (e) {
+      setErrorSolicitud(prev => ({ ...prev, [userId]: 'Error de red al registrar la guía. Intenta de nuevo.' }))
+    }
+    setGuardandoGuiaManual(null)
   }
 
   const bodegasFiltradas = bodegas.filter(b => {
@@ -285,6 +316,43 @@ export default function AdminBodega() {
                     )}
 
                     {errorSolicitud[bodega.user_id] && <p className="text-red-400 text-xs mt-2">{errorSolicitud[bodega.user_id]}</p>}
+
+                    <div className="mt-2">
+                      {!mostrarGuiaManual[bodega.user_id] ? (
+                        <button onClick={() => setMostrarGuiaManual(prev => ({ ...prev, [bodega.user_id]: true }))}
+                          className="text-ink-muted hover:text-orange-600 text-xs font-black uppercase underline transition">
+                          📋 Ya generé la guía en Solo Envíos
+                        </button>
+                      ) : (
+                        <div className="bg-surface-alt rounded-lg p-3 max-w-sm">
+                          <p className="text-ink-muted text-xs font-black uppercase mb-2">Pegar guía generada en Solo Envíos</p>
+                          <div className="flex flex-col gap-2">
+                            <input type="text" placeholder="Número de guía / tracking"
+                              value={formGuiaManual[bodega.user_id]?.trackingNumber || ''}
+                              onChange={e => setFormGuiaManual(prev => ({ ...prev, [bodega.user_id]: { ...prev[bodega.user_id], trackingNumber: e.target.value } }))}
+                              className="bg-page border border-line rounded-lg px-3 py-2 text-xs text-ink" />
+                            <input type="text" placeholder="Paquetería (ej. Estafeta, DHL)"
+                              value={formGuiaManual[bodega.user_id]?.proveedor || ''}
+                              onChange={e => setFormGuiaManual(prev => ({ ...prev, [bodega.user_id]: { ...prev[bodega.user_id], proveedor: e.target.value } }))}
+                              className="bg-page border border-line rounded-lg px-3 py-2 text-xs text-ink" />
+                            <input type="text" placeholder="Link de rastreo (opcional)"
+                              value={formGuiaManual[bodega.user_id]?.trackingUrl || ''}
+                              onChange={e => setFormGuiaManual(prev => ({ ...prev, [bodega.user_id]: { ...prev[bodega.user_id], trackingUrl: e.target.value } }))}
+                              className="bg-page border border-line rounded-lg px-3 py-2 text-xs text-ink" />
+                            <div className="flex gap-2 mt-1">
+                              <button onClick={() => handleRegistrarGuiaManual(bodega.user_id)} disabled={guardandoGuiaManual === bodega.user_id}
+                                className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black font-black uppercase text-xs px-4 py-2 rounded-lg transition">
+                                {guardandoGuiaManual === bodega.user_id ? 'Guardando...' : 'Guardar y avisar al cliente'}
+                              </button>
+                              <button onClick={() => setMostrarGuiaManual(prev => ({ ...prev, [bodega.user_id]: false }))}
+                                className="text-ink-muted hover:text-ink text-xs font-black uppercase px-3 transition">
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )
               })()}

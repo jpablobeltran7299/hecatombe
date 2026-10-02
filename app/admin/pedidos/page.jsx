@@ -26,6 +26,9 @@ export default function AdminPedidos() {
   const [cotizandoGuia, setCotizandoGuia] = useState(null)
   const [tarifasPedido, setTarifasPedido] = useState({})
   const [tarifaSelPedido, setTarifaSelPedido] = useState({})
+  const [mostrarGuiaManual, setMostrarGuiaManual] = useState({})
+  const [formGuiaManual, setFormGuiaManual] = useState({})
+  const [guardandoGuiaManual, setGuardandoGuiaManual] = useState(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -116,6 +119,34 @@ export default function AdminPedidos() {
       setErrorGuia(prev => ({ ...prev, [pedidoId]: 'Error de red al generar la guía. Verifica en Solo Envíos antes de reintentar.' }))
     }
     setGenerandoGuia(null)
+  }
+
+  async function handleRegistrarGuiaManual(pedidoId) {
+    const form = formGuiaManual[pedidoId] || {}
+    if (!form.trackingNumber?.trim() || !form.proveedor?.trim()) {
+      setErrorGuia(prev => ({ ...prev, [pedidoId]: 'Falta el número de guía o la paquetería.' }))
+      return
+    }
+    setGuardandoGuiaManual(pedidoId)
+    setErrorGuia(prev => ({ ...prev, [pedidoId]: '' }))
+    try {
+      const res = await adminFetch('/api/admin/registrar-guia-manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pedido_id: pedidoId, ...form }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, guia: data.guia, estado: 'enviado' } : p))
+        setMostrarGuiaManual(prev => ({ ...prev, [pedidoId]: false }))
+        setFormGuiaManual(prev => ({ ...prev, [pedidoId]: {} }))
+      } else {
+        setErrorGuia(prev => ({ ...prev, [pedidoId]: data.error || 'Error al registrar la guía.' }))
+      }
+    } catch (e) {
+      setErrorGuia(prev => ({ ...prev, [pedidoId]: 'Error de red al registrar la guía. Intenta de nuevo.' }))
+    }
+    setGuardandoGuiaManual(null)
   }
 
   const productosDisponibles = [...new Map(
@@ -308,6 +339,45 @@ export default function AdminPedidos() {
                         </button>
                         {errorGuia[pedido.id] && <p className="text-red-400 text-xs mt-2">{errorGuia[pedido.id]}</p>}
                       </>
+                    )}
+
+                    {!pedido.guia?.trackingNumber && (
+                      <div className="mt-2">
+                        {!mostrarGuiaManual[pedido.id] ? (
+                          <button onClick={() => setMostrarGuiaManual(prev => ({ ...prev, [pedido.id]: true }))}
+                            className="text-ink-muted hover:text-orange-600 text-xs font-black uppercase underline transition">
+                            📋 Ya generé la guía en Solo Envíos
+                          </button>
+                        ) : (
+                          <div className="bg-surface-alt rounded-lg p-3 max-w-sm">
+                            <p className="text-ink-muted text-xs font-black uppercase mb-2">Pegar guía generada en Solo Envíos</p>
+                            <div className="flex flex-col gap-2">
+                              <input type="text" placeholder="Número de guía / tracking"
+                                value={formGuiaManual[pedido.id]?.trackingNumber || ''}
+                                onChange={e => setFormGuiaManual(prev => ({ ...prev, [pedido.id]: { ...prev[pedido.id], trackingNumber: e.target.value } }))}
+                                className="bg-page border border-line rounded-lg px-3 py-2 text-xs text-ink" />
+                              <input type="text" placeholder="Paquetería (ej. Estafeta, DHL)"
+                                value={formGuiaManual[pedido.id]?.proveedor || ''}
+                                onChange={e => setFormGuiaManual(prev => ({ ...prev, [pedido.id]: { ...prev[pedido.id], proveedor: e.target.value } }))}
+                                className="bg-page border border-line rounded-lg px-3 py-2 text-xs text-ink" />
+                              <input type="text" placeholder="Link de rastreo (opcional)"
+                                value={formGuiaManual[pedido.id]?.trackingUrl || ''}
+                                onChange={e => setFormGuiaManual(prev => ({ ...prev, [pedido.id]: { ...prev[pedido.id], trackingUrl: e.target.value } }))}
+                                className="bg-page border border-line rounded-lg px-3 py-2 text-xs text-ink" />
+                              <div className="flex gap-2 mt-1">
+                                <button onClick={() => handleRegistrarGuiaManual(pedido.id)} disabled={guardandoGuiaManual === pedido.id}
+                                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black font-black uppercase text-xs px-4 py-2 rounded-lg transition">
+                                  {guardandoGuiaManual === pedido.id ? 'Guardando...' : 'Guardar y avisar al cliente'}
+                                </button>
+                                <button onClick={() => setMostrarGuiaManual(prev => ({ ...prev, [pedido.id]: false }))}
+                                  className="text-ink-muted hover:text-ink text-xs font-black uppercase px-3 transition">
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}

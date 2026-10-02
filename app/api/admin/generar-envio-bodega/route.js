@@ -6,6 +6,7 @@ import { extraerLineas } from '@/lib/pedidos'
 import { crearEnvio, obtenerCotizacion } from '@/lib/soloenvios'
 import { armarParcels } from '@/lib/paquetes'
 import { alertarAdmin } from '@/lib/alertas'
+import { notificarPedidoEnviado } from '@/lib/envios'
 
 export const maxDuration = 60
 
@@ -145,6 +146,19 @@ export async function POST(request) {
     await supabase.from('pedidos')
       .update({ guia, envio_cotizacion: envioCotizacion, bodega_estado: 'enviado' })
       .in('id', pedidos.map(p => p.id))
+
+    // Avisarle al cliente que su envío de bodega ya salió — antes esto no
+    // mandaba ningún correo al cliente, solo un aviso interno a Hecatombe.
+    await notificarPedidoEnviado(supabase, {
+      pedido: {
+        id: idsGrupo.join(', '),
+        user_id,
+        tipo_pedido: 'normal',
+        items,
+        direccion_snapshot: direccion,
+      },
+      guia,
+    })
 
     return NextResponse.json({ ok: true, guia })
   } catch (error) {
