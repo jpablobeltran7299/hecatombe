@@ -114,7 +114,7 @@ export default function AdminClientes() {
   async function cargarPedidosCliente(userId) {
     const { data } = await supabase
       .from('pedidos')
-      .select('id, created_at, total, estado, tipo_pedido, items, producto_id, anticipo_pagado, monto_liquidacion')
+      .select('id, created_at, total, estado, tipo_pedido, items, producto_id, anticipo_pagado, monto_liquidacion, guia, direccion_snapshot, envio_cotizacion')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
     const resueltos = await resolverItemsPedidos(data || [])
@@ -145,11 +145,16 @@ export default function AdminClientes() {
 
   async function subirImagenHistorial(file) {
     setSubiendoImagenHistorial(true)
-    const formData = new FormData()
-    formData.append('file', file)
-    const res = await adminFetch('/api/admin/upload', { method: 'POST', body: formData })
-    const data = await res.json()
-    if (data.url) setHistorialImagenUrl(data.url)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await adminFetch('/api/admin/upload', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.url) setHistorialImagenUrl(data.url)
+      else setMensaje('❌ Error al subir la imagen')
+    } catch (e) {
+      setMensaje('❌ Error de red al subir la imagen')
+    }
     setSubiendoImagenHistorial(false)
   }
 
@@ -158,28 +163,32 @@ export default function AdminClientes() {
     setGuardando(true)
     setMensaje('')
 
-    const res = await adminFetch('/api/admin/historial', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: clienteSeleccionado.user_id,
-        productoNombre: historialNombre,
-        productoImagen: historialImagenUrl,
-        precio: historialPrecio,
-        fechaCompra: historialFecha,
+    try {
+      const res = await adminFetch('/api/admin/historial', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: clienteSeleccionado.user_id,
+          productoNombre: historialNombre,
+          productoImagen: historialImagenUrl,
+          precio: historialPrecio,
+          fechaCompra: historialFecha,
+        })
       })
-    })
-    const data = await res.json()
-    if (data.ok) {
-      setMensaje(`✅ "${historialNombre}" agregado al historial`)
-      setHistorialNombre('')
-      setHistorialPrecio('')
-      setHistorialFecha('')
-      setHistorialImagenUrl(null)
-      setMostrarFormHistorial(false)
-      await cargarHistorial(clienteSeleccionado.user_id)
-    } else {
-      setMensaje('❌ Error al agregar al historial')
+      const data = await res.json()
+      if (data.ok) {
+        setMensaje(`✅ "${historialNombre}" agregado al historial`)
+        setHistorialNombre('')
+        setHistorialPrecio('')
+        setHistorialFecha('')
+        setHistorialImagenUrl(null)
+        setMostrarFormHistorial(false)
+        await cargarHistorial(clienteSeleccionado.user_id)
+      } else {
+        setMensaje('❌ Error al agregar al historial')
+      }
+    } catch (e) {
+      setMensaje('❌ Error de red al agregar al historial')
     }
     setGuardando(false)
   }
@@ -189,17 +198,21 @@ export default function AdminClientes() {
     setGuardando(true)
     setMensaje('')
 
-    const res = await adminFetch('/api/admin/historial', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
-    })
-    const data = await res.json()
-    if (data.ok) {
-      setMensaje('✅ Eliminado del historial')
-      await cargarHistorial(clienteSeleccionado.user_id)
-    } else {
-      setMensaje('❌ Error al eliminar del historial')
+    try {
+      const res = await adminFetch('/api/admin/historial', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setMensaje('✅ Eliminado del historial')
+        await cargarHistorial(clienteSeleccionado.user_id)
+      } else {
+        setMensaje('❌ Error al eliminar del historial')
+      }
+    } catch (e) {
+      setMensaje('❌ Error de red al eliminar del historial')
     }
     setGuardando(false)
   }

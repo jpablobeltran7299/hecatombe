@@ -234,7 +234,7 @@ export async function POST(request) {
         imagen: i.imagen || null,
       }))
 
-      const { data: pedido } = await supabase.from('pedidos').insert({
+      const { data: pedido, error: errorPedidoHecacoins } = await supabase.from('pedidos').insert({
         user_id: userId,
         total: totalOriginal,
         estado: tipo_pedido === 'apartado' ? 'apartado' : 'pagado',
@@ -250,30 +250,62 @@ export async function POST(request) {
         envio_cotizacion: envioCotizacion,
       }).select().single()
 
-      await supabase.from('hecacoins_movimientos').insert({
-        user_id: userId,
-        pedido_id: pedido?.id,
-        tipo: 'canjeado',
-        monto: descuentoHecacoins,
-        descripcion: `Canje en pedido #${pedido?.id}`,
-      })
-
-      if (tipo_pedido === 'liquidacion' && pedido_id) {
-        await supabase.from('pedidos').update({ estado: 'liquidado' }).eq('id', pedido_id)
+      if (errorPedidoHecacoins || !pedido) {
+        // Ya se descontaron Hecacoins (línea de arriba) — si el pedido no se
+        // pudo crear, hay que revertir ese descuento para no cobrarle al
+        // cliente Hecacoins por una compra que no quedó registrada en
+        // ningún lado.
+        try {
+          await ajustarHecacoins(supabase, userId, {
+            saldoDelta: descuentoHecacoins,
+            canjeadoDelta: -descuentoHecacoins,
+          })
+        } catch (e) {
+          console.error('No se pudo revertir el descuento de Hecacoins tras fallo de pedido:', e)
+        }
+        await alertarAdmin(
+          `🚨 Pago 100% Hecacoins falló al crear el pedido — usuario ${userId}`,
+          `Error: ${errorPedidoHecacoins?.message || 'insert devolvió vacío'}\n\nSe intentó revertir el descuento de ${descuentoHecacoins} Hecacoins. Verificar manualmente el saldo del usuario ${userId}.`
+        )
+        return NextResponse.json({ error: 'No se pudo registrar el pedido. Tus Hecacoins no se descontaron.' }, { status: 500 })
       }
 
-      if (tipo_pedido === 'normal') {
-        await supabase.from('carrito').delete().eq('user_id', userId)
+      // De aquí en adelante el pedido YA existe y las Hecacoins YA se
+      // cobraron — un fallo en cualquiera de estos pasos no debe tirar al
+      // catch general (que le diría al cliente "no se te cobró nada", lo
+      // cual ya no sería cierto). Cada paso alerta por su cuenta si falla.
+      try {
+        await supabase.from('hecacoins_movimientos').insert({
+          user_id: userId,
+          pedido_id: pedido.id,
+          tipo: 'canjeado',
+          monto: descuentoHecacoins,
+          descripcion: `Canje en pedido #${pedido.id}`,
+        })
 
-        const sanityClient = getSanityWriteClient()
-        for (const item of itemsPedido) {
-          await descontarStock(sanityClient, item.producto_id, item.cantidad || 1)
+        if (tipo_pedido === 'liquidacion' && pedido_id) {
+          await supabase.from('pedidos').update({ estado: 'liquidado' }).eq('id', pedido_id)
         }
-      } else if (tipo_pedido === 'apartado' && producto_id) {
-        // El apartado es lo que reclama la pieza reservada del proveedor —
-        // la liquidación (pago final) no vuelve a descontar, ya se contó aquí.
-        const sanityClient = getSanityWriteClient()
-        await descontarStock(sanityClient, producto_id, 1)
+
+        if (tipo_pedido === 'normal') {
+          await supabase.from('carrito').delete().eq('user_id', userId)
+
+          const sanityClient = getSanityWriteClient()
+          for (const item of itemsPedido) {
+            await descontarStock(sanityClient, item.producto_id, item.cantidad || 1)
+          }
+        } else if (tipo_pedido === 'apartado' && producto_id) {
+          // El apartado es lo que reclama la pieza reservada del proveedor —
+          // la liquidación (pago final) no vuelve a descontar, ya se contó aquí.
+          const sanityClient = getSanityWriteClient()
+          await descontarStock(sanityClient, producto_id, 1)
+        }
+      } catch (e) {
+        console.error(`Error post-creación en pago 100% Hecacoins, pedido #${pedido.id}:`, e)
+        await alertarAdmin(
+          `⚠️ Pedido #${pedido.id} (100% Hecacoins) creado pero algo falló después`,
+          `Usuario: ${userId}\nPedido #${pedido.id}\nError: ${e.message}\n\nRevisar manualmente: puede faltar el registro de canje, el cambio de estado de liquidación, o el descuento de stock.`
+        )
       }
 
       try {

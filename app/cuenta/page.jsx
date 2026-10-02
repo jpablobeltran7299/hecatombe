@@ -29,6 +29,7 @@ export default function CuentaPage() {
   const [pedidos, setPedidos] = useState([])
   const [bodega, setBodega] = useState(null)
   const [pedidosBodega, setPedidosBodega] = useState([])
+  const [enviosBodega, setEnviosBodega] = useState([])
   const [hecacoins, setHecacoins] = useState(null)
   const [movimientos, setMovimientos] = useState([])
   const [tab, setTab] = useState('perfil')
@@ -169,7 +170,7 @@ export default function CuentaPage() {
   async function cargarPedidos(userId) {
     const { data } = await supabase
       .from('pedidos')
-      .select('id, created_at, total, estado, items, tipo_pedido, producto_id, anticipo_pagado, monto_liquidacion, guia')
+      .select('id, created_at, total, estado, items, tipo_pedido, producto_id, anticipo_pagado, monto_liquidacion, guia, envio_cotizacion')
       .eq('user_id', userId)
       .not('destino', 'eq', 'bodega')
       .order('created_at', { ascending: false })
@@ -191,6 +192,22 @@ export default function CuentaPage() {
     const piezasResueltas = await resolverItemsPedidos(piezas)
     setBodega(piezas.length > 0 ? { total_acumulado: totalAcumulado } : null)
     setPedidosBodega(piezasResueltas)
+
+    // Antes, en cuanto se solicitaba el envío (bodega_estado pasa a
+    // 'solicitado'/'enviado'), el pedido desaparecía de esta pantalla para
+    // siempre — el cliente nunca veía que se solicitó ni el tracking cuando
+    // salía. Se trae aparte para mostrarlo en su propia sección.
+    const { data: enviosData } = await supabase
+      .from('pedidos')
+      .select('id, created_at, total, items, bodega_estado, guia')
+      .eq('user_id', userId)
+      .eq('destino', 'bodega')
+      .in('bodega_estado', ['solicitado', 'enviado'])
+      .order('created_at', { ascending: false })
+
+    const envios = enviosData || []
+    const enviosResueltos = await resolverItemsPedidos(envios)
+    setEnviosBodega(enviosResueltos)
   }
 
   async function cargarHecacoins(userId) {
@@ -789,6 +806,33 @@ export default function CuentaPage() {
                     <div key={pedido.id} className="flex items-center justify-between gap-3 border-b border-ink/5 pb-4 last:border-0 last:pb-0">
                       <PedidoItemsList lineas={pedido.lineas} size={48} />
                       <span className="text-orange-600 font-black flex-shrink-0">${pedido.total?.toLocaleString('es-MX')} MXN</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {enviosBodega.length > 0 && (
+              <div className="bg-surface border border-line rounded-2xl p-6">
+                <h2 className="text-lg font-black uppercase text-orange-600 mb-4">Envíos de Bodegatombe</h2>
+                <div className="flex flex-col gap-4">
+                  {enviosBodega.map(pedido => (
+                    <div key={pedido.id} className="border-b border-ink/5 pb-4 last:border-0 last:pb-0">
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <PedidoItemsList lineas={pedido.lineas} size={48} />
+                        <span className="text-orange-600 font-black flex-shrink-0">${pedido.total?.toLocaleString('es-MX')} MXN</span>
+                      </div>
+                      {pedido.guia?.trackingNumber ? (
+                        <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-3">
+                          <p className="text-purple-400 text-xs font-black uppercase mb-1">🚚 Enviado · {pedido.guia.proveedor}</p>
+                          <p className="text-ink/50 text-xs">Número de guía: <span className="text-ink">{pedido.guia.trackingNumber}</span></p>
+                          {pedido.guia.trackingUrl && (
+                            <a href={pedido.guia.trackingUrl} target="_blank" rel="noopener noreferrer"
+                              className="text-orange-600 hover:underline text-xs font-black uppercase mt-1 inline-block">Rastrear mi pedido →</a>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-ink/30 text-xs">📋 Solicitud enviada — estamos por generar la guía.</p>
+                      )}
                     </div>
                   ))}
                 </div>

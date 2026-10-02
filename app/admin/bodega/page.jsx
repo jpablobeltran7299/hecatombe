@@ -90,16 +90,20 @@ export default function AdminBodega() {
   async function handleCotizar(userId) {
     setCotizando(userId)
     setErrorSolicitud(prev => ({ ...prev, [userId]: '' }))
-    const res = await adminFetch('/api/admin/cotizar-envio-bodega', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId }),
-    })
-    const data = await res.json()
-    if (data.tarifas) {
-      setTarifas(prev => ({ ...prev, [userId]: { quotationId: data.quotationId, opciones: data.tarifas } }))
-    } else {
-      setErrorSolicitud(prev => ({ ...prev, [userId]: data.error || 'No se pudo cotizar.' }))
+    try {
+      const res = await adminFetch('/api/admin/cotizar-envio-bodega', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId }),
+      })
+      const data = await res.json()
+      if (data.tarifas) {
+        setTarifas(prev => ({ ...prev, [userId]: { quotationId: data.quotationId, opciones: data.tarifas } }))
+      } else {
+        setErrorSolicitud(prev => ({ ...prev, [userId]: data.error || 'No se pudo cotizar.' }))
+      }
+    } catch (e) {
+      setErrorSolicitud(prev => ({ ...prev, [userId]: 'Error de red al cotizar. Intenta de nuevo.' }))
     }
     setCotizando(null)
   }
@@ -107,20 +111,24 @@ export default function AdminBodega() {
   async function handleGenerarGuiaBodega(userId) {
     setGenerando(userId)
     setErrorSolicitud(prev => ({ ...prev, [userId]: '' }))
-    const res = await adminFetch('/api/admin/generar-envio-bodega', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: userId,
-        quotation_id: tarifas[userId]?.quotationId || null,
-        rate_id: tarifaSel[userId] || null,
-      }),
-    })
-    const data = await res.json()
-    if (data.ok) {
-      cargarBodegas()
-    } else {
-      setErrorSolicitud(prev => ({ ...prev, [userId]: data.error || 'No se pudo generar la guía.' }))
+    try {
+      const res = await adminFetch('/api/admin/generar-envio-bodega', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          quotation_id: tarifas[userId]?.quotationId || null,
+          rate_id: tarifaSel[userId] || null,
+        }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        cargarBodegas()
+      } else {
+        setErrorSolicitud(prev => ({ ...prev, [userId]: data.error || 'No se pudo generar la guía.' }))
+      }
+    } catch (e) {
+      setErrorSolicitud(prev => ({ ...prev, [userId]: 'Error de red al generar la guía. Verifica en Solo Envíos antes de reintentar.' }))
     }
     setGenerando(null)
   }

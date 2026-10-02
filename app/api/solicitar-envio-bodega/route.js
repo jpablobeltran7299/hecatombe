@@ -65,16 +65,16 @@ export async function POST(request) {
         .in('id', pedidoIds)
         .eq('bodega_estado', 'guardando')
 
-      try {
-        await resend.emails.send({
-          from: 'Hecatombe Sistema <noreply@hecatombe.com.mx>',
-          to: 'hecatombe.9194@gmail.com',
-          subject: `📦 Nueva solicitud de envío gratis de Bodegatombe — $${totalAcumulado.toLocaleString('es-MX')} MXN`,
-          html: `<p>Cliente: ${userEmail}<br>Pedidos incluidos: ${pedidoIds.join(', ')}<br>Total acumulado: $${totalAcumulado.toLocaleString('es-MX')} MXN<br>Dirección: ${direccion.calle}, ${direccion.colonia}, ${direccion.ciudad}, ${direccion.estado} CP ${direccion.cp}<br><br>Entra a /admin/bodega para cotizar y elegir la paquetería.</p>`,
-        })
-      } catch (e) {
-        console.error('Error enviando aviso de solicitud de bodega:', e)
-      }
+      // Este aviso usa alertarAdmin (no el cliente `resend` local) a propósito:
+      // antes, si este correo fallaba, solo quedaba un console.error — el
+      // pedido se marcaba "solicitado" y nadie en Hecatombe se enteraba de
+      // que había que entrar a /admin/bodega a cotizar. alertarAdmin manda
+      // el correo por fetch directo a la API de Resend, sin depender de que
+      // el cliente `resend` de arriba se haya construido bien.
+      await alertarAdmin(
+        `📦 Nueva solicitud de envío gratis de Bodegatombe — $${totalAcumulado.toLocaleString('es-MX')} MXN`,
+        `Cliente: ${userEmail}\nPedidos incluidos: ${pedidoIds.join(', ')}\nTotal acumulado: $${totalAcumulado.toLocaleString('es-MX')} MXN\nDirección: ${direccion.calle}, ${direccion.colonia}, ${direccion.ciudad}, ${direccion.estado} CP ${direccion.cp}\n\nEntra a /admin/bodega para cotizar y elegir la paquetería.`
+      )
 
       return NextResponse.json({ ok: true, gratis: true })
     }

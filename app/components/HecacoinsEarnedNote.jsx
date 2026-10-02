@@ -7,7 +7,11 @@ export default function HecacoinsEarnedNote({ pedido, className = '' }) {
   const elegible = tipo === 'normal' || tipo === 'liquidacion'
   if (!elegible) return null
 
-  const ganadas = Math.floor((pedido?.total || 0) * HECACOINS_RATE)
+  // El webhook resta el costo de envío antes de aplicar el 3% (el envío no
+  // genera Hecacoins) — si aquí no se replica esa resta, este número se ve
+  // más alto de lo que realmente se acreditó en cualquier pedido con envío.
+  const costoEnvio = pedido?.envio_cotizacion?.total || 0
+  const ganadas = Math.floor(Math.max(0, (pedido?.total || 0) - costoEnvio) * HECACOINS_RATE)
   if (ganadas <= 0) return null
 
   return (

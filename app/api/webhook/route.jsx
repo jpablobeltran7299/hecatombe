@@ -124,16 +124,54 @@ export async function POST(request) {
 
     const { data: pedidoExistente } = await supabase
       .from('pedidos')
-      .select('id')
+      .select('id, user_id, estado')
       .eq('mp_payment_id', String(paymentId))
       .limit(1)
 
-    if (pedidoExistente && pedidoExistente.length > 0) {
-      return NextResponse.json({ ok: true })
-    }
-
     const payment = new Payment(mpClient)
     const pago = await payment.get({ id: paymentId })
+
+    // Si ya existe un pedido para este pago, antes simplemente se respondía
+    // ok:true sin volver a mirar el estado — un reembolso o contracargo que
+    // MercadoPago reenvía para un pago ya procesado se ignoraba por
+    // completo: el pedido se quedaba "pagado" para siempre, sin revertir
+    // Hecacoins, y sin que nadie se enterara.
+    if (pedidoExistente && pedidoExistente.length > 0) {
+      const pedido = pedidoExistente[0]
+      const esReversión = ['refunded', 'charged_back', 'cancelled'].includes(pago.status)
+
+      if (esReversión && pedido.estado !== 'cancelado') {
+        try {
+          const { data: movimientos } = await supabase
+            .from('hecacoins_movimientos')
+            .select('user_id, tipo, monto')
+            .eq('pedido_id', pedido.id)
+
+          for (const m of movimientos || []) {
+            if (m.tipo === 'ganado') {
+              await ajustarHecacoins(supabase, m.user_id, { saldoDelta: -m.monto, ganadoDelta: -m.monto })
+            } else if (m.tipo === 'canjeado') {
+              await ajustarHecacoins(supabase, m.user_id, { saldoDelta: m.monto, canjeadoDelta: -m.monto })
+            }
+          }
+
+          await supabase.from('pedidos').update({ estado: 'cancelado' }).eq('id', pedido.id)
+
+          await alertarAdmin(
+            `🔙 Pago ${pago.status === 'refunded' ? 'reembolsado' : pago.status === 'charged_back' ? 'con contracargo' : 'cancelado'} — pedido #${pedido.id}`,
+            `Payment ID: ${paymentId}\nPedido #${pedido.id}\nEstado MP: ${pago.status}\nMonto: $${pago.transaction_amount}\n\nSe revirtieron las Hecacoins asociadas (${(movimientos || []).length} movimiento(s)) y el pedido se marcó "cancelado". REVISAR MANUALMENTE: reponer stock en Sanity si ya se había descontado, y cancelar/detener el envío si ya se generó guía.`
+          )
+        } catch (e) {
+          console.error(`Error revirtiendo pedido #${pedido.id} tras ${pago.status}:`, e)
+          await alertarAdmin(
+            `🚨 Pago ${pago.status} para pedido #${pedido.id} — la reversión automática falló`,
+            `Payment ID: ${paymentId}\nError: ${e.message}\n\nRevisar y revertir manualmente: Hecacoins, estado del pedido, stock y envío.`
+          )
+        }
+      }
+
+      return NextResponse.json({ ok: true })
+    }
 
     if (pago.status !== 'approved') {
       console.log(`Pago ${paymentId} en estado "${pago.status}" — aún no aprobado`)
@@ -373,9 +411,26 @@ export async function POST(request) {
     }
 
     // Si esta compra liquida un apartado, cerrar el pedido original para
-    // que no se pueda volver a liquidar (ver validación arriba).
+    // que no se pueda volver a liquidar. El chequeo de arriba (línea ~298)
+    // ya descarta la mayoría de los dobles pagos, pero entre esa lectura y
+    // este UPDATE dos liquidaciones casi simultáneas podrían colarse ambas —
+    // por eso el UPDATE mismo exige `estado = 'apartado'` y se verifica que
+    // sí haya afectado una fila antes de asumir que esta liquidación es la
+    // única válida.
     if (tipo_pedido === 'liquidacion' && pedido_id_apartado) {
-      await supabase.from('pedidos').update({ estado: 'liquidado' }).eq('id', pedido_id_apartado)
+      const { data: cerrado } = await supabase
+        .from('pedidos')
+        .update({ estado: 'liquidado' })
+        .eq('id', pedido_id_apartado)
+        .eq('estado', 'apartado')
+        .select('id')
+
+      if (!cerrado || cerrado.length === 0) {
+        await alertarAdmin(
+          `🚨 Doble liquidación detectada — pedido #${pedido_id_apartado}`,
+          `Payment ID: ${paymentId}\nPedido nuevo creado: #${pedido?.id}\nMonto: $${pago.transaction_amount}\n\nEste pago liquidó el pedido #${pedido_id_apartado}, pero otra liquidación ya lo había cerrado antes (carrera entre dos pagos casi simultáneos). Es probable que el cliente haya pagado dos veces — revisar manualmente si hay que reembolsar este pago.`
+        )
+      }
     }
 
     // Vaciar carrito SOLO en compras normales — es el único tipo_pedido que
@@ -417,6 +472,24 @@ export async function POST(request) {
     // escrituras concurrentes — ver lib/hecacoins.js)
     try {
       if (hecacoins_canjeadas > 0) {
+        // ajustarHecacoins nunca lanza por saldo insuficiente aquí (no se le
+        // pasa exigirSaldoSuficiente — el pago ya se cobró, no hay nada que
+        // rechazar) y "clampa" a 0 en silencio si el saldo real es menor al
+        // canjeado (p. ej. el cliente ya lo gastó en otra compra paralela
+        // entre el checkout y la confirmación del pago). Se alerta para que
+        // quede registro de que el cliente recibió un descuento sin respaldo.
+        const { data: saldoActual } = await supabase
+          .from('hecacoins')
+          .select('saldo')
+          .eq('user_id', userId)
+          .single()
+        if ((saldoActual?.saldo || 0) < hecacoins_canjeadas) {
+          await alertarAdmin(
+            `⚠️ Canje de Hecacoins sin saldo suficiente — pedido #${pedido?.id}`,
+            `Usuario: ${userId}\nPedido #${pedido?.id}\nSe canjearon ${hecacoins_canjeadas} Hecacoins pero el saldo real era ${saldoActual?.saldo || 0}.\n\nEl cliente recibió un descuento que su saldo no respaldaba — probablemente gastó el saldo en otra compra entre el checkout y la confirmación del pago. No requiere acción urgente, pero vale la pena revisar el caso.`
+          )
+        }
+
         await ajustarHecacoins(supabase, userId, {
           saldoDelta: -hecacoins_canjeadas,
           canjeadoDelta: hecacoins_canjeadas,

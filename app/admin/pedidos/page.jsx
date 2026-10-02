@@ -74,16 +74,20 @@ export default function AdminPedidos() {
   async function handleCotizarPedido(pedidoId) {
     setCotizandoGuia(pedidoId)
     setErrorGuia(prev => ({ ...prev, [pedidoId]: '' }))
-    const res = await adminFetch('/api/admin/cotizar-envio-pedido', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pedido_id: pedidoId }),
-    })
-    const data = await res.json()
-    if (data.tarifas) {
-      setTarifasPedido(prev => ({ ...prev, [pedidoId]: { quotationId: data.quotationId, opciones: data.tarifas } }))
-    } else {
-      setErrorGuia(prev => ({ ...prev, [pedidoId]: data.error || 'No se pudo cotizar.' }))
+    try {
+      const res = await adminFetch('/api/admin/cotizar-envio-pedido', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pedido_id: pedidoId }),
+      })
+      const data = await res.json()
+      if (data.tarifas) {
+        setTarifasPedido(prev => ({ ...prev, [pedidoId]: { quotationId: data.quotationId, opciones: data.tarifas } }))
+      } else {
+        setErrorGuia(prev => ({ ...prev, [pedidoId]: data.error || 'No se pudo cotizar.' }))
+      }
+    } catch (e) {
+      setErrorGuia(prev => ({ ...prev, [pedidoId]: 'Error de red al cotizar. Intenta de nuevo.' }))
     }
     setCotizandoGuia(null)
   }
@@ -91,21 +95,25 @@ export default function AdminPedidos() {
   async function handleGenerarGuia(pedidoId) {
     setGenerandoGuia(pedidoId)
     setErrorGuia(prev => ({ ...prev, [pedidoId]: '' }))
-    const res = await adminFetch('/api/admin/generar-envio', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        pedido_id: pedidoId,
-        quotation_id: tarifasPedido[pedidoId]?.quotationId || null,
-        rate_id: tarifaSelPedido[pedidoId] || null,
-      }),
-    })
-    const data = await res.json()
-    if (data.ok) {
-      setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, guia: data.guia } : p))
-      cargarSaldoEnvios()
-    } else {
-      setErrorGuia(prev => ({ ...prev, [pedidoId]: data.error || 'Error al generar la guía.' }))
+    try {
+      const res = await adminFetch('/api/admin/generar-envio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pedido_id: pedidoId,
+          quotation_id: tarifasPedido[pedidoId]?.quotationId || null,
+          rate_id: tarifaSelPedido[pedidoId] || null,
+        }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, guia: data.guia, estado: 'enviado' } : p))
+        cargarSaldoEnvios()
+      } else {
+        setErrorGuia(prev => ({ ...prev, [pedidoId]: data.error || 'Error al generar la guía.' }))
+      }
+    } catch (e) {
+      setErrorGuia(prev => ({ ...prev, [pedidoId]: 'Error de red al generar la guía. Verifica en Solo Envíos antes de reintentar.' }))
     }
     setGenerandoGuia(null)
   }
@@ -122,7 +130,7 @@ export default function AdminPedidos() {
   })
 
   const totalVentas = pedidos
-    .filter(p => p.estado === 'pagado' || p.estado === 'enviado' || p.estado === 'entregado')
+    .filter(p => ['pagado', 'liquidado', 'enviado', 'entregado'].includes(p.estado))
     .reduce((acc, p) => acc + (p.total || 0), 0)
 
   if (loading) return (
@@ -143,7 +151,7 @@ export default function AdminPedidos() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[
             { label: 'Total pedidos', value: pedidos.length },
-            { label: 'Ventas confirmadas', value: pedidos.filter(p => ['pagado','enviado','entregado'].includes(p.estado)).length },
+            { label: 'Ventas confirmadas', value: pedidos.filter(p => ['pagado','liquidado','enviado','entregado'].includes(p.estado)).length },
             { label: 'Apartados', value: pedidos.filter(p => p.estado === 'apartado').length },
             { label: 'En bodega', value: pedidos.filter(p => p.destino === 'bodega' && p.bodega_estado === 'guardando').length, href: '/admin/bodega' },
           ].map(({ label, value, href }) => {
