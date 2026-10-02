@@ -36,16 +36,16 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' }, { status: 429 })
   }
 
-  const client = new MercadoPagoConfig({
-    accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
-  })
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-  )
-
   try {
+    const client = new MercadoPagoConfig({
+      accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
+    })
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_KEY
+    )
+
     const {
       items, userId, userEmail, direccion_id,
       tipo_pedido, producto_id, pedido_id, anticipo_pagado, monto_liquidacion,
@@ -365,10 +365,8 @@ export async function POST(request) {
   } catch (error) {
     console.error('Error MP:', error)
     try {
-      const resend = new Resend(process.env.RESEND_API_KEY)
       await alertarAdmin(
-        resend,
-        '🚨 Error en /api/checkout — un cliente no pudo pagar',
+                '🚨 Error en /api/checkout — un cliente no pudo pagar',
         `Error: ${error.message}\n\nUn cliente intentó pagar y el checkout falló antes de llegar a Mercado Pago (no se le cobró nada). Revisar logs de Vercel para más contexto.\nHora: ${new Date().toISOString()}`
       )
     } catch (e) {

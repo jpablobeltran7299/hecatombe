@@ -35,20 +35,20 @@ function validarFirmaMercadoPago(request, dataId) {
 }
 
 export async function POST(request) {
-  const mpClient = new MercadoPagoConfig({
-    accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
-  })
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-  )
-
-  const sanityClient = getSanityWriteClient()
-
-  const resend = new Resend(process.env.RESEND_API_KEY)
-
   try {
+    const mpClient = new MercadoPagoConfig({
+      accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
+    })
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_KEY
+    )
+
+    const sanityClient = getSanityWriteClient()
+
+    const resend = new Resend(process.env.RESEND_API_KEY)
+
     const url = new URL(request.url)
     const topicQuery = url.searchParams.get('topic')
     const idQuery = url.searchParams.get('id') || url.searchParams.get('data.id')
@@ -83,8 +83,7 @@ export async function POST(request) {
       } catch (e) {
         console.error('Error resolviendo merchant_order:', e)
         await alertarAdmin(
-          resend,
-          `⚠️ Error resolviendo merchant_order ${idQuery}`,
+                    `⚠️ Error resolviendo merchant_order ${idQuery}`,
           `${e.message}\n\nRevisar manualmente en MercadoPago si corresponde a una venta real.`
         )
         return NextResponse.json({ ok: true })
@@ -94,8 +93,7 @@ export async function POST(request) {
       // Se avisa por correo (y no solo por log) porque ya se nos pasó una venta real
       // por confiar en que esta rama era inofensiva — mejor revisar cada vez que pase.
       await alertarAdmin(
-        resend,
-        '⚠️ Webhook recibió una notificación no reconocida',
+                '⚠️ Webhook recibió una notificación no reconocida',
         `No se reconoció el formato de esta notificación de MercadoPago, así que se ignoró.\n\nbody.type: ${body.type}\ntopic (query): ${topicQuery}\nurl completa: ${request.url}\nbody recibido: ${JSON.stringify(body)}\n\nSi esto correspondía a un pago real, hay que revisarlo manualmente en el dashboard de MercadoPago.`
       )
       return NextResponse.json({ ok: true })
@@ -103,8 +101,7 @@ export async function POST(request) {
 
     if (!paymentId) {
       await alertarAdmin(
-        resend,
-        '⚠️ Webhook recibió una notificación de pago sin ID',
+                '⚠️ Webhook recibió una notificación de pago sin ID',
         `body: ${JSON.stringify(body)}\nurl: ${request.url}`
       )
       return NextResponse.json({ ok: true })
@@ -118,8 +115,7 @@ export async function POST(request) {
     if (!validarFirmaMercadoPago(request, idParaFirma)) {
       console.error('Firma de webhook inválida para payment', paymentId)
       await alertarAdmin(
-        resend,
-        `⚠️ Firma inválida en webhook — payment ${paymentId}`,
+                `⚠️ Firma inválida en webhook — payment ${paymentId}`,
         `Se rechazó una notificación para el payment ${paymentId} porque la firma no coincidió. Si este pago es real, revisarlo manualmente en MercadoPago.`
       )
       return NextResponse.json({ error: 'invalid signature' }, { status: 401 })
@@ -142,8 +138,7 @@ export async function POST(request) {
       console.log(`Pago ${paymentId} en estado "${pago.status}" — aún no aprobado`)
       if (pago.status === 'pending' || pago.status === 'in_process') {
         await alertarAdmin(
-          resend,
-          `⏳ Pago pendiente #${paymentId} — revisar`,
+                    `⏳ Pago pendiente #${paymentId} — revisar`,
           `Payment ID: ${paymentId}\nEstado: ${pago.status}\nMonto: $${pago.transaction_amount}\nExternal reference: ${pago.external_reference}\n\nSi este pago se aprueba después, MercadoPago debería reenviar el webhook. Si no llega el pedido en unas horas, revisar manualmente en el dashboard de MercadoPago.`
         )
       }
@@ -264,8 +259,7 @@ export async function POST(request) {
       if (!pedidoApartado || pedidoApartado.estado !== 'apartado') {
         console.warn(`Liquidación ${paymentId} ignorada: pedido #${pedido_id_apartado} ya no está en estado "apartado" (posible doble pago)`)
         await alertarAdmin(
-          resend,
-          `⚠️ Posible doble liquidación — pedido #${pedido_id_apartado}`,
+                    `⚠️ Posible doble liquidación — pedido #${pedido_id_apartado}`,
           `Payment ID: ${paymentId}\nMonto: $${pago.transaction_amount}\nEl pedido #${pedido_id_apartado} ya no estaba en estado "apartado" cuando llegó esta liquidación. Revisar manualmente si hay que reembolsar.`
         )
         return NextResponse.json({ ok: true })
@@ -395,8 +389,7 @@ export async function POST(request) {
     } catch (e) {
       console.error(`Error descontando stock para pedido #${pedido?.id}:`, e)
       await alertarAdmin(
-        resend,
-        `⚠️ No se descontó stock — pedido #${pedido?.id}`,
+                `⚠️ No se descontó stock — pedido #${pedido?.id}`,
         `Payment ID: ${paymentId}\nPedido: #${pedido?.id}\nError: ${e.message}\n\nRevisar y descontar stock manualmente en Sanity si corresponde.`
       )
     }
@@ -447,8 +440,7 @@ export async function POST(request) {
     } catch (e) {
       console.error(`Error ajustando Hecacoins para pedido #${pedido?.id}:`, e)
       await alertarAdmin(
-        resend,
-        `⚠️ No se generaron/descontaron Hecacoins — pedido #${pedido?.id}`,
+                `⚠️ No se generaron/descontaron Hecacoins — pedido #${pedido?.id}`,
         `Payment ID: ${paymentId}\nUsuario: ${userId}\nPedido: #${pedido?.id}\nMonto: $${pago.transaction_amount}\nCosto envío: $${costo_envio}\nHecacoins a canjear: ${hecacoins_canjeadas}\nError: ${e.message}\n\nRevisar y ajustar Hecacoins manualmente si corresponde.`
       )
     }
@@ -577,8 +569,7 @@ export async function POST(request) {
     } catch (e) {
       console.error(`Error enviando emails de confirmación para pedido #${pedido?.id}:`, e)
       await alertarAdmin(
-        resend,
-        `⚠️ Pedido #${pedido?.id} procesado pero no se enviaron los correos de confirmación`,
+                `⚠️ Pedido #${pedido?.id} procesado pero no se enviaron los correos de confirmación`,
         `Payment ID: ${paymentId}\nCliente: ${userEmail}\nPedido: #${pedido?.id}\nMonto: $${pago.transaction_amount}\nError: ${e.message}\n\nEl pedido, stock y Hecacoins ya se procesaron — solo falló el envío de los correos. Avisar al cliente manualmente si hace falta.`
       )
     }
@@ -587,8 +578,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Webhook error:', error)
     await alertarAdmin(
-      resend,
-      '🚨 Error en webhook de pagos — venta posiblemente no procesada',
+            '🚨 Error en webhook de pagos — venta posiblemente no procesada',
       `Error: ${error.message}\n\nBody recibido: revisar logs de Vercel para más contexto.\nHora: ${new Date().toISOString()}`
     )
     return NextResponse.json({ error: error.message }, { status: 500 })

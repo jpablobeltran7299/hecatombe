@@ -4,16 +4,17 @@ import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { obtenerCotizacion } from '@/lib/soloenvios'
 import { BODEGA_THRESHOLD_MXN } from '@/lib/constants'
+import { alertarAdmin } from '@/lib/alertas'
 
 export const maxDuration = 60
 
 export async function POST(request) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-  )
-
   try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_KEY
+    )
+
     const { userId, userEmail, direccionId, quotation_id, rate_id } = await request.json()
     if (!userId || !direccionId) {
       return NextResponse.json({ error: 'Faltan datos para solicitar el envío.' }, { status: 400 })
@@ -135,6 +136,10 @@ export async function POST(request) {
     return NextResponse.json({ init_point: response.init_point })
   } catch (error) {
     console.error('Error solicitando envío de bodega:', error)
+    await alertarAdmin(
+      '🚨 Error en /api/solicitar-envio-bodega — un cliente no pudo adelantar su envío',
+      `Error: ${error.message}\n\nRevisar logs de Vercel para más contexto.\nHora: ${new Date().toISOString()}`
+    )
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
