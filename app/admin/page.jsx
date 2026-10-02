@@ -39,27 +39,47 @@ export default function AdminPage() {
           </h1>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {[
-            { titulo: 'Productos', desc: 'Crear y editar productos', icon: '🎁', href: '/admin/productos' },
-            { titulo: 'Inventario', desc: 'Stock y disponibilidad', icon: '📦', href: '/admin/inventario' },
-            { titulo: 'Pedidos', desc: 'Historial de ventas', icon: '🛍️', href: '/admin/pedidos' },
-            { titulo: 'Clientes', desc: 'Hecacoins y bodega', icon: '👥', href: '/admin/clientes' },
-            { titulo: 'Bodegatombe', desc: 'Productos en bodega', icon: '🏪', href: '/admin/bodega' },
-            { titulo: 'Clasificación', desc: 'Temáticas, universos y líneas', icon: '🏷️', href: '/admin/clasificacion' },
-            { titulo: 'Banners', desc: 'Gestionar banners del home', icon: '🖼️', href: '/admin/banners' },
-            { titulo: 'Dinámicas', desc: 'Rifas, concursos y más', icon: '🎯', href: '/admin/dinamicas' },
-            { titulo: 'Marcas', desc: 'Gestionar marcas de productos', icon: '🏷️', href: '/admin/marcas' },
-            { titulo: 'Configuración', desc: 'Ajustes generales del home', icon: '⚙️', href: '/admin/configuracion' },
-          ].map(({ titulo, desc, icon, href }) => (
-            <a key={titulo} href={href}
-              className="bg-surface border border-line hover:border-orange-500 rounded-2xl p-6 flex flex-col gap-2 transition cursor-pointer">
-              <span className="text-3xl">{icon}</span>
-              <h3 className="font-black uppercase text-ink">{titulo}</h3>
-              <p className="text-ink-muted text-sm">{desc}</p>
-            </a>
-          ))}
-        </div>
+        {[
+          {
+            seccion: 'Operación diaria',
+            items: [
+              { titulo: 'Pedidos', desc: 'Historial de ventas', icon: '🛍️', href: '/admin/pedidos' },
+              { titulo: 'Clientes', desc: 'Hecacoins y bodega', icon: '👥', href: '/admin/clientes' },
+              { titulo: 'Bodegatombe', desc: 'Productos en bodega', icon: '🏪', href: '/admin/bodega' },
+            ],
+          },
+          {
+            seccion: 'Catálogo',
+            items: [
+              { titulo: 'Productos', desc: 'Crear y editar productos', icon: '🎁', href: '/admin/productos' },
+              { titulo: 'Inventario', desc: 'Stock y disponibilidad', icon: '📦', href: '/admin/inventario' },
+              { titulo: 'Clasificación', desc: 'Temáticas, universos y líneas', icon: '🏷️', href: '/admin/clasificacion' },
+              { titulo: 'Marcas', desc: 'Gestionar marcas de productos', icon: '™️', href: '/admin/marcas' },
+            ],
+          },
+          {
+            seccion: 'Contenido del sitio',
+            items: [
+              { titulo: 'Banners', desc: 'Gestionar banners del home', icon: '🖼️', href: '/admin/banners' },
+              { titulo: 'Dinámicas', desc: 'Rifas, concursos y más', icon: '🎯', href: '/admin/dinamicas' },
+              { titulo: 'Configuración', desc: 'Ajustes generales del home', icon: '⚙️', href: '/admin/configuracion' },
+            ],
+          },
+        ].map(({ seccion, items }) => (
+          <div key={seccion} className="mb-8">
+            <h2 className="text-ink-muted text-xs font-black uppercase tracking-wider mb-3">{seccion}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {items.map(({ titulo, desc, icon, href }) => (
+                <a key={titulo} href={href}
+                  className="bg-surface border border-line hover:border-orange-500 rounded-2xl p-6 flex flex-col gap-2 transition cursor-pointer">
+                  <span className="text-3xl">{icon}</span>
+                  <h3 className="font-black uppercase text-ink">{titulo}</h3>
+                  <p className="text-ink-muted text-sm">{desc}</p>
+                </a>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </main>
   )
