@@ -8,6 +8,7 @@ import { ajustarHecacoins } from '@/lib/hecacoins'
 import { obtenerCotizacion } from '@/lib/soloenvios'
 import { COSTO_ENVIO_MXN, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
 import { alertarAdmin } from '@/lib/alertas'
+import { plantillaConfirmacionCliente, BCC_MONITOREO_CLIENTES } from '@/lib/emailTemplates'
 
 export const maxDuration = 60
 
@@ -258,18 +259,33 @@ export async function POST(request) {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY)
         const esApartado = tipo_pedido === 'apartado'
+        const nombreClienteHecacoins = direccionSnapshot?.nombre
+          ? `${direccionSnapshot.nombre} ${direccionSnapshot.apellido || ''}`.trim()
+          : userEmail
+        const direccionTextoHecacoins = direccionSnapshot
+          ? `${direccionSnapshot.calle}, ${direccionSnapshot.colonia}, ${direccionSnapshot.ciudad}, ${direccionSnapshot.estado} CP ${direccionSnapshot.cp}${direccionSnapshot.referencias ? ` — ${direccionSnapshot.referencias}` : ''}`
+          : 'No proporcionada'
+
+        const { asunto: asuntoCliente, html: htmlCliente } = plantillaConfirmacionCliente({
+          nombreCliente: nombreClienteHecacoins,
+          pedidoId: pedido?.id,
+          monto: totalOriginal,
+          esApartado,
+          esBodega: destino === 'bodega',
+          direccion: direccionTextoHecacoins,
+          notaExtra: `Pagado por completo con ${descuentoHecacoins.toLocaleString('es-MX')} Hecacoins.`,
+        })
         await resend.emails.send({
           from: 'Hecatombe Coleccionables <noreply@hecatombe.com.mx>',
           to: userEmail,
-          subject: esApartado ? '🔒 ¡Producto apartado! — Hecatombe Coleccionables' : '✅ ¡Tu pedido está confirmado! — Hecatombe Coleccionables',
-          html: `<p>Hola, tu pedido #${pedido?.id} fue pagado por completo con ${descuentoHecacoins.toLocaleString('es-MX')} Hecacoins. ${esApartado ? 'Te avisaremos cuando llegue para que puedas liquidar el resto.' : 'En breve nos pondremos en contacto contigo para coordinar el envío.'}</p>`,
+          bcc: BCC_MONITOREO_CLIENTES,
+          subject: asuntoCliente,
+          html: htmlCliente,
         })
-        await resend.emails.send({
-          from: 'Hecatombe Sistema <noreply@hecatombe.com.mx>',
-          to: 'hecatombe.9194@gmail.com',
-          subject: `🪙 Pedido #${pedido?.id} pagado 100% con Hecacoins — $${totalOriginal.toLocaleString('es-MX')} MXN`,
-          html: `<p>Cliente: ${userEmail}<br>Pedido #${pedido?.id}<br>Valor: $${totalOriginal.toLocaleString('es-MX')} MXN<br>Hecacoins usadas: ${descuentoHecacoins.toLocaleString('es-MX')}</p>`,
-        })
+        await alertarAdmin(
+          `🪙 Pedido #${pedido?.id} pagado 100% con Hecacoins — $${totalOriginal.toLocaleString('es-MX')} MXN`,
+          `Cliente: ${userEmail}\nPedido #${pedido?.id}\nValor: $${totalOriginal.toLocaleString('es-MX')} MXN\nHecacoins usadas: ${descuentoHecacoins.toLocaleString('es-MX')}`
+        )
       } catch (e) {
         console.error('Error enviando correos de pago con Hecacoins:', e)
       }
