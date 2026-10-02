@@ -5,6 +5,7 @@ import { getProductosPorIds } from '@/lib/sanity'
 import { extraerLineas } from '@/lib/pedidos'
 import { crearEnvio, obtenerCotizacion } from '@/lib/soloenvios'
 import { armarParcels } from '@/lib/paquetes'
+import { alertarAdmin } from '@/lib/alertas'
 
 export const maxDuration = 60
 
@@ -68,6 +69,29 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No se encontró el correo del cliente.' }, { status: 400 })
     }
 
+    // Reserva atómica sobre todos los pedidos del grupo — evita que un doble
+    // clic o dos pestañas generen (y cobren) dos guías reales para el mismo
+    // envío de bodega. Si el UPDATE no afecta exactamente todas las filas
+    // esperadas, alguien más ya está generando o ya terminó.
+    const idsGrupo = pedidos.map(p => p.id)
+    const { data: reservados, error: errorReserva } = await supabase
+      .from('pedidos')
+      .update({ guia: { generando: true, intento_en: new Date().toISOString() } })
+      .in('id', idsGrupo)
+      .is('guia', null)
+      .select('id')
+
+    if (errorReserva) {
+      throw new Error(`No se pudo reservar el envío de bodega para generar la guía: ${errorReserva.message}`)
+    }
+    if (!reservados || reservados.length !== idsGrupo.length) {
+      // Reversa parcial si alcanzó a reservar algunos — no dejar un subconjunto bloqueado.
+      if (reservados && reservados.length > 0) {
+        await supabase.from('pedidos').update({ guia: null }).in('id', reservados.map(r => r.id))
+      }
+      return NextResponse.json({ error: 'Este envío ya tiene una guía generada o se está generando en este momento.' }, { status: 409 })
+    }
+
     const items = pedidos.flatMap(p => extraerLineas(p))
     const ids = items.map(i => i.producto_id)
     const productos = await getProductosPorIds(ids)
@@ -75,13 +99,27 @@ export async function POST(request) {
     productos.forEach(p => { productosMap[p._id] = p })
     const parcels = armarParcels(items, productosMap)
 
-    const envio = await crearEnvio({
-      rateId: rateIdFinal,
-      direccionDestino: { ...direccion, email: user.email },
-      parcels,
-    })
+    let envio
+    try {
+      envio = await crearEnvio({
+        rateId: rateIdFinal,
+        direccionDestino: { ...direccion, email: user.email },
+        parcels,
+      })
+    } catch (e) {
+      // No sabemos si Solo Envíos ya creó (y cobró) el shipment antes de que
+      // la llamada fallara — por seguridad NO se libera la reserva. Se deja
+      // el grupo bloqueado hasta revisión manual.
+      await alertarAdmin(
+        `🚨 Falló la generación de guía de bodega — cliente ${user_id} (revisar manualmente)`,
+        `Pedidos: ${idsGrupo.join(', ')}\nError: ${e.message}\n\nNo se pudo confirmar si Solo Envíos alcanzó a crear el shipment antes de este error. Quedaron bloqueados (guia.generando=true) para evitar una segunda guía por error. Revisar en el panel de Solo Envíos y, si no se generó nada, limpiar pedidos.guia a NULL manualmente para permitir reintentar.`
+      )
+      return NextResponse.json({ error: `Error generando la guía: ${e.message}. Los pedidos quedaron bloqueados para revisión manual.` }, { status: 500 })
+    }
 
     if (!envio.trackingNumber) {
+      // Fallo limpio y confirmado por la API — seguro liberar la reserva.
+      await supabase.from('pedidos').update({ guia: null }).in('id', idsGrupo)
       return NextResponse.json({
         error: `No se pudo generar la guía (estado: ${envio.workflowStatus}). ${envio.errorDetail?.error_message || ''}`,
       }, { status: 502 })

@@ -5,18 +5,26 @@ import { Resend } from 'resend'
 import { obtenerCotizacion } from '@/lib/soloenvios'
 import { BODEGA_THRESHOLD_MXN } from '@/lib/constants'
 import { alertarAdmin } from '@/lib/alertas'
+import { getAuthUser } from '@/lib/auth'
 
 export const maxDuration = 60
 
 export async function POST(request) {
   try {
+    // Igual que en /api/checkout: nunca confiar en el userId/userEmail del
+    // body — se exige sesión real y se usa el usuario que esa sesión certifica.
+    const auth = await getAuthUser(request)
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
+    const userId = auth.user.id
+    const userEmail = auth.user.email
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_KEY
     )
 
-    const { userId, userEmail, direccionId, quotation_id, rate_id } = await request.json()
-    if (!userId || !direccionId) {
+    const { direccionId, quotation_id, rate_id } = await request.json()
+    if (!direccionId) {
       return NextResponse.json({ error: 'Faltan datos para solicitar el envío.' }, { status: 400 })
     }
 

@@ -5,18 +5,23 @@ import { extraerLineas } from '@/lib/pedidos'
 import { cotizarEnvio } from '@/lib/soloenvios'
 import { armarParcels, formatearTarifas } from '@/lib/paquetes'
 import { BODEGA_THRESHOLD_MXN } from '@/lib/constants'
+import { getAuthUser } from '@/lib/auth'
 
 export const maxDuration = 60
 
 export async function POST(request) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-  )
-
   try {
-    const { userId, direccionId } = await request.json()
-    if (!userId || !direccionId) {
+    const auth = await getAuthUser(request)
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
+    const userId = auth.user.id
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_KEY
+    )
+
+    const { direccionId } = await request.json()
+    if (!direccionId) {
       return NextResponse.json({ error: 'Faltan datos para cotizar el envío.' }, { status: 400 })
     }
 

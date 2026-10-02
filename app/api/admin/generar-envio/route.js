@@ -64,6 +64,24 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No se encontró el correo del cliente.' }, { status: 400 })
     }
 
+    // Reserva atómica: un doble clic o dos pestañas abiertas no deben poder
+    // generar (y cobrar) dos guías reales para el mismo pedido. El UPDATE
+    // solo afecta la fila si `guia` sigue en null — si no afecta ninguna,
+    // alguien más ya está generando o ya terminó.
+    const { data: reservado, error: errorReserva } = await supabase
+      .from('pedidos')
+      .update({ guia: { generando: true, intento_en: new Date().toISOString() } })
+      .eq('id', pedido_id)
+      .is('guia', null)
+      .select('id')
+
+    if (errorReserva) {
+      throw new Error(`No se pudo reservar el pedido para generar la guía: ${errorReserva.message}`)
+    }
+    if (!reservado || reservado.length === 0) {
+      return NextResponse.json({ error: 'Este pedido ya tiene una guía generada o se está generando en este momento.' }, { status: 409 })
+    }
+
     // Mismos "paquetes" que se usaron para cotizar — un paquete por pieza.
     const itemsPedido = pedido.tipo_pedido === 'normal'
       ? (pedido.items || [])
@@ -76,13 +94,30 @@ export async function POST(request) {
 
     const parcels = armarParcels(itemsPedido, productosMap)
 
-    const envio = await crearEnvio({
-      rateId: rateIdFinal,
-      direccionDestino: { ...pedido.direccion_snapshot, email: user.email },
-      parcels,
-    })
+    let envio
+    try {
+      envio = await crearEnvio({
+        rateId: rateIdFinal,
+        direccionDestino: { ...pedido.direccion_snapshot, email: user.email },
+        parcels,
+      })
+    } catch (e) {
+      // No sabemos si Solo Envíos ya creó (y cobró) el shipment antes de que
+      // la llamada fallara — por seguridad NO se libera la reserva para que
+      // nadie pueda reintentar y generar una segunda guía real. Se deja el
+      // pedido bloqueado hasta que un admin revise manualmente en Solo
+      // Envíos y, si no se generó nada, limpie `pedidos.guia` a mano.
+      await alertarAdmin(
+        `🚨 Falló la generación de guía — pedido #${pedido_id} (revisar manualmente)`,
+        `Error: ${e.message}\n\nNo se pudo confirmar si Solo Envíos alcanzó a crear el shipment antes de este error. Pedido #${pedido_id} quedó bloqueado (guia.generando=true) para evitar generar una segunda guía por error. Revisar en el panel de Solo Envíos si se generó o no, y si no, limpiar pedidos.guia a NULL manualmente para permitir reintentar.`
+      )
+      return NextResponse.json({ error: `Error generando la guía: ${e.message}. El pedido quedó bloqueado para revisión manual — no reintentes sin confirmar con Solo Envíos.` }, { status: 500 })
+    }
 
     if (!envio.trackingNumber) {
+      // Fallo limpio y confirmado por la API (no se generó ningún shipment)
+      // — aquí sí es seguro liberar la reserva para permitir reintentar.
+      await supabase.from('pedidos').update({ guia: null }).eq('id', pedido_id)
       return NextResponse.json({
         error: `No se pudo generar la guía (estado: ${envio.workflowStatus}). ${envio.errorDetail?.error_message || ''}`,
       }, { status: 502 })

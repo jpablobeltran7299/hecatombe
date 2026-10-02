@@ -3,19 +3,24 @@ import { createClient } from '@supabase/supabase-js'
 import { getProductosPorIds } from '@/lib/sanity'
 import { cotizarEnvio } from '@/lib/soloenvios'
 import { armarParcels, formatearTarifas } from '@/lib/paquetes'
+import { getAuthUser } from '@/lib/auth'
 
 export const maxDuration = 60
 
 export async function POST(request) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-  )
-
   try {
-    const { userId, direccionId, items } = await request.json()
+    const auth = await getAuthUser(request)
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
+    const userId = auth.user.id
 
-    if (!userId || !direccionId || !items?.length) {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_KEY
+    )
+
+    const { direccionId, items } = await request.json()
+
+    if (!direccionId || !items?.length) {
       return NextResponse.json({ error: 'Faltan datos para cotizar el envío.' }, { status: 400 })
     }
 

@@ -112,13 +112,15 @@ export default function CheckoutPage() {
       const destino = modoEnvio === 'bodega' ? 'bodega' : 'directo'
       const hecacoinsACanjear = usarHecacoins && !modoApartar ? hecacoins : 0
 
+      const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch('/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token}`,
+        },
         body: JSON.stringify({
           items: itemsAPagar,
-          userId: user.id,
-          userEmail: user.email,
           direccion_id: requiereDireccion ? direccionId : null,
           tipo_pedido: tipoPedido,
           destino,

@@ -13,6 +13,14 @@ import BodegaProgress from '@/app/components/BodegaProgress'
 import HecacoinsEarnedNote from '@/app/components/HecacoinsEarnedNote'
 import FormDireccion from '@/app/components/FormDireccion'
 
+// Headers con el token de sesión real — los endpoints de checkout/envío ya
+// no confían en un userId que mande el body, así que toda llamada a esas
+// rutas necesita mandar este Authorization.
+async function authHeaders() {
+  const { data: { session } } = await supabase.auth.getSession()
+  return { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` }
+}
+
 export default function CuentaPage() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -207,9 +215,8 @@ export default function CuentaPage() {
     try {
       const res = await fetch('/api/cotizar-envio', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders(),
         body: JSON.stringify({
-          userId: user.id,
           direccionId,
           items: [{ productoId: pedido.producto_id, cantidad: 1 }],
         }),
@@ -258,11 +265,9 @@ export default function CuentaPage() {
       }
       const res = await fetch('/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders(),
         body: JSON.stringify({
           items: [itemLiquidar],
-          userId: user.id,
-          userEmail: user.email,
           tipo_pedido: 'liquidacion',
           destino,
           direccion_id: destino !== 'bodega' ? direccionLiquidacion[pedido.id] : null,
@@ -286,8 +291,8 @@ export default function CuentaPage() {
     setCotizacionBodega({ cotizando: true })
     const res = await fetch('/api/cotizar-envio-bodega', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user.id, direccionId }),
+      headers: await authHeaders(),
+      body: JSON.stringify({ direccionId }),
     })
     const data = await res.json()
     setCotizacionBodega({ cotizando: false, ...data })
@@ -309,10 +314,8 @@ export default function CuentaPage() {
     try {
       const res = await fetch('/api/solicitar-envio-bodega', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders(),
         body: JSON.stringify({
-          userId: user.id,
-          userEmail: user.email,
           direccionId: direccionBodega,
           quotation_id: cotizacionBodega?.envioGratis ? null : cotizacionBodega?.quotationId,
           rate_id: cotizacionBodega?.envioGratis ? null : tarifaBodega,

@@ -9,6 +9,7 @@ import { obtenerCotizacion } from '@/lib/soloenvios'
 import { COSTO_ENVIO_MXN, BODEGA_THRESHOLD_MXN } from '@/lib/constants'
 import { alertarAdmin } from '@/lib/alertas'
 import { plantillaConfirmacionCliente, BCC_MONITOREO_CLIENTES } from '@/lib/emailTemplates'
+import { getAuthUser } from '@/lib/auth'
 
 export const maxDuration = 60
 
@@ -38,6 +39,16 @@ export async function POST(request) {
   }
 
   try {
+    // El userId/userEmail NUNCA se toma del body — antes se confiaba
+    // ciegamente en lo que mandara el cliente, lo que permitía a cualquiera
+    // mandar el user_id de otra persona y gastarle sus Hecacoins o generar
+    // pedidos a su nombre (IDOR). Se exige sesión real y se usa el usuario
+    // que esa sesión certifica, ignorando cualquier userId/userEmail del body.
+    const auth = await getAuthUser(request)
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
+    const userId = auth.user.id
+    const userEmail = auth.user.email
+
     const client = new MercadoPagoConfig({
       accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
     })
@@ -48,7 +59,7 @@ export async function POST(request) {
     )
 
     const {
-      items, userId, userEmail, direccion_id,
+      items, direccion_id,
       tipo_pedido, producto_id, pedido_id, anticipo_pagado, monto_liquidacion,
       hecacoins_a_canjear, destino, quotation_id, rate_id
     } = await request.json()
