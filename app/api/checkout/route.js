@@ -212,7 +212,16 @@ export async function POST(request) {
         throw e
       }
 
-      const itemsPedido = itemsValidados.map(i => ({ producto_id: i.productoId, cantidad: i.cantidad }))
+      // Se guarda un snapshot (nombre, precio, imagen) además del producto_id —
+      // las piezas únicas/numeradas se borran de Sanity una vez vendidas, y sin
+      // este snapshot el historial del pedido pierde esa info para siempre.
+      const itemsPedido = itemsValidados.map(i => ({
+        producto_id: i.productoId,
+        cantidad: i.cantidad,
+        nombre: i.nombre,
+        precio: i.precio,
+        imagen: i.imagen || null,
+      }))
 
       const { data: pedido } = await supabase.from('pedidos').insert({
         user_id: userId,
@@ -266,6 +275,13 @@ export async function POST(request) {
           ? `${direccionSnapshot.calle}, ${direccionSnapshot.colonia}, ${direccionSnapshot.ciudad}, ${direccionSnapshot.estado} CP ${direccionSnapshot.cp}${direccionSnapshot.referencias ? ` — ${direccionSnapshot.referencias}` : ''}`
           : 'No proporcionada'
 
+        const itemsParaCorreo = itemsValidados.map(item => ({
+          title: item.nombre,
+          quantity: item.cantidad,
+          unitPrice: item.precio,
+          pictureUrl: item.imagen || null,
+        }))
+
         const { asunto: asuntoCliente, html: htmlCliente } = plantillaConfirmacionCliente({
           nombreCliente: nombreClienteHecacoins,
           pedidoId: pedido?.id,
@@ -274,6 +290,9 @@ export async function POST(request) {
           esBodega: destino === 'bodega',
           direccion: direccionTextoHecacoins,
           notaExtra: `Pagado por completo con ${descuentoHecacoins.toLocaleString('es-MX')} Hecacoins.`,
+          items: itemsParaCorreo,
+          subtotal: totalOriginal,
+          descuentoHecacoins,
         })
         await resend.emails.send({
           from: 'Hecatombe Coleccionables <noreply@hecatombe.com.mx>',

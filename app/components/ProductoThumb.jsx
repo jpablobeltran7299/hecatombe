@@ -1,7 +1,21 @@
 import { urlFor } from '@/lib/sanity'
 
-export default function ProductoThumb({ imagenes, nombre, size = 48 }) {
+// `imagenUrl` es el snapshot guardado en el pedido (URL directa, para cuando
+// el producto ya se borró de Sanity) — tiene prioridad sobre `imagenes`
+// (referencias de Sanity, que solo sirven si el documento sigue vivo).
+export default function ProductoThumb({ imagenes, imagenUrl, nombre, size = 48 }) {
   const imagen = imagenes?.[0]
+
+  if (imagenUrl) {
+    return (
+      <img
+        src={imagenUrl}
+        alt={nombre || 'Producto'}
+        className="object-contain rounded-lg bg-white flex-shrink-0"
+        style={{ width: size, height: size }}
+      />
+    )
+  }
 
   if (imagen) {
     return (

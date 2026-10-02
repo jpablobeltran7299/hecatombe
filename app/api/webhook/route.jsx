@@ -7,7 +7,7 @@ import { getSanityWriteClient, descontarStock } from '@/lib/sanityAdmin'
 import { ajustarHecacoins } from '@/lib/hecacoins'
 import { obtenerCotizacion } from '@/lib/soloenvios'
 import { alertarAdmin } from '@/lib/alertas'
-import { plantillaConfirmacionCliente, BCC_MONITOREO_CLIENTES } from '@/lib/emailTemplates'
+import { plantillaConfirmacionCliente, tablaProductosHtml, BCC_MONITOREO_CLIENTES } from '@/lib/emailTemplates'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -319,12 +319,30 @@ export async function POST(request) {
       ? `${direccionElegida.calle}, ${direccionElegida.colonia}, ${direccionElegida.ciudad}, ${direccionElegida.estado} CP ${direccionElegida.cp}${direccionElegida.referencias ? ` — ${direccionElegida.referencias}` : ''}`
       : 'No proporcionada'
 
+    // additional_info.items trae lo que MercadoPago realmente cobró (nombre,
+    // cantidad, precio e imagen) — se guarda ese snapshot en el pedido en vez
+    // de solo el producto_id, porque las piezas únicas/numeradas se borran de
+    // Sanity una vez vendidas: sin este snapshot, el historial del pedido
+    // pierde el nombre/foto para siempre y queda mostrando "Producto no
+    // disponible" (ver pedido #13, operación 181833656256).
+    const itemsConSnapshot = (pago.additional_info?.items || [])
+      .filter(i => i.id !== 'envio' && i.id !== 'hecacoins-descuento')
+      .map(i => ({
+        producto_id: i.id,
+        cantidad: Number(i.quantity) || 1,
+        nombre: i.title,
+        precio: parseFloat(i.unit_price) || null,
+        imagen: i.picture_url || null,
+      }))
+
     // Los "items" del pedido deben ser lo que realmente se pagó, no el carrito
     // general del cliente (que es un dato no relacionado para apartado/liquidación
     // y puede tener productos que el cliente ni siquiera compró en esta operación).
-    const itemsPedido = tipo_pedido === 'normal'
-      ? (carritoItems || [])
-      : (producto_id ? [{ producto_id, cantidad: 1 }] : [])
+    const itemsPedido = itemsConSnapshot.length > 0
+      ? itemsConSnapshot
+      : tipo_pedido === 'normal'
+        ? (carritoItems || [])
+        : (producto_id ? [{ producto_id, cantidad: 1 }] : [])
 
     // Guardar pedido. Si ya existe un índice único en mp_payment_id (ver
     // SQL_pendiente_indice_unico.sql) y dos notificaciones para el mismo pago
@@ -451,6 +469,16 @@ export async function POST(request) {
     const esBodega = destino === 'bodega'
 
     try {
+    // Mismo snapshot que se guardó en el pedido (ver itemsConSnapshot arriba)
+    // — así el correo siempre muestra exactamente lo que se cobró.
+    const itemsParaCorreo = itemsConSnapshot.map(i => ({
+      title: i.nombre,
+      quantity: i.cantidad,
+      unitPrice: i.precio,
+      pictureUrl: i.imagen,
+    }))
+    const subtotalCorreo = itemsParaCorreo.reduce((acc, i) => acc + (i.unitPrice || 0) * i.quantity, 0)
+
     const { asunto: asuntoCliente, html: htmlCliente } = plantillaConfirmacionCliente({
       nombreCliente,
       pedidoId: pedido?.id || paymentId,
@@ -461,6 +489,9 @@ export async function POST(request) {
       costoEnvio: costo_envio,
       proveedorEnvio: envioCotizacion?.proveedor,
       direccion,
+      items: itemsParaCorreo,
+      subtotal: itemsParaCorreo.length > 0 ? subtotalCorreo : null,
+      descuentoHecacoins: hecacoins_canjeadas,
     })
     await resend.emails.send({
       from: 'Hecatombe Coleccionables <noreply@hecatombe.com.mx>',
@@ -472,7 +503,7 @@ export async function POST(request) {
 
     await resend.emails.send({
       from: 'Hecatombe Sistema <noreply@hecatombe.com.mx>',
-      to: 'hecatombe.9194@gmail.com',
+      to: ['hecatombe.9194@gmail.com', 'jpablobeltran7299@gmail.com'],
       subject: esApartado
         ? `🔒 Producto apartado #${pedido?.id} — $${pago.transaction_amount?.toLocaleString('es-MX')} MXN anticipo`
         : esBodega
@@ -510,6 +541,11 @@ export async function POST(request) {
                       ${esApartado && monto_liquidacion ? `<tr><td style="color:#aaa;font-size:13px;padding-bottom:8px;">Pendiente de liquidar: <span style="color:#fff;">$${monto_liquidacion?.toLocaleString('es-MX')} MXN</span></td></tr>` : ''}
                       <tr><td style="color:#aaa;font-size:13px;">ID Mercado Pago: <span style="color:#fff;">${paymentId}</span></td></tr>
                     </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 40px 40px;">
+                    ${tablaProductosHtml(itemsParaCorreo)}
                   </td>
                 </tr>
                 <tr>

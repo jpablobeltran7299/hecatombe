@@ -12,7 +12,7 @@ export default function PedidoItemsList({ lineas, max = 3, size = 48 }) {
     <div className="flex flex-col gap-2">
       {visibles.map((linea, i) => (
         <div key={`${linea.producto_id}-${i}`} className="flex items-center gap-3 min-w-0">
-          <ProductoThumb imagenes={linea.producto?.imagenes} nombre={linea.producto?.nombre} size={size} />
+          <ProductoThumb imagenes={linea.producto?.imagenes} imagenUrl={linea.producto?.imagenUrl} nombre={linea.producto?.nombre} size={size} />
           <div className="flex-1 min-w-0">
             <p className="text-ink text-xs font-black truncate">{linea.producto?.nombre || 'Producto no disponible'}</p>
             {linea.cantidad > 1 && <p className="text-ink/30 text-xs">Cantidad: {linea.cantidad}</p>}
