@@ -47,7 +47,7 @@ export default function AdminPedidos() {
   async function cargarPedidos() {
     const { data } = await supabase
       .from('pedidos')
-      .select('id, created_at, total, estado, tipo_pedido, destino, bodega_estado, mp_payment_id, anticipo_pagado, monto_liquidacion, user_id, items, producto_id, envio_cotizacion, guia')
+      .select('id, created_at, total, estado, tipo_pedido, destino, bodega_estado, mp_payment_id, anticipo_pagado, monto_liquidacion, user_id, items, producto_id, envio_cotizacion, guia, direccion_snapshot')
       .order('created_at', { ascending: false })
 
     const pedidosData = data || []
@@ -241,6 +241,16 @@ export default function AdminPedidos() {
                 {pedido.lineas?.length > 0 && (
                   <div className="mt-3">
                     <PedidoItemsList lineas={pedido.lineas} size={40} />
+                  </div>
+                )}
+                {pedido.destino !== 'bodega' && pedido.direccion_snapshot && (
+                  <div className="mt-3 bg-surface-alt rounded-lg p-3">
+                    <p className="text-ink-muted text-xs font-black uppercase mb-1">Dirección de envío</p>
+                    <p className="text-ink text-xs font-bold">{pedido.direccion_snapshot.nombre} {pedido.direccion_snapshot.apellido} <span className="text-ink-muted font-normal">· {pedido.direccion_snapshot.telefono}</span></p>
+                    <p className="text-ink-muted text-xs mt-1">
+                      {pedido.direccion_snapshot.calle}, {pedido.direccion_snapshot.colonia}, {pedido.direccion_snapshot.ciudad}, {pedido.direccion_snapshot.estado} CP {pedido.direccion_snapshot.cp}
+                      {pedido.direccion_snapshot.referencias ? ` — ${pedido.direccion_snapshot.referencias}` : ''}
+                    </p>
                   </div>
                 )}
                 <HecacoinsEarnedNote pedido={pedido} className="mt-2" />
