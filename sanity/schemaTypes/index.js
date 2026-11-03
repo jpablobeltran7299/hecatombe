@@ -6,5 +6,6 @@ import tematica from './tematica'
 import linea from './linea'
 import universo from './universo'
 import configuracion from './configuracion'
+import promocion from './promocion'
 
-export const schemaTypes = [marca, producto, banner, dinamica, tematica, linea, universo, configuracion]
+export const schemaTypes = [marca, producto, banner, dinamica, tematica, linea, universo, configuracion, promocion]

@@ -60,6 +60,7 @@ export default function AdminPage() {
           {
             seccion: 'Contenido del sitio',
             items: [
+              { titulo: 'Promociones', desc: 'Prender/apagar descuentos (Buen Fin, etc.)', icon: '🏷️', href: '/admin/promociones' },
               { titulo: 'Banners', desc: 'Gestionar banners del home', icon: '🖼️', href: '/admin/banners' },
               { titulo: 'Dinámicas', desc: 'Rifas, concursos y más', icon: '🎯', href: '/admin/dinamicas' },
               { titulo: 'Configuración', desc: 'Ajustes generales del home', icon: '⚙️', href: '/admin/configuracion' },
