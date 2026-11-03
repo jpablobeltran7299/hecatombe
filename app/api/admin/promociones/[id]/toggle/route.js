@@ -32,10 +32,29 @@ export async function POST(request, { params }) {
   try {
     const { activar } = await request.json()
     const promo = await client.fetch(
-      `*[_id == $id][0]{ _id, nombre, tipo, valor, alcance, activa, productosAfectados, "productos": productos[]._ref }`,
+      `*[_id == $id][0]{ _id, nombre, modalidad, tipo, valor, alcance, activa, productosAfectados, "productos": productos[]._ref }`,
       { id }
     )
     if (!promo) return NextResponse.json({ error: 'Promoción no encontrada' }, { status: 404 })
+
+    // La modalidad "escalonado" no toca productos — solo prende/apaga su
+    // propio flag, que app/api/checkout/route.js lee al calcular el total.
+    // Solo puede haber una activa a la vez (el checkout no sabría cuál
+    // usar si hubiera dos).
+    if (promo.modalidad === 'escalonado') {
+      if (activar) {
+        if (promo.activa) return NextResponse.json({ ok: true })
+        const otraActiva = await client.fetch(
+          `*[_type == "promocion" && modalidad == "escalonado" && activa == true && _id != $id][0]{ nombre }`,
+          { id }
+        )
+        if (otraActiva) {
+          return NextResponse.json({ error: `Ya está activa la promoción escalonada "${otraActiva.nombre}" — apágala primero.` }, { status: 400 })
+        }
+      }
+      await client.patch(id).set({ activa: !!activar }).commit()
+      return NextResponse.json({ ok: true })
+    }
 
     if (activar) {
       if (promo.activa) return NextResponse.json({ ok: true, productosAfectados: promo.productosAfectados || [] })

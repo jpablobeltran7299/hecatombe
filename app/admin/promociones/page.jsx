@@ -7,6 +7,16 @@ import { adminFetch } from '@/lib/adminFetch'
 import { getPromocionesAdmin, getTodosProductosParaAdmin } from '@/lib/sanity'
 import { useAuth } from '@/app/components/AuthProvider'
 
+const FORM_VACIO = {
+  nombre: '',
+  modalidad: 'producto',
+  tipo: 'porcentaje',
+  valor: '',
+  alcance: 'catalogo',
+  productos: new Set(),
+  escalones: [{ minimo: '', porcentaje: '' }],
+}
+
 export default function AdminPromociones() {
   const { user, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
@@ -16,7 +26,7 @@ export default function AdminPromociones() {
   const [cargandoToggle, setCargandoToggle] = useState(null)
   const [error, setError] = useState('')
   const [modoEditar, setModoEditar] = useState(null) // null = lista, 'nuevo' = crear, id = editar
-  const [form, setForm] = useState({ nombre: '', tipo: 'porcentaje', valor: '', alcance: 'catalogo', productos: new Set() })
+  const [form, setForm] = useState(FORM_VACIO)
   const router = useRouter()
 
   useEffect(() => {
@@ -36,7 +46,7 @@ export default function AdminPromociones() {
   }
 
   function abrirNuevo() {
-    setForm({ nombre: '', tipo: 'porcentaje', valor: '', alcance: 'catalogo', productos: new Set() })
+    setForm(FORM_VACIO)
     setModoEditar('nuevo')
     setError('')
   }
@@ -44,10 +54,14 @@ export default function AdminPromociones() {
   function abrirEditar(promo) {
     setForm({
       nombre: promo.nombre,
-      tipo: promo.tipo,
-      valor: String(promo.valor),
-      alcance: promo.alcance,
+      modalidad: promo.modalidad || 'producto',
+      tipo: promo.tipo || 'porcentaje',
+      valor: promo.valor != null ? String(promo.valor) : '',
+      alcance: promo.alcance || 'catalogo',
       productos: new Set((promo.productos || []).map(p => p._id)),
+      escalones: (promo.escalones || []).length > 0
+        ? promo.escalones.map(e => ({ minimo: String(e.minimo), porcentaje: String(e.porcentaje) }))
+        : [{ minimo: '', porcentaje: '' }],
     })
     setModoEditar(promo._id)
     setError('')
@@ -62,10 +76,12 @@ export default function AdminPromociones() {
       body: JSON.stringify({
         id: modoEditar !== 'nuevo' ? modoEditar : undefined,
         nombre: form.nombre,
+        modalidad: form.modalidad,
         tipo: form.tipo,
         valor: form.valor,
         alcance: form.alcance,
         productos: Array.from(form.productos),
+        escalones: form.escalones.filter(e => e.minimo !== '' && e.porcentaje !== ''),
       }),
     })
     const data = await res.json()
@@ -116,6 +132,21 @@ export default function AdminPromociones() {
     })
   }
 
+  function actualizarEscalon(idx, campo, valor) {
+    setForm(prev => ({
+      ...prev,
+      escalones: prev.escalones.map((e, i) => i === idx ? { ...e, [campo]: valor } : e),
+    }))
+  }
+
+  function agregarEscalon() {
+    setForm(prev => ({ ...prev, escalones: [...prev.escalones, { minimo: '', porcentaje: '' }] }))
+  }
+
+  function quitarEscalon(idx) {
+    setForm(prev => ({ ...prev, escalones: prev.escalones.filter((_, i) => i !== idx) }))
+  }
+
   if (loading) return (
     <main className="min-h-screen bg-page flex items-center justify-center">
       <p className="text-ink-muted">Cargando promociones...</p>
@@ -145,45 +176,89 @@ export default function AdminPromociones() {
                   placeholder="Ej. Buen Fin 2026" className={inputClass} />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelClass}>Tipo</label>
-                  <div className="flex gap-1">
-                    <button onClick={() => setForm({ ...form, tipo: 'porcentaje' })}
-                      className={`flex-1 px-3 py-3 rounded-lg text-xs font-black uppercase ${form.tipo === 'porcentaje' ? 'bg-orange-500 text-black' : 'bg-page text-ink-muted border border-line'}`}>%</button>
-                    <button onClick={() => setForm({ ...form, tipo: 'fijo' })}
-                      className={`flex-1 px-3 py-3 rounded-lg text-xs font-black uppercase ${form.tipo === 'fijo' ? 'bg-orange-500 text-black' : 'bg-page text-ink-muted border border-line'}`}>$</button>
-                  </div>
-                </div>
-                <div>
-                  <label className={labelClass}>Valor</label>
-                  <input type="number" min="0" value={form.valor} onChange={e => setForm({ ...form, valor: e.target.value })}
-                    placeholder={form.tipo === 'porcentaje' ? 'Ej. 20' : 'Ej. 50'} className={inputClass} />
-                </div>
-              </div>
-
               <div>
-                <label className={labelClass}>Alcance</label>
+                <label className={labelClass}>Tipo de promoción</label>
                 <div className="flex gap-1">
-                  <button onClick={() => setForm({ ...form, alcance: 'catalogo' })}
-                    className={`flex-1 px-3 py-3 rounded-lg text-xs font-black uppercase ${form.alcance === 'catalogo' ? 'bg-orange-500 text-black' : 'bg-page text-ink-muted border border-line'}`}>
-                    Todo el catálogo
+                  <button onClick={() => setForm({ ...form, modalidad: 'producto' })}
+                    className={`flex-1 px-3 py-3 rounded-lg text-xs font-black uppercase ${form.modalidad === 'producto' ? 'bg-orange-500 text-black' : 'bg-page text-ink-muted border border-line'}`}>
+                    Descuento por producto
                   </button>
-                  <button onClick={() => setForm({ ...form, alcance: 'seleccion' })}
-                    className={`flex-1 px-3 py-3 rounded-lg text-xs font-black uppercase ${form.alcance === 'seleccion' ? 'bg-orange-500 text-black' : 'bg-page text-ink-muted border border-line'}`}>
-                    Productos específicos
+                  <button onClick={() => setForm({ ...form, modalidad: 'escalonado' })}
+                    className={`flex-1 px-3 py-3 rounded-lg text-xs font-black uppercase ${form.modalidad === 'escalonado' ? 'bg-orange-500 text-black' : 'bg-page text-ink-muted border border-line'}`}>
+                    Escalonado por monto de compra
                   </button>
                 </div>
                 <p className="text-ink-muted text-xs mt-2">
-                  {form.alcance === 'catalogo'
-                    ? 'Al prenderla, aplica a todos los productos activos en ese momento (los que agregues después NO se incluyen automáticamente).'
-                    : `${form.productos.size} producto${form.productos.size !== 1 ? 's' : ''} seleccionado${form.productos.size !== 1 ? 's' : ''}`}
+                  {form.modalidad === 'producto'
+                    ? 'Baja el precio tachado de los productos que elijas.'
+                    : 'Ej: "compra +$500 → 10% OFF". Se calcula sobre el total del carrito (sin envío), solo en compras normales. Solo puede haber una escalonada activa a la vez.'}
                 </p>
               </div>
+
+              {form.modalidad === 'producto' ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelClass}>Tipo</label>
+                      <div className="flex gap-1">
+                        <button onClick={() => setForm({ ...form, tipo: 'porcentaje' })}
+                          className={`flex-1 px-3 py-3 rounded-lg text-xs font-black uppercase ${form.tipo === 'porcentaje' ? 'bg-orange-500 text-black' : 'bg-page text-ink-muted border border-line'}`}>%</button>
+                        <button onClick={() => setForm({ ...form, tipo: 'fijo' })}
+                          className={`flex-1 px-3 py-3 rounded-lg text-xs font-black uppercase ${form.tipo === 'fijo' ? 'bg-orange-500 text-black' : 'bg-page text-ink-muted border border-line'}`}>$</button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelClass}>Valor</label>
+                      <input type="number" min="0" value={form.valor} onChange={e => setForm({ ...form, valor: e.target.value })}
+                        placeholder={form.tipo === 'porcentaje' ? 'Ej. 20' : 'Ej. 50'} className={inputClass} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>Alcance</label>
+                    <div className="flex gap-1">
+                      <button onClick={() => setForm({ ...form, alcance: 'catalogo' })}
+                        className={`flex-1 px-3 py-3 rounded-lg text-xs font-black uppercase ${form.alcance === 'catalogo' ? 'bg-orange-500 text-black' : 'bg-page text-ink-muted border border-line'}`}>
+                        Todo el catálogo
+                      </button>
+                      <button onClick={() => setForm({ ...form, alcance: 'seleccion' })}
+                        className={`flex-1 px-3 py-3 rounded-lg text-xs font-black uppercase ${form.alcance === 'seleccion' ? 'bg-orange-500 text-black' : 'bg-page text-ink-muted border border-line'}`}>
+                        Productos específicos
+                      </button>
+                    </div>
+                    <p className="text-ink-muted text-xs mt-2">
+                      {form.alcance === 'catalogo'
+                        ? 'Al prenderla, aplica a todos los productos activos en ese momento (los que agregues después NO se incluyen automáticamente).'
+                        : `${form.productos.size} producto${form.productos.size !== 1 ? 's' : ''} seleccionado${form.productos.size !== 1 ? 's' : ''}`}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label className={labelClass}>Escalones</label>
+                  <div className="flex flex-col gap-2">
+                    {form.escalones.map((e, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="text-ink-muted text-xs font-black">+$</span>
+                        <input type="number" min="0" value={e.minimo} onChange={ev => actualizarEscalon(idx, 'minimo', ev.target.value)}
+                          placeholder="500" className={inputClass} />
+                        <span className="text-ink-muted text-xs font-black">→</span>
+                        <input type="number" min="0" max="100" value={e.porcentaje} onChange={ev => actualizarEscalon(idx, 'porcentaje', ev.target.value)}
+                          placeholder="10" className={inputClass} />
+                        <span className="text-ink-muted text-xs font-black">%</span>
+                        <button onClick={() => quitarEscalon(idx)} className="text-red-400 hover:text-red-300 text-xs font-black px-2 flex-shrink-0">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={agregarEscalon} className="text-orange-600 hover:text-orange-500 text-xs font-black uppercase mt-3">
+                    + Agregar escalón
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          {form.alcance === 'seleccion' && (
+          {form.modalidad === 'producto' && form.alcance === 'seleccion' && (
             <div className="bg-surface border border-line rounded-2xl p-6">
               <h2 className="text-lg font-black uppercase text-orange-600 mb-4">Elegir productos</h2>
               <div className="flex flex-col gap-1 max-h-96 overflow-y-auto">
@@ -223,7 +298,7 @@ export default function AdminPromociones() {
           </button>
         </div>
         <p className="text-ink-muted text-xs mb-8">
-          Nota: si un producto ya tiene un descuento puesto a mano desde /admin/productos, no lo metas también a una promoción de aquí — apagarla le borraría ese descuento manual.
+          Nota: si un producto ya tiene un descuento puesto a mano desde /admin/productos, no lo metas también a una promoción "por producto" de aquí — apagarla le borraría ese descuento manual.
         </p>
 
         <div className="flex flex-col gap-4">
@@ -232,9 +307,22 @@ export default function AdminPromociones() {
               <div className="flex-1 min-w-0">
                 <p className="text-ink font-black text-sm">{promo.nombre}</p>
                 <div className="flex gap-3 text-xs text-ink-muted mt-1 flex-wrap">
-                  <span>{promo.tipo === 'fijo' ? `$${promo.valor} MXN` : `${promo.valor}%`} de descuento</span>
-                  <span>{promo.alcance === 'catalogo' ? 'Todo el catálogo' : `${(promo.productos || []).length} producto(s)`}</span>
-                  {promo.activa && <span className="text-green-400">🟢 Activa — {(promo.productosAfectados || []).length} producto(s) con el descuento puesto</span>}
+                  {promo.modalidad === 'escalonado' ? (
+                    <>
+                      <span>Escalonado por monto de compra</span>
+                      <span>{(promo.escalones || []).map(e => `+$${e.minimo}→${e.porcentaje}%`).join(' · ')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{promo.tipo === 'fijo' ? `$${promo.valor} MXN` : `${promo.valor}%`} de descuento</span>
+                      <span>{promo.alcance === 'catalogo' ? 'Todo el catálogo' : `${(promo.productos || []).length} producto(s)`}</span>
+                    </>
+                  )}
+                  {promo.activa && (
+                    <span className="text-green-400">
+                      🟢 Activa{promo.modalidad !== 'escalonado' ? ` — ${(promo.productosAfectados || []).length} producto(s) con el descuento puesto` : ''}
+                    </span>
+                  )}
                 </div>
               </div>
               <button onClick={() => abrirEditar(promo)} disabled={promo.activa}

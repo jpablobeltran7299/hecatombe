@@ -2,7 +2,7 @@ import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
-import { getProducto, getProductosPorIds, calcularPrecioFinal } from '@/lib/sanity'
+import { getProducto, getProductosPorIds, calcularPrecioFinal, getPromoEscalonadaActiva } from '@/lib/sanity'
 import { getSanityWriteClient, descontarStock } from '@/lib/sanityAdmin'
 import { ajustarHecacoins } from '@/lib/hecacoins'
 import { obtenerCotizacion } from '@/lib/soloenvios'
@@ -155,6 +155,22 @@ export async function POST(request) {
     // Calcular total original (con precios ya validados contra Sanity)
     const totalOriginal = itemsValidados.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
 
+    // Promoción escalonada por monto de compra (ej. "+$500 → 10% OFF",
+    // ver /admin/promociones) — solo en compras normales, sobre el valor de
+    // los productos, SIN envío. Se usa el escalón más alto que se alcance.
+    let descuentoEscalonado = 0
+    let promoEscalonadaNombre = null
+    if (tipo_pedido === 'normal' || !tipo_pedido) {
+      const promoEscalonada = await getPromoEscalonadaActiva()
+      const escalonAplicable = (promoEscalonada?.escalones || [])
+        .filter(e => totalOriginal >= e.minimo)
+        .sort((a, b) => b.minimo - a.minimo)[0]
+      if (escalonAplicable) {
+        descuentoEscalonado = Math.round(totalOriginal * (escalonAplicable.porcentaje / 100))
+        promoEscalonadaNombre = promoEscalonada.nombre
+      }
+    }
+
     // Costo de envío: se calcula aquí, nunca se confía en lo que mande el cliente.
     // Aplica en compras normales y en liquidaciones de preventa que eligen
     // envío directo (no bodega) y no alcanzan el monto de envío gratis.
@@ -200,10 +216,10 @@ export async function POST(request) {
         .single()
 
       const saldoDisponible = saldo?.saldo || 0
-      descuentoHecacoins = Math.min(hecacoins_a_canjear, saldoDisponible, totalOriginal)
+      descuentoHecacoins = Math.min(hecacoins_a_canjear, saldoDisponible, totalOriginal - descuentoEscalonado)
     }
 
-    const totalFinal = Math.max(0, totalOriginal - descuentoHecacoins) + costoEnvio
+    const totalFinal = Math.max(0, totalOriginal - descuentoEscalonado - descuentoHecacoins) + costoEnvio
 
     // Si paga todo con Hecacoins — no pasa por MercadoPago, así que hay que
     // generar el pedido, descontar stock y mandar los correos aquí mismo
@@ -336,6 +352,8 @@ export async function POST(request) {
           items: itemsParaCorreo,
           subtotal: totalOriginal,
           descuentoHecacoins,
+          descuentoPromocion: descuentoEscalonado,
+          nombrePromocion: promoEscalonadaNombre,
         })
         await resend.emails.send({
           from: 'Hecatombe Coleccionables <noreply@hecatombe.com.mx>',
@@ -372,6 +390,13 @@ export async function POST(request) {
         currency_id: 'MXN',
         picture_url: item.imagen || '',
       })),
+      ...(descuentoEscalonado > 0 ? [{
+        id: 'promo-escalonada-descuento',
+        title: `Descuento ${promoEscalonadaNombre || 'promoción'}`,
+        quantity: 1,
+        unit_price: -descuentoEscalonado,
+        currency_id: 'MXN',
+      }] : []),
       ...(descuentoHecacoins > 0 ? [{
         id: 'hecacoins-descuento',
         title: `Descuento Hecacoins`,
@@ -406,6 +431,8 @@ export async function POST(request) {
           anticipo_pagado: anticipo_pagado || null,
           monto_liquidacion: tipo_pedido === 'liquidacion' ? montoLiquidacionReal : (monto_liquidacion || null),
           hecacoins_canjeadas: descuentoHecacoins,
+          descuento_escalonado: descuentoEscalonado,
+          promo_escalonada_nombre: promoEscalonadaNombre,
           costo_envio: costoEnvio,
           direccion_id: direccion_id || null,
           quotation_id: envioCotizacion?.quotation_id || null,

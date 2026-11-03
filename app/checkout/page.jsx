@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { BODEGA_THRESHOLD_MXN, COSTO_ENVIO_MXN } from '@/lib/constants'
+import { getPromoEscalonadaActiva } from '@/lib/sanity'
 
 export default function CheckoutPage() {
   const [user, setUser] = useState(null)
@@ -24,7 +25,12 @@ export default function CheckoutPage() {
   const [direccionId, setDireccionId] = useState(null)
   const [confirmoDireccion, setConfirmoDireccion] = useState(false)
   const [error, setError] = useState('')
+  const [promoEscalonada, setPromoEscalonada] = useState(null)
   const router = useRouter()
+
+  useEffect(() => {
+    getPromoEscalonadaActiva().then(setPromoEscalonada).catch(() => setPromoEscalonada(null))
+  }, [])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -161,10 +167,20 @@ export default function CheckoutPage() {
     ? itemApartar?.anticipo || 0
     : items.reduce((acc, i) => acc + (i.precio * i.cantidad), 0)
 
-  const descuentoHC = usarHecacoins && !modoApartar ? Math.min(hecacoins, totalBruto) : 0
+  // Vista previa del descuento escalonado (ver /admin/promociones) — el
+  // monto real y definitivo se vuelve a calcular en /api/checkout, nunca se
+  // confía en este cálculo del cliente.
+  const escalonAplicable = !modoApartar
+    ? (promoEscalonada?.escalones || [])
+        .filter(e => totalBruto >= e.minimo)
+        .sort((a, b) => b.minimo - a.minimo)[0]
+    : null
+  const descuentoPromo = escalonAplicable ? Math.round(totalBruto * (escalonAplicable.porcentaje / 100)) : 0
+
+  const descuentoHC = usarHecacoins && !modoApartar ? Math.min(hecacoins, totalBruto - descuentoPromo) : 0
   const envioGratis = totalBruto >= 1200
   const costoEnvio = !modoApartar && modoEnvio === 'inmediato' && !envioGratis ? COSTO_ENVIO_MXN : 0
-  const totalFinal = totalBruto - descuentoHC + costoEnvio
+  const totalFinal = totalBruto - descuentoPromo - descuentoHC + costoEnvio
 
   const inputClass = "w-full bg-page border border-line-strong rounded-lg px-4 py-3 text-ink placeholder-ink-muted focus:outline-none focus:border-orange-500 transition"
   const labelClass = "text-ink-muted text-xs font-black uppercase tracking-widest mb-2 block"
@@ -368,10 +384,16 @@ export default function CheckoutPage() {
               )}
 
               <div className="border-t border-line pt-4 mb-6">
-                {descuentoHC > 0 && (
+                {(descuentoHC > 0 || descuentoPromo > 0) && (
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-ink-muted text-sm">Subtotal</span>
                     <span className="text-ink-muted text-sm">${totalBruto.toLocaleString('es-MX')} MXN</span>
+                  </div>
+                )}
+                {descuentoPromo > 0 && (
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-green-400 text-sm font-black">{promoEscalonada?.nombre || 'Descuento'} ({escalonAplicable.porcentaje}%)</span>
+                    <span className="text-green-400 text-sm font-black">-${descuentoPromo.toLocaleString('es-MX')} MXN</span>
                   </div>
                 )}
                 {descuentoHC > 0 && (

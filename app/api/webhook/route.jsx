@@ -190,7 +190,7 @@ export async function POST(request) {
     // external_reference largo hacía que rechazara el pago sin dar motivo).
     // Se deja el parseo de JSON viejo como fallback para pagos ya en tránsito
     // al momento de este cambio.
-    let userId, tipo_pedido, destino, producto_id, pedido_id_apartado, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas, costo_envio, direccion_id, quotation_id, rate_id, pedido_ids_bodega, envio_proveedor, envio_servicio, envio_dias
+    let userId, tipo_pedido, destino, producto_id, pedido_id_apartado, anticipo_pagado, monto_liquidacion, hecacoins_canjeadas, descuento_escalonado, promo_escalonada_nombre, costo_envio, direccion_id, quotation_id, rate_id, pedido_ids_bodega, envio_proveedor, envio_servicio, envio_dias
     let ref = null
     if (/^\d+$/.test(String(pago.external_reference || ''))) {
       const { data: checkoutPendiente } = await supabase
@@ -210,6 +210,8 @@ export async function POST(request) {
       anticipo_pagado = ref.anticipo_pagado
       monto_liquidacion = ref.monto_liquidacion
       hecacoins_canjeadas = ref.hecacoins_canjeadas || 0
+      descuento_escalonado = ref.descuento_escalonado || 0
+      promo_escalonada_nombre = ref.promo_escalonada_nombre || null
       costo_envio = ref.costo_envio || 0
       direccion_id = ref.direccion_id || null
       quotation_id = ref.quotation_id || null
@@ -222,6 +224,8 @@ export async function POST(request) {
       userId = pago.external_reference
       tipo_pedido = 'normal'
       destino = 'directo'
+      descuento_escalonado = 0
+      promo_escalonada_nombre = null
       costo_envio = 0
       direccion_id = null
       quotation_id = null
@@ -364,7 +368,7 @@ export async function POST(request) {
     // pierde el nombre/foto para siempre y queda mostrando "Producto no
     // disponible" (ver pedido #13, operación 181833656256).
     const itemsConSnapshot = (pago.additional_info?.items || [])
-      .filter(i => i.id !== 'envio' && i.id !== 'hecacoins-descuento')
+      .filter(i => i.id !== 'envio' && i.id !== 'hecacoins-descuento' && i.id !== 'promo-escalonada-descuento')
       .map(i => ({
         producto_id: i.id,
         cantidad: Number(i.quantity) || 1,
@@ -565,6 +569,8 @@ export async function POST(request) {
       items: itemsParaCorreo,
       subtotal: itemsParaCorreo.length > 0 ? subtotalCorreo : null,
       descuentoHecacoins: hecacoins_canjeadas,
+      descuentoPromocion: descuento_escalonado,
+      nombrePromocion: promo_escalonada_nombre,
     })
     await resend.emails.send({
       from: 'Hecatombe Coleccionables <noreply@hecatombe.com.mx>',

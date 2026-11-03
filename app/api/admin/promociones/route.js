@@ -12,8 +12,26 @@ const getSanityClient = () => createClient({
   useCdn: false,
 })
 
-function validarConfig({ nombre, tipo, valor, alcance, productos }) {
+function validarConfig({ nombre, modalidad, tipo, valor, alcance, productos, escalones }) {
   if (!nombre || !nombre.trim()) return 'Falta el nombre de la promoción'
+  if (!['producto', 'escalonado'].includes(modalidad)) return 'Modalidad inválida'
+
+  if (modalidad === 'escalonado') {
+    if (!Array.isArray(escalones) || escalones.length === 0) {
+      return 'Agrega al menos un escalón de descuento'
+    }
+    const minimos = new Set()
+    for (const e of escalones) {
+      const minimo = parseFloat(e.minimo)
+      const porcentaje = parseFloat(e.porcentaje)
+      if (isNaN(minimo) || minimo < 0) return 'Hay un monto mínimo inválido en los escalones'
+      if (isNaN(porcentaje) || porcentaje <= 0 || porcentaje > 100) return 'Hay un porcentaje inválido en los escalones (1-100)'
+      if (minimos.has(minimo)) return 'No puede haber dos escalones con el mismo monto mínimo'
+      minimos.add(minimo)
+    }
+    return null
+  }
+
   if (!['porcentaje', 'fijo'].includes(tipo)) return 'Tipo de descuento inválido'
   const valorNum = parseFloat(valor)
   if (!valor || isNaN(valorNum) || valorNum <= 0) return 'Valor de descuento inválido'
@@ -23,6 +41,34 @@ function validarConfig({ nombre, tipo, valor, alcance, productos }) {
     return 'Elige al menos un producto para esta promoción'
   }
   return null
+}
+
+function construirCampos(body) {
+  if (body.modalidad === 'escalonado') {
+    return {
+      modalidad: 'escalonado',
+      escalones: body.escalones.map(e => ({
+        _type: 'escalon',
+        _key: `${e.minimo}`,
+        minimo: parseFloat(e.minimo),
+        porcentaje: parseFloat(e.porcentaje),
+      })),
+      tipo: null,
+      valor: null,
+      alcance: null,
+      productos: [],
+    }
+  }
+  return {
+    modalidad: 'producto',
+    tipo: body.tipo,
+    valor: parseFloat(body.valor),
+    alcance: body.alcance,
+    productos: body.alcance === 'seleccion'
+      ? body.productos.map(id => ({ _type: 'reference', _key: id, _ref: id }))
+      : [],
+    escalones: [],
+  }
 }
 
 export async function POST(request) {
@@ -37,12 +83,7 @@ export async function POST(request) {
     const doc = await client.create({
       _type: 'promocion',
       nombre: body.nombre.trim(),
-      tipo: body.tipo,
-      valor: parseFloat(body.valor),
-      alcance: body.alcance,
-      productos: body.alcance === 'seleccion'
-        ? body.productos.map(id => ({ _type: 'reference', _key: id, _ref: id }))
-        : [],
+      ...construirCampos(body),
       activa: false,
       productosAfectados: [],
     })
@@ -72,12 +113,7 @@ export async function PUT(request) {
 
     await client.patch(id).set({
       nombre: body.nombre.trim(),
-      tipo: body.tipo,
-      valor: parseFloat(body.valor),
-      alcance: body.alcance,
-      productos: body.alcance === 'seleccion'
-        ? body.productos.map(pid => ({ _type: 'reference', _key: pid, _ref: pid }))
-        : [],
+      ...construirCampos(body),
     }).commit()
     return NextResponse.json({ ok: true })
   } catch (e) {
