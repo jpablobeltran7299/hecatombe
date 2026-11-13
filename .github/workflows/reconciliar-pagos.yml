@@ -1,0 +1,15 @@
+name: Reconciliar pagos pendientes
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  reconciliar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Llamar endpoint de reconciliación
+        run: |
+          curl -sS -f -X GET "https://www.hecatombe.com.mx/api/cron/pagos-pendientes" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

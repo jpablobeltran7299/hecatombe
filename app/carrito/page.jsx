@@ -16,6 +16,19 @@ export default function CarritoPage() {
     const e = params.get('estado')
     if (e) setEstado(e)
 
+    // Red de seguridad: si el cliente regresa de un pago exitoso, forzamos
+    // la verificación/creación del pedido en el backend en vez de confiar
+    // únicamente en que el webhook de MercadoPago haya llegado. Idempotente
+    // y en segundo plano — no bloquea ni afecta lo que ve el usuario aquí.
+    const paymentId = params.get('payment_id')
+    if (e === 'exitoso' && paymentId) {
+      fetch('/api/verificar-pago', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_id: paymentId }),
+      }).catch(() => {})
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
     })
